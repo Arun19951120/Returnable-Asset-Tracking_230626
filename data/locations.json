@@ -1,0 +1,29 @@
+[
+  {
+    "id": "loc-23305e74",
+    "name": "Master Warehouse",
+    "type": "Warehouse",
+    "status": "Active",
+    "address": "No. 13, Master Hub, Ch",
+    "isMasterWarehouse": true,
+    "createdAt": "2026-06-09T17:28:32.585Z"
+  },
+  {
+    "id": "loc-cd04bf34",
+    "name": "Tier 1",
+    "type": "Tier1_Site",
+    "status": "Active",
+    "address": "NO, 14 MM Nagar, CH",
+    "isMasterWarehouse": false,
+    "createdAt": "2026-06-09T17:29:34.169Z"
+  },
+  {
+    "id": "loc-2ffc4ba8",
+    "name": "OEM",
+    "type": "OEM_Site",
+    "status": "Active",
+    "address": "232, Bengaluru",
+    "isMasterWarehouse": false,
+    "createdAt": "2026-06-09T17:30:04.112Z"
+  }
+]

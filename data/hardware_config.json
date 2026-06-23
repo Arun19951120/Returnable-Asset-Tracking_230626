@@ -1,0 +1,54 @@
+{
+  "rfid": {
+    "enabled": true,
+    "readerType": "Fixed Gate",
+    "ipAddress": "192.168.1.100",
+    "port": "5084",
+    "antennaCount": 4,
+    "readPower": 27,
+    "writePower": 27,
+    "protocol": "LLRP",
+    "tagFormat": "EPC Gen2",
+    "connected": false
+  },
+  "ble": {
+    "enabled": true,
+    "scanInterval": 1000,
+    "rssiThreshold": -70,
+    "tagPrefix": "BLE-",
+    "macFilter": "",
+    "companyId": "0x004C",
+    "txPower": 4,
+    "connected": false
+  },
+  "barcode": {
+    "enabled": true,
+    "scannerType": "USB HID",
+    "comPort": "COM3",
+    "baudRate": "9600",
+    "symbologies": [
+      "Code128",
+      "Code39",
+      "QR",
+      "DataMatrix",
+      "EAN13"
+    ],
+    "triggerMode": "Manual",
+    "connected": false
+  },
+  "qr": {
+    "enabled": true,
+    "cameraIndex": 0,
+    "resolution": "1280x720",
+    "decodeFormats": [
+      "QR_CODE",
+      "DATA_MATRIX",
+      "AZTEC"
+    ],
+    "encodeFormat": "QR_CODE",
+    "errorCorrection": "M",
+    "moduleSize": 4,
+    "printDPI": 300,
+    "connected": false
+  }
+}

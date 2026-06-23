@@ -1,0 +1,71 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userProfile().role == 'Admin';
+    }
+
+    // Users collection
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Custom roles — admin manages, all signed-in users can read
+    match /custom_roles/{roleId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Assets — all signed-in users read; admins + suppliers write
+    match /assets/{assetId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (isAdmin() || userProfile().role in ['Supplier', 'Tier-1']);
+    }
+
+    // Locations — readable by all; admin writes
+    match /locations/{locationId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Projects — readable by all; admin writes
+    match /projects/{projectId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Orders — authenticated users create/read own; admin reads all
+    match /orders/{orderId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isAdmin() || resource.data.createdBy == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Pickup requests
+    match /pickup_requests/{reqId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isAdmin() || resource.data.requestedBy == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Audit logs — append-only for authenticated, read for admin
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+  }
+}

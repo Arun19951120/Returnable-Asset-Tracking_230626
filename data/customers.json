@@ -1,0 +1,22 @@
+[
+  {
+    "id": "cus-b79649be",
+    "name": "Customer 01",
+    "contactEmail": "customer01@tier1.com",
+    "contactPhone": "",
+    "address": "werfnwifbbc",
+    "slaTarget": 7,
+    "status": "Active",
+    "createdAt": "2026-06-09T17:31:04.770Z"
+  },
+  {
+    "id": "cus-f02330c8",
+    "name": "Customer02",
+    "contactEmail": "customer2@oem.com",
+    "contactPhone": "",
+    "address": "qwdbcbga, ",
+    "slaTarget": 7,
+    "status": "Active",
+    "createdAt": "2026-06-09T17:31:30.653Z"
+  }
+]

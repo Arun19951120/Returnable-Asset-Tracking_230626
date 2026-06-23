@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Dark mode overrides ─────────────────────────────────────────────────── */
+html.dark body                         { background: #0f172a; color: #f1f5f9; }
+
+/* Backgrounds */
+html.dark .bg-white                    { background-color: #1e293b !important; }
+html.dark .bg-slate-50                 { background-color: #0f172a !important; }
+html.dark .bg-slate-100                { background-color: #1e293b !important; }
+html.dark .bg-slate-200                { background-color: #334155 !important; }
+html.dark .bg-slate-800                { background-color: #e2e8f0 !important; }
+html.dark .bg-slate-900                { background-color: #f1f5f9 !important; }
+
+/* Text */
+html.dark .text-slate-900              { color: #f1f5f9 !important; }
+html.dark .text-slate-800              { color: #e2e8f0 !important; }
+html.dark .text-slate-700              { color: #cbd5e1 !important; }
+html.dark .text-slate-600              { color: #94a3b8 !important; }
+html.dark .text-slate-500              { color: #64748b !important; }
+html.dark .text-slate-400              { color: #475569 !important; }
+html.dark .text-white                  { color: #0f172a !important; }
+
+/* Borders */
+html.dark .border-slate-100            { border-color: #1e293b !important; }
+html.dark .border-slate-200            { border-color: #334155 !important; }
+html.dark .border-slate-300            { border-color: #475569 !important; }
+
+/* Inputs / selects */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+html.dark select,
+html.dark textarea                     {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+/* Sidebar active item — slate-900 bg + white text should stay readable */
+html.dark aside .bg-slate-900          { background-color: #6366f1 !important; }
+html.dark aside .text-white            { color: #ffffff !important; }
+
+/* Tables */
+html.dark th                           { background-color: #1e293b !important; color: #cbd5e1 !important; }
+html.dark td                           { color: #cbd5e1 !important; }
+html.dark tr:hover td                  { background-color: #1e293b !important; }
+
+/* Hover overrides */
+html.dark .hover\:bg-slate-50:hover    { background-color: #1e293b !important; }
+html.dark .hover\:bg-slate-100:hover   { background-color: #334155 !important; }
+
+/* Shadows → subtle in dark mode */
+html.dark .shadow-sm                   { box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4) !important; }
+
+/* scrollbar */
+html.dark ::-webkit-scrollbar-track    { background: #1e293b; }
+html.dark ::-webkit-scrollbar-thumb    { background: #475569; border-radius: 4px; }

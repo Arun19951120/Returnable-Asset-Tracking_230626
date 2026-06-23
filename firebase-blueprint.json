@@ -1,0 +1,95 @@
+{
+  "collections": {
+    "users": {
+      "description": "Corporate partner profiles with RBAC role and location restrictions",
+      "schema": {
+        "uid": "string",
+        "email": "string",
+        "displayName": "string",
+        "role": "string — links to CustomRole.name or built-in: Admin | Supplier | Tier-1 | OEM",
+        "organization": "string?",
+        "projects": "string[]? — active project names this user can access",
+        "allowedLocations": "string[]? — location names user can dispatch to; empty = unrestricted"
+      }
+    },
+    "custom_roles": {
+      "description": "Admin-defined dynamic roles controlling UI tab visibility",
+      "schema": {
+        "id": "string",
+        "name": "string — unique role identifier",
+        "allowedTabs": "string[] — tab IDs: dashboard | assets | orders | pickups | forecasting | audit | admin",
+        "description": "string?",
+        "createdAt": "ISO date string"
+      }
+    },
+    "assets": {
+      "description": "Individual returnable transit asset inventory records",
+      "schema": {
+        "id": "string",
+        "name": "string",
+        "uuid": "string — unique hardware identifier",
+        "status": "Available | Dispatched | In-Transit | Maintenance",
+        "location": "string — current location name",
+        "healthScore": "number 0-100",
+        "lastUpdated": "ISO date string"
+      }
+    },
+    "locations": {
+      "description": "Physical storage and dispatch sites",
+      "schema": {
+        "id": "string",
+        "name": "string",
+        "type": "Warehouse | Tier1_Site | OEM_Site",
+        "status": "Active | Inactive"
+      }
+    },
+    "projects": {
+      "description": "Active supply chain contracts",
+      "schema": {
+        "id": "string",
+        "name": "string",
+        "client": "string",
+        "status": "Active | Closed"
+      }
+    },
+    "orders": {
+      "description": "Logistics movement orders",
+      "schema": {
+        "id": "string",
+        "assetId": "string?",
+        "carrier": "string",
+        "status": "Pending | Approved | Dispatched | Received",
+        "origin": "string",
+        "destination": "string",
+        "createdAt": "ISO date string",
+        "updatedAt": "ISO date string",
+        "createdBy": "string — user uid"
+      }
+    },
+    "pickup_requests": {
+      "description": "Partner requests to retrieve empty reusable containers",
+      "schema": {
+        "id": "string",
+        "requestedBy": "string — user uid",
+        "location": "string",
+        "assetIds": "string[]",
+        "status": "Open | Scheduled | Completed",
+        "createdAt": "ISO date string"
+      }
+    },
+    "audit_logs": {
+      "description": "Immutable compliance event trail",
+      "schema": {
+        "id": "string",
+        "timestamp": "ISO date string",
+        "userId": "string",
+        "userEmail": "string",
+        "action": "string",
+        "category": "Asset | Order | User | Role | Pickup",
+        "details": "string"
+      }
+    }
+  },
+  "builtInRoles": ["Admin", "Supplier", "Tier-1", "OEM"],
+  "allTabs": ["dashboard", "assets", "orders", "pickups", "forecasting", "audit", "admin"]
+}

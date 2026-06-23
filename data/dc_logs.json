@@ -1,0 +1,657 @@
+[
+  {
+    "id": "dc_-357b8a4b",
+    "dcNo": "MOV-658305",
+    "createdAt": "2026-06-11T11:00:58.305Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Checkout",
+    "description": "PLSKIT 1200X1000X1000mm",
+    "qty": 1,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-ee34385e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-11",
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "dc_-c0cdf91c",
+    "dcNo": "DC-5681322",
+    "createdAt": "2026-06-11T11:01:21.322Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Checkout",
+    "description": "PLSKIT 1200X1000X1000mm ×1",
+    "qty": 1,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-ee34385e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-11",
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "dc_-c621de3e",
+    "dcNo": "DC-5800870",
+    "createdAt": "2026-06-11T11:03:20.870Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×1",
+    "qty": 1,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-59379a3c",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-06",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-1b59f06f",
+    "dcNo": "DC-5845981",
+    "createdAt": "2026-06-11T11:04:05.981Z",
+    "fromLocation": "Tier 1",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×4",
+    "qty": 4,
+    "lineMode": "cumulative",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-59379a3c",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-06",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-21a20d4d",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-16",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-7536d45e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-17",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-069037d4",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-18",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-24a9067f",
+    "dcNo": "DC-6607449",
+    "createdAt": "2026-06-11T11:16:47.449Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×1",
+    "qty": 1,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-ea400a60",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-22",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-d8a35bf4",
+    "dcNo": "DC-6865742",
+    "createdAt": "2026-06-11T11:21:05.742Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×1",
+    "qty": 1,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-ea400a60",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-22",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-5d252534",
+    "dcNo": "DC-7081326",
+    "createdAt": "2026-06-11T11:24:41.326Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-17cb0788",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-23",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-61657773",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-24",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-da9bd50e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-25",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-ed371d52",
+    "dcNo": "DC-7412570",
+    "createdAt": "2026-06-11T11:30:12.570Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-17cb0788",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-23",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-61657773",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-24",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-da9bd50e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-25",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-2071f9ba",
+    "dcNo": "DC-7647938",
+    "createdAt": "2026-06-11T11:34:07.938Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-17cb0788",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-23",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-61657773",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-24",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-da9bd50e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-25",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-a776c27d",
+    "dcNo": "DC-1374187",
+    "createdAt": "2026-06-11T12:36:14.187Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×4",
+    "qty": 4,
+    "lineMode": "cumulative",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-f0944467",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-07",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-87c8f9d5",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-09",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-ee34385e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-11",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-a07f6b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-13",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-502fa774",
+    "dcNo": "DC-0676353",
+    "createdAt": "2026-06-11T15:11:16.353Z",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "cumulative",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-c4945b1a",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-01",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-39bf02cc",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-02",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-0c6222ce",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-03",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-872e5b62",
+    "dcNo": "DC-1555168",
+    "createdAt": "2026-06-12T08:05:55.168Z",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×1",
+    "qty": 1,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-71c027a8",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-04",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-c1a09718",
+    "dcNo": "DC-0677959",
+    "createdAt": "2026-06-13T17:11:17.959Z",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×4",
+    "qty": 4,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-71c027a8",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-04",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-59379a3c",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-06",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-87c8f9d5",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-09",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-8beab800",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-10",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-49e0ed86",
+    "dcNo": "DC-9812131",
+    "createdAt": "2026-06-14T04:03:32.131Z",
+    "fromLocation": "OEM",
+    "toLocation": "OEM",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×2",
+    "qty": 2,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-c4945b1a",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-01",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-39bf02cc",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-02",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-33c32096",
+    "dcNo": "DC-0260571",
+    "createdAt": "2026-06-14T04:11:00.571Z",
+    "fromLocation": "OEM",
+    "toLocation": "Master Warehouse",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-c4945b1a",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-01",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-39bf02cc",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-02",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-0c6222ce",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-03",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-bac7d4a0",
+    "dcNo": "DC-1097040",
+    "createdAt": "2026-06-14T04:24:57.040Z",
+    "fromLocation": "OEM",
+    "toLocation": "Master Warehouse",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×2",
+    "qty": 2,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-59379a3c",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-06",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-87c8f9d5",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-09",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-23c8ec39",
+    "dcNo": "DC-8710441",
+    "createdAt": "2026-06-14T09:18:30.441Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×6",
+    "qty": 6,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-39bf02cc",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-02",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-59379a3c",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-06",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-f0944467",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-07",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-87c8f9d5",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-09",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-ee34385e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-11",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-a07f6b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-13",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-7e2b96a2",
+    "dcNo": "DC-1520948",
+    "createdAt": "2026-06-15T08:18:40.948Z",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×4",
+    "qty": 4,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-71c027a8",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-04",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-59379a3c",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-06",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-87c8f9d5",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-09",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-8beab800",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-10",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-960ce5e1",
+    "dcNo": "MOV-739137",
+    "createdAt": "2026-06-19T07:38:59.137Z",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Checkout",
+    "description": "PLSKIT 1200X1000X1000mm",
+    "qty": 1,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "createdBy": "user-2b2e87c2",
+    "assetSnapshots": [
+      {
+        "id": "ass-c4945b1a",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-01",
+        "cost": 0
+      }
+    ]
+  },
+  {
+    "id": "dc_-dbb1a31e",
+    "dcNo": "DC-0904332",
+    "createdAt": "2026-06-22T06:48:24.332Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "cumulative",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-4679f583",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-76",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-af97ee5e",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-77",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-f09f60e6",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-80",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  }
+]

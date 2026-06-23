@@ -1,0 +1,61 @@
+[
+  {
+    "id": "not-bf6d9904",
+    "title": "📦 Incoming Shipment — Tier 1",
+    "message": "3 items dispatched from OEM:\n• PLSKIT 1200X1000X1000mm × 3",
+    "type": "warning",
+    "read": true,
+    "createdAt": "2026-06-14T10:54:49.082Z",
+    "updatedAt": "2026-06-14T10:55:46.401Z"
+  },
+  {
+    "id": "not-2369844c",
+    "title": "📦 Incoming Shipment — OEM",
+    "message": "4 items dispatched from Tier 1:\n• PLSKIT 1200X1000X1000mm × 4",
+    "type": "warning",
+    "read": true,
+    "createdAt": "2026-06-14T10:58:48.597Z",
+    "updatedAt": "2026-06-14T11:01:29.510Z"
+  },
+  {
+    "id": "not-16a592fb",
+    "title": "📦 Incoming Shipment — Master Warehouse",
+    "message": "5 items dispatched from OEM:\n• PLSKIT 1200X1000X1000mm × 5",
+    "type": "warning",
+    "read": true,
+    "createdAt": "2026-06-14T11:03:25.177Z",
+    "updatedAt": "2026-06-14T11:04:31.787Z"
+  },
+  {
+    "id": "not-c2bc2369",
+    "title": "📦 Incoming Shipment — Tier 1",
+    "message": "4 items dispatched from Master Warehouse:\n• PLSKIT 1200X1000X1000mm × 4",
+    "type": "warning",
+    "read": false,
+    "createdAt": "2026-06-15T13:22:27.316Z"
+  },
+  {
+    "id": "not-cdbd3f01",
+    "title": "📦 Incoming Shipment — OEM",
+    "message": "2 items dispatched from Tier 1:\n• PLSKIT 1200X1000X1000mm × 2",
+    "type": "warning",
+    "read": false,
+    "createdAt": "2026-06-19T07:38:22.827Z"
+  },
+  {
+    "id": "not-f9db4440",
+    "title": "📦 Incoming Shipment — Tier 1",
+    "message": "3 items dispatched from Master Warehouse:\n• PLSKIT 1200X1000X1000mm × 3",
+    "type": "warning",
+    "read": false,
+    "createdAt": "2026-06-19T07:39:51.464Z"
+  },
+  {
+    "id": "not-58129694",
+    "title": "📦 Incoming Shipment — Tier 1",
+    "message": "3 items dispatched from Master Warehouse:\n• PLSKIT 1200X1000X1000mm × 3",
+    "type": "warning",
+    "read": false,
+    "createdAt": "2026-06-22T06:48:24.095Z"
+  }
+]

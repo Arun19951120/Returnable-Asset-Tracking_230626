@@ -1,0 +1,142 @@
+[
+  {
+    "id": "ass-2f03e4c6",
+    "assetId": "ass-39bf02cc",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-09T17:53:06.194Z",
+    "locationsVisited": [
+      "Master Warehouse",
+      "Tier 1"
+    ],
+    "status": "Active",
+    "createdAt": "2026-06-09T17:53:06.243Z",
+    "updatedAt": "2026-06-11T13:02:37.714Z"
+  },
+  {
+    "id": "ass-dcd8d5cc",
+    "assetId": "ass-59379a3c",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-09T17:53:06.426Z",
+    "locationsVisited": [
+      "Master Warehouse",
+      "Tier 1",
+      "OEM"
+    ],
+    "status": "Completed",
+    "createdAt": "2026-06-09T17:53:06.447Z",
+    "updatedAt": "2026-06-14T11:05:11.187Z",
+    "completedAt": "2026-06-14T11:05:11.174Z",
+    "durationDays": 5
+  },
+  {
+    "id": "ass-9be79a80",
+    "assetId": "ass-f0944467",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-09T17:53:06.530Z",
+    "locationsVisited": [
+      "Master Warehouse",
+      "Tier 1"
+    ],
+    "status": "Active",
+    "createdAt": "2026-06-09T17:53:06.577Z",
+    "updatedAt": "2026-06-11T13:02:37.861Z"
+  },
+  {
+    "id": "ass-e0e0ec81",
+    "assetId": "ass-87c8f9d5",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-09T17:53:06.630Z",
+    "locationsVisited": [
+      "Master Warehouse",
+      "Tier 1"
+    ],
+    "status": "Active",
+    "createdAt": "2026-06-09T17:53:06.653Z",
+    "updatedAt": "2026-06-11T13:02:37.925Z"
+  },
+  {
+    "id": "ass-7d2a1e55",
+    "assetId": "ass-ee34385e",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-09T17:53:06.705Z",
+    "locationsVisited": [
+      "Master Warehouse",
+      "Tier 1"
+    ],
+    "status": "Active",
+    "createdAt": "2026-06-09T17:53:06.727Z",
+    "updatedAt": "2026-06-11T13:02:37.977Z"
+  },
+  {
+    "id": "ass-6a9eacfd",
+    "assetId": "ass-a07f6b09",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-10T06:51:01.932Z",
+    "locationsVisited": [
+      "Master Warehouse",
+      "Tier 1",
+      "OEM"
+    ],
+    "status": "Completed",
+    "createdAt": "2026-06-10T06:51:01.949Z",
+    "updatedAt": "2026-06-14T11:05:11.353Z",
+    "completedAt": "2026-06-14T11:05:11.337Z",
+    "durationDays": 4
+  },
+  {
+    "id": "ass-9305c56d",
+    "assetId": "ass-3be67d9c",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-10T06:51:02.074Z",
+    "locationsVisited": [
+      "Master Warehouse",
+      "Tier 1"
+    ],
+    "status": "Active",
+    "createdAt": "2026-06-10T06:51:02.082Z",
+    "updatedAt": "2026-06-11T13:02:38.093Z"
+  },
+  {
+    "id": "ass-e7dc65c0",
+    "assetId": "ass-4a3f1170",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-19T07:39:51.185Z",
+    "locationsVisited": [
+      "Master Warehouse"
+    ],
+    "status": "Active",
+    "createdAt": "2026-06-19T07:39:51.220Z"
+  },
+  {
+    "id": "ass-99b56fa7",
+    "assetId": "ass-6dbe7038",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-19T07:39:51.344Z",
+    "locationsVisited": [
+      "Master Warehouse"
+    ],
+    "status": "Active",
+    "createdAt": "2026-06-19T07:39:51.359Z"
+  },
+  {
+    "id": "ass-6109aedb",
+    "assetId": "ass-1f491ea9",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-06-19T07:39:51.396Z",
+    "locationsVisited": [
+      "Master Warehouse"
+    ],
+    "status": "Active",
+    "createdAt": "2026-06-19T07:39:51.409Z"
+  }
+]

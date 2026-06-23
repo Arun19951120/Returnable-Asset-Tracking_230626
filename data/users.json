@@ -1,0 +1,94 @@
+[
+  {
+    "uid": "admin-001",
+    "email": "admin@circulartrack.com",
+    "password": "admin123",
+    "displayName": "Admin User",
+    "role": "Admin",
+    "organization": "CircularTrak HQ",
+    "projects": [],
+    "allowedLocations": []
+  },
+  {
+    "uid": "manager-001",
+    "email": "manager@circulartrack.com",
+    "password": "manager123",
+    "displayName": "Priya Sharma",
+    "role": "Manager",
+    "organization": "CircularTrak HQ",
+    "projects": [],
+    "allowedLocations": []
+  },
+  {
+    "uid": "employee-001",
+    "email": "ops@circulartrack.com",
+    "password": "employee123",
+    "displayName": "Mark Johnson",
+    "role": "Employee",
+    "organization": "CircularTrak HQ",
+    "projects": [
+      "Project Alpha",
+      "Project Beta"
+    ],
+    "allowedLocations": [
+      "Warehouse A",
+      "Warehouse B"
+    ]
+  },
+  {
+    "uid": "customer-001",
+    "email": "customer@acme.com",
+    "password": "customer123",
+    "displayName": "Jane Smith",
+    "role": "Customer",
+    "organization": "ACME Logistics",
+    "projects": [
+      "Project Alpha"
+    ],
+    "allowedLocations": [
+      "Tier-1 Site North"
+    ]
+  },
+  {
+    "uid": "customer-002",
+    "email": "site@factory.com",
+    "password": "factory123",
+    "displayName": "Sara Lee",
+    "role": "Customer",
+    "organization": "OEM Factory",
+    "projects": [
+      "Project Beta"
+    ],
+    "allowedLocations": [
+      "Tier-1 Site South",
+      "OEM Plant East"
+    ]
+  },
+  {
+    "uid": "user-2b2e87c2",
+    "email": "customer01@tier1.com",
+    "password": "Tier123",
+    "displayName": "Vignesh",
+    "role": "Customer",
+    "organization": "",
+    "projects": [],
+    "allowedLocations": [
+      "Tier 1"
+    ],
+    "passwordHash": "dGllcjEyMw==",
+    "updatedAt": "2026-06-12T06:26:56.000Z"
+  },
+  {
+    "uid": "user-22c5b492",
+    "email": "customer02@oem.com",
+    "password": "oem123",
+    "displayName": "Saravanan",
+    "role": "Customer",
+    "organization": "OEM",
+    "projects": [],
+    "allowedLocations": [
+      "OEM"
+    ],
+    "updatedAt": "2026-06-13T17:17:00.651Z"
+  }
+]

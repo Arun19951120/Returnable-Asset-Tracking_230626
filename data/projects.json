@@ -1,0 +1,28 @@
+[
+  {
+    "id": "pro-0e666bc8",
+    "name": "Project Alpha",
+    "client": "Customer 01",
+    "status": "Active",
+    "startDate": "2026-06-09",
+    "endDate": "2029-07-08",
+    "allowedLocations": [
+      "Master Warehouse",
+      "Tier 1",
+      "OEM"
+    ],
+    "createdAt": "2026-06-09T17:39:41.431Z",
+    "contractType": "po",
+    "poNumber": "01234",
+    "poQty": 10000,
+    "poEndDate": "2026-12-31",
+    "minQtyAlert": 100,
+    "poCountFromLocation": "Master Warehouse",
+    "poCountToLocation": "Tier 1",
+    "poBasis": "asset",
+    "updatedAt": "2026-06-22T22:44:59.103Z",
+    "woodPerAsset": 15,
+    "corrugationPerAsset": 7,
+    "poPrice": 1360
+  }
+]
