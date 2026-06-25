@@ -516,7 +516,7 @@ function DCCommentDialog({
               Cancel
             </button>
             <button onClick={() => onConfirm(comment, signatureImg)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700">
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700">
               <FileText className="h-4 w-4" /> Generate DC (3 Copies)
             </button>
           </div>
@@ -632,7 +632,7 @@ export default function Transfers() {
             </button>
           )}
           <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
             <Plus className="h-4 w-4" /> New Transfer
           </button>
         </div>
@@ -789,7 +789,7 @@ export default function Transfers() {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm text-slate-600">Cancel</button>
                 <button type="submit" disabled={saving}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-60">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-60">
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Create
                 </button>
               </div>

@@ -111,13 +111,68 @@ export default function HardwareConfig() {
   }
 
   async function testConnection(device: keyof HardwareConfigData) {
+    if (!config) return;
     setTesting(device);
-    await new Promise((r) => setTimeout(r, 1800));   // simulate connection test
-    const success = Math.random() > 0.35;            // 65% success for demo
-    setConfig((prev) => prev ? { ...prev, [device]: { ...prev[device], connected: success } } : prev);
-    if (success) toast.success(`${device.toUpperCase()} device connected`);
-    else toast.error(`${device.toUpperCase()} — no response from device`);
-    setTesting(null);
+    try {
+      let ok = false;
+      let message = "";
+
+      if (device === "rfid") {
+        // Real TCP test to RFID reader
+        const ip   = config.rfid.ipAddress || "192.168.1.100";
+        const port = config.rfid.port || "5084";
+        const res  = await fetch(`/api/rfid/test?ip=${encodeURIComponent(ip)}&port=${encodeURIComponent(port)}`);
+        const data = await res.json() as { ok: boolean; message: string };
+        ok = data.ok; message = data.message;
+
+      } else if (device === "ble") {
+        // Real Web Bluetooth adapter check
+        if (typeof navigator !== "undefined" && "bluetooth" in navigator) {
+          try {
+            const available = await (navigator.bluetooth as { getAvailability?: () => Promise<boolean> }).getAvailability?.();
+            ok = available ?? true;
+            message = ok ? "BLE adapter detected in browser" : "No BLE adapter found — enable Bluetooth on this device";
+          } catch {
+            ok = false; message = "Web Bluetooth permission denied or unavailable";
+          }
+        } else {
+          ok = false; message = "Web Bluetooth not supported — use Chrome or Edge";
+        }
+
+      } else if (device === "barcode") {
+        // Check Web Serial API availability
+        if (typeof navigator !== "undefined" && "serial" in navigator) {
+          ok = true; message = `Web Serial API available (${config.barcode.scannerType})`;
+        } else {
+          // USB HID scanners work as keyboards — always usable
+          ok = config.barcode.scannerType === "USB HID";
+          message = ok
+            ? "USB HID scanner detected — plug in and scan to test"
+            : "Web Serial API not available — use Chrome/Edge, or switch to USB HID mode";
+        }
+
+      } else if (device === "qr") {
+        // Test camera access
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          stream.getTracks().forEach((t) => t.stop());
+          ok = true; message = "Camera access granted — QR scanner ready";
+        } catch (err: unknown) {
+          ok = false;
+          message = err instanceof Error && err.name === "NotAllowedError"
+            ? "Camera permission denied — allow camera access in browser settings"
+            : "No camera detected";
+        }
+      }
+
+      setConfig((prev) => prev ? { ...prev, [device]: { ...prev[device], connected: ok } } : prev);
+      if (ok) toast.success(message);
+      else     toast.error(message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Connection test failed");
+    } finally {
+      setTesting(null);
+    }
   }
 
   function patch<K extends keyof HardwareConfigData>(
@@ -161,7 +216,7 @@ export default function HardwareConfig() {
           <p className="text-sm text-slate-500">Configure RFID, BLE, Barcode & QR Code reader/writer devices</p>
         </div>
         <button onClick={save} disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-60">
+          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save All
         </button>

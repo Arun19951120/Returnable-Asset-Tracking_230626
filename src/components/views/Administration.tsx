@@ -127,7 +127,7 @@ function UserProfilesTab() {
           <RefreshCw className="h-3.5 w-3.5" />
         </button>
         <button onClick={() => { setShowAdd(true); setAddErrors([]); setNewUser({ ...NEW_USER_EMPTY }); }}
-          className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700">
+          className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700">
           <UserPlus className="h-3.5 w-3.5" /> Add New User
         </button>
       </div>
@@ -194,7 +194,7 @@ function UserProfilesTab() {
             <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
               <button onClick={() => setShowAdd(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
               <button onClick={handleAddUser} disabled={addSaving}
-                className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
+                className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
                 {addSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                 Create User
               </button>
@@ -203,7 +203,7 @@ function UserProfilesTab() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden card-bento">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
@@ -272,7 +272,7 @@ function UserProfilesTab() {
                   {allRoles.map((r) => {
                     const active = form.role === r;
                     return (
-                      <label key={r} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"}`}>
+                      <label key={r} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all ${active ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"}`}>
                         <input type="radio" className="hidden" checked={active} onChange={() => setForm((p) => ({ ...p, role: r }))} />
                         {r}
                         {active && <Check className="h-3.5 w-3.5 ml-auto" />}
@@ -313,7 +313,7 @@ function UserProfilesTab() {
               <div className="flex gap-3 pt-2 sticky bottom-0 bg-white pb-1">
                 <button onClick={() => setEditing(null)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
                 <button onClick={handleSave} disabled={saving}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Save Changes
                 </button>
               </div>
@@ -387,7 +387,7 @@ function PasswordResetTab() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* User selection */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="card-bento overflow-hidden">
           <div className="border-b border-slate-100 px-4 py-3 bg-slate-50">
             <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Select User</p>
           </div>
@@ -401,7 +401,7 @@ function PasswordResetTab() {
             <div className="max-h-72 overflow-y-auto space-y-1">
               {filtered.map((u) => (
                 <button key={u.uid} onClick={() => { setSelected(u); setNewPass(""); setConfirm(""); setStrength(0); }}
-                  className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${selected?.uid === u.uid ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"}`}>
+                  className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${selected?.uid === u.uid ? "bg-indigo-600 text-white" : "hover:bg-slate-50 text-slate-700"}`}>
                   <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${selected?.uid === u.uid ? "bg-white text-slate-900" : "bg-slate-100 text-slate-600"}`}>
                     {u.displayName?.charAt(0).toUpperCase() ?? "?"}
                   </div>
@@ -417,7 +417,7 @@ function PasswordResetTab() {
         </div>
 
         {/* Reset form */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="card-bento overflow-hidden">
           <div className="border-b border-slate-100 px-4 py-3 bg-slate-50">
             <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
               {selected ? `Reset Password — ${selected.displayName}` : "New Password"}
@@ -497,7 +497,7 @@ function PasswordResetTab() {
 
                 <button onClick={handleReset}
                   disabled={saving || !newPass || !confirm || newPass !== confirm || newPass.length < 6}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50 transition-all">
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-all">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
                   Reset Password
                 </button>
@@ -571,7 +571,7 @@ function RBACTab() {
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Custom Roles ({roles.length})</h3>
-          <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
+          <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">
             <Plus className="h-3.5 w-3.5" /> Define New Role
           </button>
         </div>
@@ -625,7 +625,7 @@ function RBACTab() {
                   {ALL_TABS.map((tab) => {
                     const checked = newRole.allowedTabs.includes(tab.id);
                     return (
-                      <label key={tab.id} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all ${checked ? "border-slate-900 bg-slate-900 text-white font-medium" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      <label key={tab.id} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all ${checked ? "border-indigo-600 bg-indigo-600 text-white font-medium" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                         <input type="checkbox" checked={checked} onChange={() => toggleTab(tab.id)} className="rounded" />
                         {tab.label}
                         {checked && <Check className="h-3 w-3 ml-auto" />}
@@ -637,7 +637,7 @@ function RBACTab() {
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setShowCreate(false)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
                 <button onClick={handleCreate} disabled={saving || !newRole.name.trim() || !newRole.allowedTabs.length}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Create Role
                 </button>
               </div>
@@ -690,12 +690,12 @@ function ProjectsTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">{projects.length} projects · {projects.filter((p) => p.status === "Active").length} active</p>
-        <button onClick={openCreate} className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+        <button onClick={openCreate} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
           <Plus className="h-4 w-4" /> Add Project
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden card-bento">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
@@ -755,7 +755,7 @@ function ProjectsTab() {
                 <label className="mb-2 block text-xs font-semibold text-slate-600">Status</label>
                 <div className="flex gap-3">
                   {(["Active", "Closed"] as const).map((s) => (
-                    <label key={s} className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-semibold transition-all ${form.status === s ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                    <label key={s} className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-semibold transition-all ${form.status === s ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                       <input type="radio" className="hidden" checked={form.status === s} onChange={() => setForm((p) => ({ ...p, status: s }))} />
                       {form.status === s && <Check className="h-3.5 w-3.5" />} {s}
                     </label>
@@ -765,7 +765,7 @@ function ProjectsTab() {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
                 <button type="submit" disabled={saving}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />} {editing ? "Save" : "Add Project"}
                 </button>
               </div>

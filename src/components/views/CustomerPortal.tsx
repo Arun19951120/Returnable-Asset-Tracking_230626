@@ -431,13 +431,13 @@ export default function CustomerPortal() {
       )}
 
       {/* Pie chart card */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+      <div className="card-bento p-6">
         <h2 className="text-sm font-semibold text-slate-700 mb-4">Assets by Status</h2>
         <DonutChart data={statusCounts} selected={selected} onSelect={setSelected} />
       </div>
 
       {/* Asset list */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="card-bento overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
           <p className="text-sm font-semibold text-slate-700">
             {selected ? `${selected} Assets` : "All Assets"} ({filteredAssets.length})

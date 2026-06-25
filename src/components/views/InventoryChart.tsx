@@ -148,11 +148,11 @@ export default function InventoryChart() {
           {/* View toggle */}
           <div className="flex rounded-lg border border-slate-200 overflow-hidden bg-white">
             <button onClick={() => setViewMode("location")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "location" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "location" ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
               <MapPin className="h-3.5 w-3.5" /> By Location
             </button>
             <button onClick={() => setViewMode("customer")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "customer" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "customer" ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
               <Users className="h-3.5 w-3.5" /> By Customer
             </button>
           </div>
@@ -210,7 +210,7 @@ export default function InventoryChart() {
 
       {/* Customer×Location matrix (only in customer view) */}
       {viewMode === "customer" && (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="card-bento overflow-hidden">
           <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 bg-gradient-to-r from-slate-50 to-white">
             <Users className="h-4 w-4 text-slate-400" />
             <h2 className="font-semibold text-slate-800">Customer × Location Inventory</h2>
@@ -346,7 +346,7 @@ export default function InventoryChart() {
       </div>
 
       {/* Location detail table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="card-bento overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 bg-gradient-to-r from-slate-50 to-white">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-slate-400" />

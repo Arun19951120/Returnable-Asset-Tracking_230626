@@ -455,27 +455,141 @@ function BulkScanner({ scannedIds, availableAssets, onAdd, onRemove, placeholder
   scannedIds: string[]; availableAssets: Asset[]; allAssets?: Asset[];
   onAdd: (id: string) => void; onRemove: (id: string) => void; placeholder?: string;
 }) {
-  const [input, setInput]             = useState("");
-  const [activeReader, setActiveReader] = useState<ReaderType | null>(null);
-  const [showCamera, setShowCamera]   = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [input, setInput]               = useState("");
+  const [activeReader, setActiveReader]  = useState<ReaderType | null>(null);
+  const [showCamera, setShowCamera]      = useState(false);
+  const [rfidStatus, setRfidStatus]      = useState<"idle" | "connecting" | "live" | "error">("idle");
+  const inputRef    = useRef<HTMLInputElement>(null);
+  const rfidEsRef   = useRef<EventSource | null>(null);
+
+  // Cleanup RFID stream on unmount
+  useEffect(() => () => { rfidEsRef.current?.close(); }, []);
+
+  function stopRFID() {
+    rfidEsRef.current?.close();
+    rfidEsRef.current = null;
+    setRfidStatus("idle");
+    setActiveReader(null);
+  }
 
   async function activateReader(type: ReaderType) {
-    if (type === "QR" || type === "Barcode") {
-      // For QR use camera; for Barcode use keyboard input (USB HID scanner)
-      if (type === "QR") { setShowCamera(true); return; }
+    // Toggle off if already active
+    if (activeReader === type) {
+      if (type === "RFID") stopRFID();
+      else setActiveReader(null);
+      return;
     }
-    if (type === "RFID" || type === "BLE") {
+
+    if (type === "QR") { setShowCamera(true); return; }
+
+    if (type === "Barcode") {
+      setActiveReader("Barcode");
+      inputRef.current?.focus();
+      toast.info("Barcode reader active — scan or type and press Enter", { duration: 4000 });
+      return;
+    }
+
+    // ── RFID: real LLRP SSE stream ─────────────────────────────────────────
+    if (type === "RFID") {
+      let cfg: { rfid?: { enabled?: boolean; ipAddress?: string; port?: string } } = {};
+      try { cfg = await fetch("/api/hardware-config").then((r) => r.json()); } catch {}
+      if (!cfg.rfid?.enabled) { toast.error("RFID not enabled — go to Hardware Config to enable it"); return; }
+
+      const ip   = cfg.rfid.ipAddress || "192.168.1.100";
+      const port = cfg.rfid.port      || "5084";
+
+      // Close any previous stream
+      rfidEsRef.current?.close();
+      setRfidStatus("connecting");
+      setActiveReader("RFID");
+      toast.info(`Connecting to RFID reader at ${ip}:${port}…`, { id: "rfid-conn", duration: 10000 });
+
+      const es = new EventSource(`/api/rfid/stream?ip=${encodeURIComponent(ip)}&port=${encodeURIComponent(port)}`);
+      rfidEsRef.current = es;
+
+      es.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data) as { type: string; epc?: string; message?: string };
+          if (msg.type === "connected") {
+            setRfidStatus("live");
+            toast.success("RFID reader connected — hold tag near antenna", { id: "rfid-conn", duration: 4000 });
+          } else if (msg.type === "tag" && msg.epc) {
+            handleScan(msg.epc);
+          } else if (msg.type === "error") {
+            setRfidStatus("error");
+            toast.error(`RFID: ${msg.message}`, { id: "rfid-conn" });
+            stopRFID();
+          } else if (msg.type === "done") {
+            stopRFID();
+          }
+        } catch { /* ignore parse errors */ }
+      };
+      es.onerror = () => {
+        setRfidStatus("error");
+        toast.error("RFID stream disconnected", { id: "rfid-conn" });
+        stopRFID();
+      };
+      return;
+    }
+
+    // ── BLE: Web Bluetooth API ─────────────────────────────────────────────
+    if (type === "BLE") {
+      let cfg: { ble?: { enabled?: boolean; tagPrefix?: string; macFilter?: string } } = {};
+      try { cfg = await fetch("/api/hardware-config").then((r) => r.json()); } catch {}
+      if (!cfg.ble?.enabled) { toast.error("BLE not enabled — go to Hardware Config to enable it"); return; }
+
+      if (!("bluetooth" in navigator)) {
+        toast.error("Web Bluetooth not supported — use Chrome or Edge on desktop");
+        return;
+      }
+
+      setActiveReader("BLE");
+      toast.info("BLE: Select your tag in the browser dialog…", { duration: 6000 });
+
       try {
-        const cfg = await fetch("/api/hardware-config").then((r) => r.json());
-        if (type === "RFID" && !cfg.rfid?.enabled) { toast.error("RFID reader not enabled in Hardware Config"); return; }
-        if (type === "BLE"  && !cfg.ble?.enabled)  { toast.error("BLE reader not enabled in Hardware Config"); return; }
-      } catch { toast.error("Hardware config unreachable"); return; }
+        const namePrefix = cfg.ble.tagPrefix || "";
+        const filters = namePrefix
+          ? [{ namePrefix }, { name: namePrefix.replace(/-$/, "") }]
+          : undefined;
+
+        type BluetoothNavigator = Navigator & {
+          bluetooth: {
+            requestDevice(opts: { acceptAllDevices?: boolean; filters?: { namePrefix?: string; name?: string }[]; optionalServices?: string[] }): Promise<{ id: string; name?: string; gatt?: { connect(): Promise<{ getCharacteristic?: (s: string) => Promise<{ readValue(): Promise<DataView> }> }> } }>;
+          };
+        };
+        const device = await (navigator as BluetoothNavigator).bluetooth.requestDevice({
+          ...(filters ? { filters } : { acceptAllDevices: true }),
+          optionalServices: ["generic_access", "battery_service"],
+        });
+
+        const tagId = device.name || device.id;
+        toast.success(`BLE tag found: ${tagId}`, { duration: 3000 });
+        handleScan(tagId);
+
+        // Also try GATT read for custom tag data
+        try {
+          const server = await device.gatt?.connect();
+          if (server) {
+            try {
+              const char = await server.getCharacteristic?.("00002a00-0000-1000-8000-00805f9b34fb");
+              if (char) {
+                const val = await char.readValue();
+                const deviceName = new TextDecoder().decode(val);
+                if (deviceName && deviceName !== tagId) handleScan(deviceName);
+              }
+            } catch { /* characteristic may not exist */ }
+          }
+        } catch { /* GATT optional */ }
+
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "";
+        if (!msg.toLowerCase().includes("cancel")) {
+          toast.error(`BLE error: ${msg || "Failed to connect"}`);
+        }
+      } finally {
+        setActiveReader(null);
+      }
     }
-    setActiveReader(type);
-    inputRef.current?.focus();
-    toast.info(`${type} reader active — scan asset tag`, { duration: 5000 });
-    setTimeout(() => setActiveReader(null), 10000);
   }
 
   // Resolve a raw scan value → asset (search across all assets if allAssets provided)
@@ -523,20 +637,35 @@ function BulkScanner({ scannedIds, availableAssets, onAdd, onRemove, placeholder
         {/* Reader type buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-semibold text-slate-500 shrink-0">Scan via:</span>
-          {READERS.map(({ type, icon, label, desc }) => (
-            <button key={type} onClick={() => activateReader(type)}
-              title={desc}
-              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                activeReader === type
-                  ? "border-slate-800 bg-slate-800 text-white"
-                  : type === "QR"
-                  ? "border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                  : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100"}`}>
-              {icon} {label}
-              {activeReader === type && <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />}
-              {type === "QR" && <Camera className="h-3 w-3 ml-0.5 text-blue-500" />}
-            </button>
-          ))}
+          {READERS.map(({ type, icon, label, desc }) => {
+            const isActive = activeReader === type;
+            const isRFIDLive = type === "RFID" && rfidStatus === "live";
+            const isRFIDConnecting = type === "RFID" && rfidStatus === "connecting";
+            return (
+              <button key={type} onClick={() => activateReader(type)}
+                title={isActive ? `Click to stop ${label}` : desc}
+                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  isActive
+                    ? isRFIDLive
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : isRFIDConnecting
+                      ? "border-amber-500 bg-amber-500 text-white"
+                      : "border-indigo-600 bg-indigo-600 text-white"
+                    : type === "QR"
+                    ? "border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                    : type === "RFID"
+                    ? "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                    : type === "BLE"
+                    ? "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100"}`}>
+                {icon} {label}
+                {isRFIDLive && <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-white animate-pulse" />}
+                {isRFIDConnecting && <Loader2 className="ml-0.5 h-3 w-3 animate-spin" />}
+                {type === "QR" && !isActive && <Camera className="h-3 w-3 ml-0.5 text-blue-500" />}
+                {isActive && type !== "RFID" && <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-white animate-pulse" />}
+              </button>
+            );
+          })}
         </div>
 
         {/* Keyboard / HID input */}
@@ -585,9 +714,24 @@ function BulkScanner({ scannedIds, availableAssets, onAdd, onRemove, placeholder
           </div>
         )}
 
-        {scannedIds.length === 0 && (
+        {/* RFID live status bar */}
+        {activeReader === "RFID" && (
+          <div className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium ${
+            rfidStatus === "live" ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+            : rfidStatus === "connecting" ? "bg-amber-50 text-amber-700 border border-amber-200"
+            : "bg-red-50 text-red-700 border border-red-200"}`}>
+            <span className="flex items-center gap-1.5">
+              {rfidStatus === "live" && <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />}
+              {rfidStatus === "connecting" && <Loader2 className="h-3 w-3 animate-spin" />}
+              {rfidStatus === "live" ? "RFID reader live — hold tag to antenna" : rfidStatus === "connecting" ? "Connecting to RFID reader…" : "RFID disconnected"}
+            </span>
+            <button onClick={stopRFID} className="text-current opacity-60 hover:opacity-100 underline">Stop</button>
+          </div>
+        )}
+
+        {scannedIds.length === 0 && activeReader !== "RFID" && (
           <p className="text-center text-[10px] text-slate-400 py-1">
-            Use camera QR, plug in a USB/BT scanner, or type and press Enter
+            Use camera QR, plug in USB scanner, activate RFID/BLE, or type and press Enter
           </p>
         )}
       </div>
@@ -1010,7 +1154,7 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
                 </button>
                 {dispatchQueued.length > 0 && dispatchQueued.length > 1 && (
                   <button onClick={() => setShowBulkDC(true)} disabled={!dispatchTo}
-                    className="flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-50">
+                    className="flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-indigo-700 disabled:opacity-50">
                     <FileText className="h-4 w-4" /> + DC
                   </button>
                 )}

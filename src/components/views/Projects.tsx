@@ -844,7 +844,7 @@ function SustainabilityTab({
       </div>
 
       {/* Per-project breakdown */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="card-bento overflow-hidden">
         <div className="border-b border-slate-100 bg-slate-50 px-5 py-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-700">Project-wise Sustainability</h3>
           <p className="text-xs text-slate-400">Click ✎ to configure material savings per asset</p>
@@ -1137,7 +1137,7 @@ export default function Projects() {
                 </div>
               ))}
               <button onClick={() => setShowAlerts(false)}
-                className="w-full rounded-lg bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700">
+                className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700">
                 Acknowledge
               </button>
             </div>
@@ -1160,7 +1160,7 @@ export default function Projects() {
           )}
           {activeTab === "projects" && (
             <button onClick={openCreate}
-              className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
               <Plus className="h-4 w-4" /> New Project
             </button>
           )}
@@ -1508,7 +1508,7 @@ export default function Projects() {
                 <button type="button" onClick={() => setShowForm(false)}
                   className="flex-1 rounded-lg border border-slate-200 py-2 text-sm text-slate-600">Cancel</button>
                 <button type="submit" disabled={saving}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-60">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-60">
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   {editingId ? "Save Changes" : "Create Project"}
                 </button>

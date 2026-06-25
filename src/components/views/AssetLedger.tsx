@@ -370,7 +370,7 @@ export default function AssetLedger() {
             </button>
           )}
           <button onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
             <Plus className="h-4 w-4" /> Add Asset
           </button>
         </div>
@@ -527,7 +527,7 @@ export default function AssetLedger() {
             <div className="flex gap-1 border-b border-slate-100 bg-slate-50 px-4 py-2">
               {([["single", "Single Asset"], ["bulk", "Bulk Add (Form)"], ["csv", "CSV Import"]] as const).map(([m, label]) => (
                 <button key={m} onClick={() => setAddMode(m)}
-                  className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${addMode === m ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-200"}`}>
+                  className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${addMode === m ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-200"}`}>
                   {label}
                 </button>
               ))}
@@ -655,7 +655,7 @@ export default function AssetLedger() {
                       <button
                         type="button"
                         onClick={() => setHasKit(false)}
-                        className={`px-3 py-1.5 transition-colors ${!hasKit ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100"}`}
+                        className={`px-3 py-1.5 transition-colors ${!hasKit ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100"}`}
                       >No</button>
                       <button
                         type="button"
@@ -722,7 +722,7 @@ export default function AssetLedger() {
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowAdd(false)} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm text-slate-600">Cancel</button>
                   <button type="submit" disabled={saving}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-60">
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-60">
                     {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Add Asset
                   </button>
                 </div>
@@ -735,11 +735,11 @@ export default function AssetLedger() {
                 {/* Option picker */}
                 <div className="flex gap-1 border-b border-slate-100 bg-slate-50 px-4 py-2">
                   <button onClick={() => { setBulkSubMode("table"); setSerialPreview([]); }}
-                    className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${bulkSubMode === "table" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-200"}`}>
+                    className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${bulkSubMode === "table" ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-200"}`}>
                     Option A — Row by Row
                   </button>
                   <button onClick={() => { setBulkSubMode("serial"); setSerialPreview([]); }}
-                    className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${bulkSubMode === "serial" ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-200"}`}>
+                    className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${bulkSubMode === "serial" ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-200"}`}>
                     Option B — Serial / Auto-sequence
                   </button>
                 </div>
@@ -819,7 +819,7 @@ export default function AssetLedger() {
                     <div className="flex gap-3">
                       <button onClick={() => setShowAdd(false)} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm text-slate-600">Cancel</button>
                       <button onClick={handleBulkAdd} disabled={bulkSaving}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-60">
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-60">
                         {bulkSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                         Add {bulkRows.filter((r) => r.name && r.uuid && r.location).length} Assets
                       </button>
@@ -965,7 +965,7 @@ export default function AssetLedger() {
                         </button>
                       ) : (
                         <button onClick={handleSerialSave} disabled={serialSaving}
-                          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-60">
+                          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-60">
                           {serialSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                           Save {serialPreview.length} Assets
                         </button>
@@ -1027,7 +1027,7 @@ export default function AssetLedger() {
                     <>
                       <button onClick={() => setCsvParsed([])} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm text-slate-600">Re-parse</button>
                       <button onClick={handleCSVImport} disabled={csvSaving}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-60">
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-60">
                         {csvSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                         Import {csvParsed.length} Assets
                       </button>
@@ -1112,7 +1112,7 @@ export default function AssetLedger() {
           <div className="w-72 rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between bg-slate-900 px-4 py-3">
+            <div className="flex items-center justify-between bg-indigo-600 px-4 py-3">
               <div>
                 <p className="text-xs font-bold text-white">{qrAsset.name}</p>
                 <p className="text-[10px] text-slate-400 font-mono">{qrAsset.uuid}</p>
@@ -1129,7 +1129,7 @@ export default function AssetLedger() {
             {/* Actions */}
             <div className="flex gap-2 border-t border-slate-100 px-4 py-3">
               <a href={qrDataUrl} download={`QR-${qrAsset.uuid}.png`}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-slate-900 py-2 text-xs font-semibold text-white hover:bg-slate-700">
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
                 <Download className="h-3.5 w-3.5" /> Download PNG
               </a>
               <button onClick={() => setQrAsset(null)}

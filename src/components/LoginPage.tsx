@@ -50,7 +50,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-200">
             <Package className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -61,7 +61,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-200">
           <h2 className="mb-6 text-lg font-semibold text-slate-800">
             {mode === "login" ? "Sign in to your account" : "Create account"}
           </h2>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                   required
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-colors"
                   placeholder="Jane Smith"
                 />
               </div>
@@ -140,7 +140,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-200 disabled:opacity-60"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {mode === "login" ? "Sign In" : "Create Account"}
@@ -151,7 +151,7 @@ export default function LoginPage() {
             {mode === "login" ? "No account yet?" : "Already have an account?"}{" "}
             <button
               onClick={() => setMode(mode === "login" ? "register" : "login")}
-              className="font-medium text-slate-800 underline"
+              className="font-medium text-indigo-600 hover:text-indigo-800 underline transition-colors"
             >
               {mode === "login" ? "Register" : "Sign in"}
             </button>

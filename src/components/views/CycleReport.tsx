@@ -145,7 +145,7 @@ export default function CycleReport() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="card-bento overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

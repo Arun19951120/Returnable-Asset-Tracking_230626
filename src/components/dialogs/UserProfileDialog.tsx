@@ -310,7 +310,7 @@ export default function UserProfileDialog({ onClose }: Props) {
                   ℹ️ Email and role can only be changed by an Admin from the User Management tab.
                 </div>
                 <button onClick={handleSaveMe} disabled={savingMe}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60">
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
                   {savingMe ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                   Save Profile
                 </button>

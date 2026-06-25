@@ -47,7 +47,7 @@ function StatCard({ label, value, icon: Icon, sub, color, trend }: {
   sub?: string; color: string; trend?: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+    <div className="card-bento relative overflow-hidden p-5">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{label}</p>
@@ -192,7 +192,7 @@ function SmartMovementWidget({
     <div className="space-y-4">
       {/* ── Incoming Shipments ─────────────────────────────────────────────── */}
       {incomingMovs.length > 0 && (
-        <div className="rounded-2xl border border-emerald-200 bg-white overflow-hidden shadow-sm">
+        <div className="rounded-3xl border border-emerald-200 bg-white overflow-hidden shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-3">
             <div className="flex items-center gap-2">
               <Truck className="h-4 w-4 text-emerald-600" />
@@ -391,7 +391,7 @@ function CustomerDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-6 py-5 text-white shadow-lg">
+      <div className="rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-800 px-6 py-5 text-white shadow-lg shadow-indigo-200/40">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Customer Portal</p>
@@ -441,7 +441,7 @@ function CustomerDashboard() {
 
       {/* Inventory by location */}
       {myLocs.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="card-bento">
           <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
             <BarChart3 className="h-4 w-4 text-slate-400" />
             <h2 className="font-semibold text-slate-800">Current Inventory at Your Location(s)</h2>
@@ -479,7 +479,7 @@ function CustomerDashboard() {
       )}
 
       {/* Movement history */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="card-bento">
         <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
           <ArrowUpDown className="h-4 w-4 text-slate-400" />
           <h2 className="font-semibold text-slate-800">Movement History</h2>
@@ -584,7 +584,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-6 py-5 text-white shadow-lg">
+      <div className="rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-800 px-6 py-5 text-white shadow-lg shadow-indigo-200/40">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">AKN Returnable Asset Tracking</p>
@@ -640,7 +640,7 @@ export default function Dashboard() {
       </div>
 
       {/* Recent orders */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="card-bento">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <h2 className="font-semibold text-slate-800">Recent Orders</h2>
             <TrendingUp className="h-4 w-4 text-slate-400" />
@@ -709,7 +709,7 @@ export default function Dashboard() {
 
       {/* Location breakdown */}
       {locations.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="card-bento">
           <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
             <MapPin className="h-4 w-4 text-slate-400" />
             <h2 className="font-semibold text-slate-800">Inventory by Location</h2>

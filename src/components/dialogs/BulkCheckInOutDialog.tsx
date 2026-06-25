@@ -204,7 +204,7 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
               </button>
               {mode !== "checkin" && (
                 <button onClick={handleDownloadDC}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
                   <Download className="h-4 w-4" /> Download DC
                 </button>
               )}
@@ -293,7 +293,7 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
                 {MODE_CONFIG[mode].statusOptions.map((s) => (
                   <button type="button" key={s} onClick={() => setStatus(s)}
                     className={`rounded-lg border py-2 text-xs font-medium transition-colors ${
-                      newStatus === s ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                      newStatus === s ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50"
                     }`}>
                     {s}
                   </button>

@@ -189,7 +189,7 @@ export default function Orders() {
               <Download className="h-3.5 w-3.5" /> Export
             </button>
           )}
-          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
             <Plus className="h-4 w-4" /> {isCustomer ? "Place Order" : "New Order"}
           </button>
         </div>
@@ -201,7 +201,7 @@ export default function Orders() {
       />
 
       {/* Orders table */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-hidden card-bento">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
@@ -346,7 +346,7 @@ export default function Orders() {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
                 <button type="submit" disabled={loading}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
                   {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   {isCustomer ? "Submit Request" : "Create Order"}
                 </button>

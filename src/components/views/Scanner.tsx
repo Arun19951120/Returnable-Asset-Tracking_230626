@@ -9,7 +9,7 @@ import { Camera, ArrowRight, QrCode, Wifi, ScanBarcode } from "lucide-react";
 export default function Scanner() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600">
         <Camera className="h-8 w-8 text-white" />
       </div>
 

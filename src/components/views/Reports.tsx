@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { fetchAll, addDocument, updateDocument, deleteDocument } from "@/lib/storage";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { fetchAll, addDocument, updateDocument, deleteDocument, logAudit } from "@/lib/storage";
 import type { Asset, AssetMovement, Order, Transfer, ScheduledReport, AuditLog, Location, Project, Customer } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -13,6 +13,7 @@ import {
   FileText, Download, Plus, Trash2, X, Loader2,
   Mail, BarChart2, Clock, ShoppingCart, TrendingUp,
   Package, ArrowRight, Star, Users, LogIn, LogOut, Search, Filter,
+  Upload, CheckCircle2, AlertTriangle, XCircle,
 } from "lucide-react";
 import FilterBar, { DayRange, filterByDays } from "@/components/ui/FilterBar";
 import { toast } from "sonner";
@@ -1020,7 +1021,7 @@ function ScheduledTab({ projects }: { projects: Project[] }) {
 
       <div className="flex justify-end">
         <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
           <Plus className="h-4 w-4" /> Configure Report
         </button>
       </div>
@@ -1167,7 +1168,7 @@ function ScheduledTab({ projects }: { projects: Project[] }) {
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm text-slate-600">Cancel</button>
                 <button type="submit" disabled={saving}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-60">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-60">
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Save Configuration
                 </button>
               </div>
@@ -1313,7 +1314,7 @@ function CustomerHistoryTab({ locations }: { locations: Location[] }) {
               <X className="h-3 w-3" /> Clear
             </button>
             <button onClick={exportCSV}
-              className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700">
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">
               <Download className="h-3.5 w-3.5" /> Export CSV
             </button>
           </div>
@@ -1321,7 +1322,7 @@ function CustomerHistoryTab({ locations }: { locations: Location[] }) {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="card-bento overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -1425,7 +1426,7 @@ function RetiredAssetsTab({ assets }: { assets: Asset[] }) {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="card-bento overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <h3 className="font-semibold text-slate-800">Retired Asset List</h3>
           <button onClick={doExport}
@@ -1475,6 +1476,792 @@ function RetiredAssetsTab({ assets }: { assets: Asset[] }) {
   );
 }
 
+// ─── CSV Parser (handles JSON.stringify-quoted values from exportCSV) ────────
+function parseCSV(text: string): Record<string, string>[] {
+  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+
+  function parseLine(line: string): string[] {
+    const cols: string[] = [];
+    let i = 0;
+    while (i < line.length) {
+      if (line[i] === '"') {
+        let val = ""; i++;
+        while (i < line.length) {
+          if (line[i] === '"' && line[i + 1] === '"') { val += '"'; i += 2; }
+          else if (line[i] === '"')                    { i++; break; }
+          else                                          { val += line[i]; i++; }
+        }
+        cols.push(val);
+        if (line[i] === ",") i++;
+      } else {
+        const end = line.indexOf(",", i);
+        if (end === -1) { cols.push(line.slice(i)); break; }
+        cols.push(line.slice(i, end));
+        i = end + 1;
+      }
+    }
+    return cols;
+  }
+
+  const headers = parseLine(lines[0]);
+  return lines.slice(1).map((line) => {
+    const vals = parseLine(line);
+    const row: Record<string, string> = {};
+    headers.forEach((h, idx) => { row[h] = (vals[idx] ?? "").trim(); });
+    return row;
+  });
+}
+
+// ─── Import Movement Section ──────────────────────────────────────────────────
+type ImportStatus = "ready" | "duplicate" | "asset_not_found" | "invalid";
+interface ImportRow {
+  raw: Record<string, string>;
+  index: number;
+  asset: Asset | null;
+  status: ImportStatus;
+  reason?: string;
+}
+
+function ImportMovementSection({
+  assets, projects, existingMovements, onImported, onClose,
+}: {
+  assets: Asset[];
+  projects: Project[];
+  existingMovements: AssetMovement[];
+  onImported: () => void;
+  onClose: () => void;
+}) {
+  const { profile } = useAuth();
+  const fileRef   = useRef<HTMLInputElement>(null);
+  const [rows,     setRows]     = useState<ImportRow[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [dragOver,  setDragOver]  = useState(false);
+  const [result,    setResult]    = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
+
+  // ── Parse & validate CSV text ─────────────────────────────────────────────
+  function parseAndValidate(text: string) {
+    const csvRows = parseCSV(text);
+    if (!csvRows.length) { toast.error("No data rows found — check the file format"); return; }
+
+    const seen = new Set<string>(); // detect intra-file duplicates
+
+    const parsed: ImportRow[] = csvRows.map((raw, index) => {
+      const uuid = (raw["UUID"]       || "").toLowerCase();
+      const rfid = (raw["RFID Tag"]   || "").toLowerCase();
+      const name = (raw["Asset Name"] || "").toLowerCase();
+      const from = (raw["From Location"] || "").trim();
+      const to   = (raw["To Location"]   || "").trim();
+      const date = (raw["Date"]          || "").trim();
+
+      if (!from || !to)
+        return { raw, index, asset: null, status: "invalid" as const, reason: "Missing From or To location" };
+
+      const asset = assets.find((a) =>
+        (uuid && a.uuid.toLowerCase() === uuid) ||
+        (rfid && (a.rfidTag ?? "").toLowerCase() === rfid) ||
+        (name && a.name.toLowerCase() === name)
+      ) ?? null;
+
+      if (!asset)
+        return { raw, index, asset: null, status: "asset_not_found" as const,
+          reason: `Asset not found: "${raw["Asset Name"] || raw["UUID"] || rfid}"` };
+
+      // Intra-file duplicate
+      const key = `${asset.id}|${from}|${to}|${date}`;
+      if (seen.has(key))
+        return { raw, index, asset, status: "duplicate" as const, reason: "Duplicate row within this file" };
+
+      // DB duplicate
+      const dbDupe = existingMovements.some(
+        (m) => m.assetId === asset.id && m.fromLocation === from &&
+               m.toLocation === to && m.createdAt.slice(0, 10) === date
+      );
+      if (dbDupe)
+        return { raw, index, asset, status: "duplicate" as const, reason: "Movement already recorded in system" };
+
+      seen.add(key);
+      return { raw, index, asset, status: "ready" as const };
+    });
+
+    setRows(parsed);
+    setResult(null);
+  }
+
+  async function handleFile(file: File) {
+    if (!file.name.match(/\.(csv|txt)$/i)) { toast.error("Please upload a CSV file (.csv)"); return; }
+    const text = await file.text();
+    parseAndValidate(text);
+  }
+
+  // ── Confirm import ────────────────────────────────────────────────────────
+  async function doImport() {
+    const ready = rows.filter((r) => r.status === "ready");
+    if (!ready.length) { toast.error("No valid rows to import"); return; }
+    setImporting(true);
+    let created = 0;
+    const errors: string[] = [];
+
+    for (const row of ready) {
+      try {
+        const { raw, asset } = row;
+        const from   = raw["From Location"].trim();
+        const to     = raw["To Location"].trim();
+        const type   = (["Checkout","Checkin","Transfer"].includes(raw["Type"]) ? raw["Type"] : "Checkout") as "Checkout" | "Checkin" | "Transfer";
+        const status = raw["Status"] === "In-Transit" ? "In-Transit" : "Completed" as "In-Transit" | "Completed";
+        const isoDate = raw["Date"]
+          ? new Date(`${raw["Date"]}T${raw["Time"] || "00:00:00"}`).toISOString()
+          : new Date().toISOString();
+        const completedAt = status === "Completed"
+          ? (raw["Completed At"] ? new Date(raw["Completed At"]).toISOString() : isoDate)
+          : undefined;
+
+        await addDocument("movements", {
+          assetId:      asset!.id,
+          assetName:    asset!.name,
+          fromLocation: from,
+          toLocation:   to,
+          movementType: type,
+          status,
+          createdBy:    profile?.uid ?? "csv-import",
+          createdAt:    isoDate,
+          ...(completedAt ? { completedAt, completedBy: profile?.uid ?? "csv-import" } : {}),
+          notes:        raw["Notes"] || "Imported from CSV",
+        });
+
+        // Update asset location & status
+        if (status === "Completed") {
+          await updateDocument("assets", asset!.id, { status: "Available", location: to });
+        } else {
+          await updateDocument("assets", asset!.id, { status: "In-Transit" });
+        }
+
+        created++;
+      } catch (err: unknown) {
+        errors.push(`Row ${row.index + 2}: ${err instanceof Error ? err.message : "Unknown error"}`);
+      }
+    }
+
+    // Audit log
+    if (created > 0) {
+      await logAudit({
+        userId:    profile?.uid ?? "",
+        userEmail: profile?.email ?? "",
+        action:    `CSV Import: ${created} movement record(s) created`,
+        category:  "Transfer",
+        details:   `Skipped: ${rows.length - ready.length}, Errors: ${errors.length}`,
+      }).catch(() => {});
+    }
+
+    setImporting(false);
+    setResult({ created, skipped: rows.filter((r) => r.status === "duplicate").length, errors });
+    if (created > 0) {
+      toast.success(`Import complete — ${created} movements created`);
+      onImported();
+    }
+  }
+
+  // ── Counts ────────────────────────────────────────────────────────────────
+  const readyCount = rows.filter((r) => r.status === "ready").length;
+  const skipCount  = rows.filter((r) => r.status === "duplicate").length;
+  const errorCount = rows.filter((r) => r.status === "asset_not_found" || r.status === "invalid").length;
+
+  return (
+    <div className="card-bento p-5 space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Upload className="h-5 w-5 text-indigo-600" />
+          <h3 className="text-base font-bold text-slate-800">Import Movement Report (CSV)</h3>
+        </div>
+        <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Template hint */}
+      <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-xs text-indigo-700">
+        <p className="font-semibold mb-1">Expected CSV columns:</p>
+        <p className="font-mono text-[10px] text-indigo-600 break-all">
+          Date, Time, Asset Name, UUID, RFID Tag, BLE Tag, From Location, To Location, Type, Status, Project, Completed At, Created By, Notes
+        </p>
+        <p className="mt-1.5 text-indigo-500">Use the <strong>CSV Download</strong> from this tab to get the correct format, fill in rows, and re-upload.</p>
+      </div>
+
+      {/* Drop zone */}
+      {rows.length === 0 && (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+          onClick={() => fileRef.current?.click()}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed py-12 transition-all ${
+            dragOver ? "border-indigo-500 bg-indigo-50" : "border-slate-200 hover:border-indigo-300 hover:bg-slate-50"
+          }`}>
+          <div className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-colors ${dragOver ? "bg-indigo-600" : "bg-slate-100"}`}>
+            <Upload className={`h-6 w-6 ${dragOver ? "text-white" : "text-slate-400"}`} />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-slate-700">Drop your CSV file here</p>
+            <p className="text-xs text-slate-400 mt-0.5">or click to browse — .csv files only</p>
+          </div>
+          <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+        </div>
+      )}
+
+      {/* Preview table */}
+      {rows.length > 0 && !result && (
+        <div className="space-y-4">
+          {/* Summary pills */}
+          <div className="flex flex-wrap gap-2">
+            <span className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+              <CheckCircle2 className="h-3.5 w-3.5" /> {readyCount} ready to import
+            </span>
+            {skipCount > 0 && (
+              <span className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                <AlertTriangle className="h-3.5 w-3.5" /> {skipCount} duplicate{skipCount > 1 ? "s" : ""} — will skip
+              </span>
+            )}
+            {errorCount > 0 && (
+              <span className="flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                <XCircle className="h-3.5 w-3.5" /> {errorCount} error{errorCount > 1 ? "s" : ""} — will skip
+              </span>
+            )}
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="min-w-full text-xs">
+              <thead>
+                <tr className="bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-3 py-2.5 text-left">Row</th>
+                  <th className="px-3 py-2.5 text-left">Status</th>
+                  <th className="px-3 py-2.5 text-left">Date</th>
+                  <th className="px-3 py-2.5 text-left">Asset</th>
+                  <th className="px-3 py-2.5 text-left">From</th>
+                  <th className="px-3 py-2.5 text-left">To</th>
+                  <th className="px-3 py-2.5 text-left">Type</th>
+                  <th className="px-3 py-2.5 text-left">Movement Status</th>
+                  <th className="px-3 py-2.5 text-left">Note</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {rows.map((row) => (
+                  <tr key={row.index} className={
+                    row.status === "ready"
+                      ? "bg-white hover:bg-emerald-50/40"
+                      : row.status === "duplicate"
+                      ? "bg-amber-50/60 opacity-60"
+                      : "bg-red-50/60 opacity-60"
+                  }>
+                    <td className="px-3 py-2 text-slate-400">{row.index + 2}</td>
+                    <td className="px-3 py-2">
+                      {row.status === "ready" && (
+                        <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Ready
+                        </span>
+                      )}
+                      {row.status === "duplicate" && (
+                        <span className="flex items-center gap-1 text-amber-600 font-semibold">
+                          <AlertTriangle className="h-3.5 w-3.5" /> Duplicate
+                        </span>
+                      )}
+                      {(row.status === "asset_not_found" || row.status === "invalid") && (
+                        <span className="flex items-center gap-1 text-red-600 font-semibold">
+                          <XCircle className="h-3.5 w-3.5" /> Error
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-600">{row.raw["Date"] || "—"}</td>
+                    <td className="px-3 py-2">
+                      <p className="font-semibold text-slate-800">{row.raw["Asset Name"] || "—"}</p>
+                      <p className="font-mono text-[9px] text-slate-400">{row.raw["UUID"] || row.raw["RFID Tag"] || ""}</p>
+                    </td>
+                    <td className="px-3 py-2 text-slate-600">{row.raw["From Location"] || "—"}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-800">{row.raw["To Location"] || "—"}</td>
+                    <td className="px-3 py-2">
+                      <span className={`rounded-full px-2 py-0.5 font-medium ${
+                        row.raw["Type"] === "Checkin"  ? "bg-emerald-100 text-emerald-700"
+                        : row.raw["Type"] === "Transfer" ? "bg-purple-100 text-purple-700"
+                        : "bg-blue-100 text-blue-700"}`}>
+                        {row.raw["Type"] || "Checkout"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`rounded-full px-2 py-0.5 font-medium ${
+                        row.raw["Status"] === "Completed" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                        {row.raw["Status"] || "—"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-slate-400 italic text-[10px] max-w-[180px] truncate">{row.reason || ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between">
+            <button onClick={() => setRows([])}
+              className="text-xs text-slate-400 hover:text-slate-600 underline">
+              ← Upload a different file
+            </button>
+            <div className="flex gap-2">
+              <button onClick={onClose}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={doImport} disabled={importing || readyCount === 0}
+                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-all">
+                {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                {importing ? "Importing…" : `Import ${readyCount} Record${readyCount !== 1 ? "s" : ""}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Result summary */}
+      {result && (
+        <div className="space-y-3">
+          <div className={`flex items-center gap-3 rounded-2xl p-4 ${result.created > 0 ? "bg-emerald-50 border border-emerald-200" : "bg-amber-50 border border-amber-200"}`}>
+            {result.created > 0
+              ? <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" />
+              : <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600" />}
+            <div>
+              <p className="font-semibold text-slate-800">
+                {result.created > 0 ? `Successfully imported ${result.created} movement record${result.created !== 1 ? "s" : ""}` : "Nothing was imported"}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {result.skipped > 0 && `${result.skipped} duplicate${result.skipped !== 1 ? "s" : ""} skipped. `}
+                {result.errors.length > 0 && `${result.errors.length} error${result.errors.length !== 1 ? "s" : ""}.`}
+              </p>
+            </div>
+          </div>
+
+          {result.errors.length > 0 && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 space-y-1">
+              <p className="text-xs font-semibold text-red-700">Errors:</p>
+              {result.errors.map((e, i) => (
+                <p key={i} className="text-[10px] font-mono text-red-600">{e}</p>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => { setRows([]); setResult(null); }}
+              className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+              Import another file
+            </button>
+            <button onClick={onClose}
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Location-to-Location Movement Report Tab ─────────────────────────────────
+function LocationMovementTab({
+  movements, assets, projects, locations, onRefresh,
+}: {
+  movements: AssetMovement[];
+  assets: Asset[];
+  projects: Project[];
+  locations: Location[];
+  onRefresh: () => void;
+}) {
+  const [fromLoc,    setFromLoc]    = useState("");
+  const [toLoc,      setToLoc]      = useState("");
+  const [projectId,  setProjectId]  = useState("");
+  const [dayRange,   setDayRange]   = useState<DayRange>("30");
+  const [statusFilter, setStatus]   = useState<"" | "In-Transit" | "Completed">("");
+  const [showImport,   setShowImport] = useState(false);
+
+  // ── Filtered data ───────────────────────────────────────────────────────────
+  const filtered = filterByDays(movements, dayRange).filter((m) => {
+    if (fromLoc     && m.fromLocation !== fromLoc) return false;
+    if (toLoc       && m.toLocation   !== toLoc)   return false;
+    if (statusFilter && m.status      !== statusFilter) return false;
+    if (projectId) {
+      const asset = assets.find((a) => a.id === m.assetId);
+      if (!asset || asset.projectId !== projectId) return false;
+    }
+    return true;
+  });
+
+  // ── KPI tiles ───────────────────────────────────────────────────────────────
+  const uniqueAssets = new Set(filtered.map((m) => m.assetId)).size;
+  const completed    = filtered.filter((m) => m.status === "Completed").length;
+  const inTransit    = filtered.filter((m) => m.status === "In-Transit").length;
+  const uniqueRoutes = new Set(filtered.map((m) => `${m.fromLocation}→${m.toLocation}`)).size;
+
+  // ── Chart — daily movement count ────────────────────────────────────────────
+  const dailyMap = new Map<string, number>();
+  filtered.forEach((m) => {
+    const day = m.createdAt.slice(0, 10);
+    dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1);
+  });
+  const chartData = Array.from(dailyMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, count]) => ({ date: date.slice(5), count })); // MM-DD for X axis
+
+  // ── Route summary ────────────────────────────────────────────────────────────
+  const routeMap = new Map<string, { count: number; assets: Set<string> }>();
+  filtered.forEach((m) => {
+    const key = `${m.fromLocation} → ${m.toLocation}`;
+    const r = routeMap.get(key) ?? { count: 0, assets: new Set() };
+    r.count++;
+    r.assets.add(m.assetId);
+    routeMap.set(key, r);
+  });
+  const routeSummary = Array.from(routeMap.entries())
+    .map(([route, r]) => ({ route, trips: r.count, assets: r.assets.size }))
+    .sort((a, b) => b.trips - a.trips);
+
+  // ── CSV Export ───────────────────────────────────────────────────────────────
+  function downloadCSV() {
+    const rows = filtered.map((m) => {
+      const asset  = assets.find((a) => a.id === m.assetId);
+      const proj   = projects.find((p) => p.id === asset?.projectId);
+      return {
+        "Date":         m.createdAt.slice(0, 10),
+        "Time":         new Date(m.createdAt).toLocaleTimeString("en-IN"),
+        "Asset Name":   m.assetName,
+        "UUID":         asset?.uuid ?? "",
+        "RFID Tag":     asset?.rfidTag ?? "",
+        "BLE Tag":      asset?.bleTag ?? "",
+        "From Location": m.fromLocation,
+        "To Location":  m.toLocation,
+        "Type":         m.movementType,
+        "Status":       m.status,
+        "Project":      proj?.name ?? "",
+        "Completed At": m.completedAt ? m.completedAt.slice(0, 10) : "",
+        "Created By":   m.createdBy,
+        "Notes":        m.notes ?? "",
+      };
+    });
+    const label = [
+      fromLoc ? `From_${fromLoc.replace(/\s+/g, "_")}` : "",
+      toLoc   ? `To_${toLoc.replace(/\s+/g, "_")}` : "",
+      dayRange,
+    ].filter(Boolean).join("_") || "All";
+    exportCSV(rows, `Movement_Report_${label}_${new Date().toISOString().slice(0, 10)}.csv`);
+  }
+
+  // ── PDF Export ───────────────────────────────────────────────────────────────
+  async function downloadPDF() {
+    if (!filtered.length) { toast.error("No data to export"); return; }
+    try {
+      const { jsPDF }   = await import("jspdf");
+      const autoTable   = (await import("jspdf-autotable")).default;
+      const doc         = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+      // Header
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("AKN Returnable Asset Tracking", 14, 14);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Location-to-Location Movement Report", 14, 20);
+
+      const meta = [
+        fromLoc ? `From: ${fromLoc}` : "From: All",
+        toLoc   ? `To: ${toLoc}`     : "To: All",
+        `Period: ${dayRange}`,
+        projectId ? `Project: ${projects.find((p) => p.id === projectId)?.name ?? projectId}` : "Project: All",
+        `Generated: ${new Date().toLocaleString("en-IN")}`,
+        `Total Records: ${filtered.length}`,
+      ].join("   |   ");
+      doc.setFontSize(8);
+      doc.text(meta, 14, 26, { maxWidth: 260 });
+
+      autoTable(doc, {
+        startY: 32,
+        head: [["#", "Date", "Asset Name", "UUID", "From Location", "To Location", "Type", "Status", "Project"]],
+        body: filtered.map((m, i) => {
+          const asset = assets.find((a) => a.id === m.assetId);
+          const proj  = projects.find((p) => p.id === asset?.projectId);
+          return [
+            i + 1,
+            m.createdAt.slice(0, 10),
+            m.assetName,
+            asset?.uuid ?? "",
+            m.fromLocation,
+            m.toLocation,
+            m.movementType,
+            m.status,
+            proj?.name ?? "—",
+          ];
+        }),
+        styles:    { fontSize: 7.5, cellPadding: 2 },
+        headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+      });
+
+      // Footer
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text(`Page ${i} of ${pageCount} — AKN Returnable Asset Tracking`, 14, doc.internal.pageSize.height - 6);
+      }
+
+      const label = [
+        fromLoc ? fromLoc.replace(/\s+/g, "_") : "All",
+        toLoc   ? toLoc.replace(/\s+/g, "_")   : "All",
+        dayRange,
+        new Date().toISOString().slice(0, 10),
+      ].join("_");
+      doc.save(`Movement_Report_${label}.pdf`);
+      toast.success("PDF downloaded");
+    } catch {
+      toast.error("Failed to generate PDF");
+    }
+  }
+
+  const locNames = Array.from(new Set([
+    ...locations.map((l) => l.name),
+    ...movements.map((m) => m.fromLocation),
+    ...movements.map((m) => m.toLocation),
+  ])).filter(Boolean).sort();
+
+  return (
+    <div className="space-y-5">
+      {/* ── Filters ─────────────────────────────────────────────────────────── */}
+      <div className="card-bento p-5 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <ArrowRight className="h-4 w-4 text-indigo-600" />
+            Location-to-Location Movement Report
+          </h2>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={downloadCSV}
+              className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">
+              <Download className="h-3.5 w-3.5" /> CSV
+            </button>
+            <button onClick={downloadPDF}
+              className="flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors">
+              <FileText className="h-3.5 w-3.5" /> PDF
+            </button>
+            <button onClick={() => setShowImport((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-colors ${
+                showImport
+                  ? "border-violet-400 bg-violet-600 text-white hover:bg-violet-700"
+                  : "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"}`}>
+              <Upload className="h-3.5 w-3.5" /> Upload & Import
+            </button>
+          </div>
+        </div>
+
+        {/* Filter row */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">From Location</label>
+            <select value={fromLoc} onChange={(e) => setFromLoc(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+              <option value="">All locations</option>
+              {locNames.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">To Location</label>
+            <select value={toLoc} onChange={(e) => setToLoc(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+              <option value="">All locations</option>
+              {locNames.filter((l) => l !== fromLoc).map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Project</label>
+            <select value={projectId} onChange={(e) => setProjectId(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+              <option value="">All projects</option>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Status</label>
+            <select value={statusFilter} onChange={(e) => setStatus(e.target.value as "" | "In-Transit" | "Completed")}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+              <option value="">All statuses</option>
+              <option value="Completed">Completed</option>
+              <option value="In-Transit">In-Transit</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Period filter */}
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-slate-500">Period</label>
+          <FilterBar dayRange={dayRange} onDayRangeChange={setDayRange} />
+        </div>
+      </div>
+
+      {/* ── Import panel ────────────────────────────────────────────────────── */}
+      {showImport && (
+        <ImportMovementSection
+          assets={assets}
+          projects={projects}
+          existingMovements={movements}
+          onImported={() => { onRefresh(); setShowImport(false); }}
+          onClose={() => setShowImport(false)}
+        />
+      )}
+
+      {/* ── KPI tiles ───────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Total Movements", value: filtered.length,  color: "bg-indigo-600",  light: "bg-indigo-50 text-indigo-700"  },
+          { label: "Unique Assets",   value: uniqueAssets,     color: "bg-violet-600",  light: "bg-violet-50 text-violet-700"  },
+          { label: "Completed",       value: completed,        color: "bg-emerald-600", light: "bg-emerald-50 text-emerald-700"},
+          { label: "In-Transit",      value: inTransit,        color: "bg-amber-500",   light: "bg-amber-50 text-amber-700"    },
+        ].map(({ label, value, color, light }) => (
+          <div key={label} className="card-bento p-4 flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${color}`}>
+              <Package className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{value}</p>
+              <p className="text-xs text-slate-500">{label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Chart + Route Summary ────────────────────────────────────────────── */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Daily trend chart */}
+        <div className="card-bento p-5 lg:col-span-2">
+          <h3 className="mb-4 text-sm font-bold text-slate-700">Daily Movement Count</h3>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={chartData} barSize={16}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: 12 }}
+                  formatter={(v) => [`${v} movements`, "Count"]}
+                />
+                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-52 items-center justify-center text-sm text-slate-400">No movement data for selected filters</div>
+          )}
+        </div>
+
+        {/* Route summary */}
+        <div className="card-bento p-5">
+          <h3 className="mb-4 text-sm font-bold text-slate-700">
+            Top Routes
+            <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-600">{uniqueRoutes} unique</span>
+          </h3>
+          <div className="space-y-2 max-h-[220px] overflow-y-auto">
+            {routeSummary.length === 0 && <p className="text-xs text-slate-400">No routes</p>}
+            {routeSummary.map(({ route, trips, assets: assetCount }) => (
+              <div key={route} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-semibold text-slate-700">{route}</p>
+                  <p className="text-[10px] text-slate-400">{assetCount} asset{assetCount !== 1 ? "s" : ""}</p>
+                </div>
+                <span className="ml-2 shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">{trips}×</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Movement Table ───────────────────────────────────────────────────── */}
+      <div className="card-bento overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+          <p className="text-sm font-bold text-slate-800">
+            Movement Records
+            <span className="ml-2 text-xs font-normal text-slate-400">{filtered.length} records</span>
+          </p>
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Completed
+            <span className="ml-2 h-2 w-2 rounded-full bg-amber-400" /> In-Transit
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          {filtered.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-sm text-slate-400">
+              No movements match the selected filters
+            </div>
+          ) : (
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left font-semibold">#</th>
+                  <th className="px-4 py-3 text-left font-semibold">Date & Time</th>
+                  <th className="px-4 py-3 text-left font-semibold">Asset</th>
+                  <th className="px-4 py-3 text-left font-semibold">UUID</th>
+                  <th className="px-4 py-3 text-left font-semibold">From</th>
+                  <th className="px-4 py-3 text-left font-semibold">To</th>
+                  <th className="px-4 py-3 text-left font-semibold">Type</th>
+                  <th className="px-4 py-3 text-left font-semibold">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold">Project</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map((m, i) => {
+                  const asset = assets.find((a) => a.id === m.assetId);
+                  const proj  = projects.find((p) => p.id === asset?.projectId);
+                  const isCompleted = m.status === "Completed";
+                  return (
+                    <tr key={m.id} className="hover:bg-indigo-50/40 transition-colors">
+                      <td className="px-4 py-3 text-xs text-slate-400">{i + 1}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <p className="text-xs font-semibold text-slate-700">{m.createdAt.slice(0, 10)}</p>
+                        <p className="text-[10px] text-slate-400">{new Date(m.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-xs font-semibold text-slate-800">{m.assetName}</p>
+                        {asset?.rfidTag && <p className="text-[10px] font-mono text-slate-400">{asset.rfidTag}</p>}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{asset?.uuid ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs text-slate-700">{m.fromLocation}</td>
+                      <td className="px-4 py-3 text-xs font-semibold text-slate-800">
+                        <span className="flex items-center gap-1">
+                          <ArrowRight className="h-3 w-3 text-indigo-400 shrink-0" />
+                          {m.toLocation}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          m.movementType === "Checkout" ? "bg-blue-100 text-blue-700"
+                          : m.movementType === "Checkin" ? "bg-emerald-100 text-emerald-700"
+                          : "bg-purple-100 text-purple-700"}`}>
+                          {m.movementType}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${
+                          isCompleted ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${isCompleted ? "bg-emerald-500" : "bg-amber-400 animate-pulse"}`} />
+                          {m.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-500">{proj?.name ?? <span className="text-slate-300">—</span>}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Reports() {
   const [assets,    setAssets]    = useState<Asset[]>([]);
   const [orders,    setOrders]    = useState<Order[]>([]);
@@ -1483,27 +2270,28 @@ export default function Reports() {
   const [logs,      setLogs]      = useState<AuditLog[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [projects,  setProjects]  = useState<Project[]>([]);
-  const [activeTab, setActiveTab] = useState<"kpi" | "sales" | "customer" | "scheduled" | "retired">("kpi");
+  const [activeTab, setActiveTab] = useState<"kpi" | "sales" | "movement" | "customer" | "scheduled" | "retired">("kpi");
 
-  useEffect(() => {
-    (async () => {
-      const [a, o, t, lg, locs, pr, mv] = await Promise.all([
-        fetchAll<Asset>("assets"),
-        fetchAll<Order>("orders"),
-        fetchAll<Transfer>("transfers"),
-        fetchAll<AuditLog>("audit_logs"),
-        fetchAll<Location>("locations"),
-        fetchAll<Project>("projects"),
-        fetchAll<AssetMovement>("movements"),
-      ]);
-      setAssets(a); setOrders(o); setTransfers(t); setLogs(lg);
-      setLocations(locs); setProjects(pr); setMovements(mv);
-    })();
+  const load = useCallback(async () => {
+    const [a, o, t, lg, locs, pr, mv] = await Promise.all([
+      fetchAll<Asset>("assets"),
+      fetchAll<Order>("orders"),
+      fetchAll<Transfer>("transfers"),
+      fetchAll<AuditLog>("audit_logs"),
+      fetchAll<Location>("locations"),
+      fetchAll<Project>("projects"),
+      fetchAll<AssetMovement>("movements"),
+    ]);
+    setAssets(a); setOrders(o); setTransfers(t); setLogs(lg);
+    setLocations(locs); setProjects(pr); setMovements(mv);
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const TABS = [
     { id: "kpi"       as const, label: "KPI Analytics",        icon: BarChart2    },
     { id: "sales"     as const, label: "Sales Report",          icon: ShoppingCart },
+    { id: "movement"  as const, label: "Movement Report",       icon: ArrowRight   },
     { id: "customer"  as const, label: "Customer History",      icon: Users        },
     { id: "scheduled" as const, label: "Scheduled Reports",     icon: Clock        },
     { id: "retired"   as const, label: "Retired Assets",        icon: Package      },
@@ -1511,7 +2299,7 @@ export default function Reports() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-6 py-5 text-white shadow-lg">
+      <div className="rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-800 px-6 py-5 text-white shadow-lg shadow-indigo-200/40">
         <h1 className="text-2xl font-bold">Reports & KPI</h1>
         <p className="mt-1 text-sm text-slate-400">Analytics, customer history, sales performance, and automated reporting</p>
       </div>
@@ -1520,18 +2308,19 @@ export default function Reports() {
         {TABS.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-medium transition-all ${
-              activeTab === id ? "border-slate-900 text-slate-900" : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              activeTab === id ? "border-indigo-600 text-indigo-700" : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             }`}>
             <Icon className="h-4 w-4" />{label}
           </button>
         ))}
       </div>
 
-      {activeTab === "kpi"       && <KPITab       assets={assets} orders={orders} transfers={transfers} logs={logs} locations={locations} projects={projects} movements={movements} />}
-      {activeTab === "sales"     && <SalesTab     transfers={transfers} assets={assets} locations={locations} projects={projects} movements={movements} />}
-      {activeTab === "customer"  && <CustomerHistoryTab locations={locations} />}
-      {activeTab === "scheduled" && <ScheduledTab projects={projects} />}
-      {activeTab === "retired"   && <RetiredAssetsTab assets={assets} />}
+      {activeTab === "kpi"       && <KPITab              assets={assets} orders={orders} transfers={transfers} logs={logs} locations={locations} projects={projects} movements={movements} />}
+      {activeTab === "sales"     && <SalesTab            transfers={transfers} assets={assets} locations={locations} projects={projects} movements={movements} />}
+      {activeTab === "movement"  && <LocationMovementTab movements={movements} assets={assets} projects={projects} locations={locations} onRefresh={load} />}
+      {activeTab === "customer"  && <CustomerHistoryTab  locations={locations} />}
+      {activeTab === "scheduled" && <ScheduledTab        projects={projects} />}
+      {activeTab === "retired"   && <RetiredAssetsTab    assets={assets} />}
     </div>
   );
 }

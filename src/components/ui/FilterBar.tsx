@@ -79,7 +79,7 @@ export default function FilterBar({
             onClick={() => onDayRangeChange(opt.value)}
             className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               dayRange === opt.value
-                ? "bg-slate-900 text-white"
+                ? "bg-indigo-600 text-white"
                 : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
             }`}
           >

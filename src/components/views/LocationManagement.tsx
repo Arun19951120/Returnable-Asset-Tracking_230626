@@ -92,7 +92,7 @@ export default function LocationManagement() {
           <p className="text-sm text-slate-500">{active} active · {locations.length} total sites</p>
         </div>
         <button onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
           <Plus className="h-4 w-4" /> Add Location
         </button>
       </div>
@@ -223,7 +223,7 @@ export default function LocationManagement() {
                 <button type="button" onClick={() => setShowForm(false)}
                   className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600">Cancel</button>
                 <button type="submit" disabled={saving}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-sm font-medium text-white disabled:opacity-60">
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white disabled:opacity-60">
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />} {editing ? "Save" : "Add"}
                 </button>
               </div>
