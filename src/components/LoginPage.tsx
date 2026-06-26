@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useLoginAction } from "@/lib/auth-context";
 import { UserProfile } from "@/lib/types";
-import { Package, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const loginAction = useLoginAction();
@@ -50,8 +51,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-200">
-            <Package className="h-6 w-6 text-white" />
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-lg shadow-slate-200 border border-slate-100 overflow-hidden">
+            <Image src="/AKN.png" alt="AKN Design Tech" width={80} height={80} className="object-contain p-1" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             AKN Returnable Asset Tracking

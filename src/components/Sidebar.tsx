@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { ALL_TABS, Notification } from "@/lib/types";
 import { fetchAll } from "@/lib/storage";
@@ -65,8 +66,8 @@ export default function Sidebar({ activeTab, onTabChange }: { activeTab: string;
     <aside className="flex h-screen w-62 flex-col border-r border-slate-200 bg-white" style={{ width: "15rem" }}>
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-slate-200 px-5 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600">
-          <Package className="h-4 w-4 text-white" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white overflow-hidden border border-slate-100 shadow-sm">
+          <Image src="/AKN.png" alt="AKN Design Tech" width={40} height={40} className="object-contain" />
         </div>
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-slate-900">AKN Returnable</p>
