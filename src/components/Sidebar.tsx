@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Package, Camera, ArrowRightLeft, ClipboardList,
   Truck, Building2, MapPin, Brain, BarChart2, Bell, FileText,
   ShieldCheck, LogOut, ChevronRight, Bluetooth, Wifi, Settings2,
-  LogIn, RotateCcw, Settings,
+  LogIn, RotateCcw, Settings, X,
 } from "lucide-react";
 import UserProfileDialog from "@/components/dialogs/UserProfileDialog";
 
@@ -34,7 +34,14 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 
 interface DeviceStatus { rfid: boolean; ble: boolean }
 
-export default function Sidebar({ activeTab, onTabChange }: { activeTab: string; onTabChange: (tab: string) => void }) {
+export default function Sidebar({
+  activeTab, onTabChange, isOpen, onClose,
+}: {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const { profile, allowedTabs, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [devices, setDevices] = useState<DeviceStatus>({ rfid: false, ble: false });
@@ -62,7 +69,9 @@ export default function Sidebar({ activeTab, onTabChange }: { activeTab: string;
   const visibleTabs = ALL_TABS.filter((t) => allowedTabs.includes(t.id));
 
   return (
-    <aside className="flex h-screen w-62 flex-col border-r border-slate-200 bg-white" style={{ width: "15rem" }}>
+    <aside
+      className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-300 ease-in-out lg:relative lg:z-auto lg:h-screen lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+    >
       {/* Logo */}
       <div className="flex items-center gap-2.5 border-b border-slate-200 px-5 py-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600">
@@ -73,15 +82,25 @@ export default function Sidebar({ activeTab, onTabChange }: { activeTab: string;
           <p className="text-[10px] text-slate-400 font-mono">v3.1.0</p>
         </div>
         {/* Global device status pills */}
-        <div className="ml-auto flex flex-col gap-0.5">
-          <span title={`RFID ${devices.rfid ? "connected" : "offline"}`}
-            className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${devices.rfid ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"}`}>
-            <Wifi className="h-2.5 w-2.5" /> RFID
-          </span>
-          <span title={`BLE ${devices.ble ? "connected" : "offline"}`}
-            className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${devices.ble ? "bg-indigo-100 text-indigo-600" : "bg-slate-100 text-slate-400"}`}>
-            <Bluetooth className="h-2.5 w-2.5" /> BLE
-          </span>
+        <div className="ml-auto flex items-center gap-1">
+          <div className="flex flex-col gap-0.5">
+            <span title={`RFID ${devices.rfid ? "connected" : "offline"}`}
+              className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${devices.rfid ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"}`}>
+              <Wifi className="h-2.5 w-2.5" /> RFID
+            </span>
+            <span title={`BLE ${devices.ble ? "connected" : "offline"}`}
+              className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${devices.ble ? "bg-indigo-100 text-indigo-600" : "bg-slate-100 text-slate-400"}`}>
+              <Bluetooth className="h-2.5 w-2.5" /> BLE
+            </span>
+          </div>
+          {/* Close button — mobile only */}
+          <button
+            onClick={onClose}
+            className="lg:hidden ml-1 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       </div>
 

@@ -1051,7 +1051,7 @@ export default function AssetLedger() {
       {retireAsset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setRetireAsset(null)}>
-          <div className="w-[420px] rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between bg-red-600 px-5 py-4">
               <div className="flex items-center gap-2 text-white">

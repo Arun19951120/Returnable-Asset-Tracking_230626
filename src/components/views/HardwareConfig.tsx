@@ -223,7 +223,7 @@ export default function HardwareConfig() {
       </div>
 
       {/* Status overview */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {([
           { key: "rfid",    label: "RFID",    icon: Wifi,     color: "bg-blue-600" },
           { key: "ble",     label: "BLE",     icon: Bluetooth,color: "bg-indigo-600" },

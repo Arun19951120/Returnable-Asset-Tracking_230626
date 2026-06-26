@@ -47,7 +47,7 @@ export default function Forecasting() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
           <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />
           <div><p className="text-xl font-bold text-emerald-800">{healthyAssets.length}</p><p className="text-xs text-emerald-600">Healthy (≥75)</p></div>

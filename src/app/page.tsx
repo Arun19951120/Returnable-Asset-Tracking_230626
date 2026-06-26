@@ -50,6 +50,7 @@ const VIEWS: Record<string, React.ComponentType> = {
 export default function App() {
   const { user, loading, allowedTabs } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) {
     return (
@@ -63,17 +64,33 @@ export default function App() {
 
   const isCustomer = user?.role === "Customer";
   const resolvedTab = allowedTabs.includes(activeTab) ? activeTab : allowedTabs[0] ?? "dashboard";
-  // Customer dashboard is always the CustomerPortal; other views remain the same
   const ActiveView = (resolvedTab === "dashboard" && isCustomer)
     ? CustomerPortal
     : (VIEWS[resolvedTab] ?? Dashboard);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar activeTab={resolvedTab} onTabChange={setActiveTab} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar onNotificationsClick={() => setActiveTab("notifications")} />
-        <main className="flex-1 overflow-y-auto px-8 py-8">
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <Sidebar
+        activeTab={resolvedTab}
+        onTabChange={(tab) => { setActiveTab(tab); setSidebarOpen(false); }}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <TopBar
+          onNotificationsClick={() => setActiveTab("notifications")}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+        <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
           <ActiveView />
         </main>
       </div>

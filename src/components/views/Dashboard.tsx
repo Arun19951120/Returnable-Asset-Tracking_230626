@@ -460,7 +460,7 @@ function CustomerDashboard() {
                     </div>
                     <span className="text-sm font-bold text-slate-700">{locAssets.length} total</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {(["Available","In-Transit","Dispatched","Maintenance"] as const).map((st) => {
                       const cnt = locAssets.filter((a) => a.status === st).length;
                       return (

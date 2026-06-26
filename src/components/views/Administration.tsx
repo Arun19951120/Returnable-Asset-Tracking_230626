@@ -203,7 +203,7 @@ function UserProfilesTab() {
         </div>
       )}
 
-      <div className="overflow-hidden card-bento">
+      <div className="overflow-x-auto card-bento">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
@@ -548,7 +548,7 @@ function RBACTab() {
     <div className="space-y-5">
       <div>
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">System Built-in Roles</h3>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {BUILT_IN_ROLES.map((role) => {
             const desc: Record<string, string> = {
               Admin:    "Full access to all features and settings",
@@ -695,7 +695,7 @@ function ProjectsTab() {
         </button>
       </div>
 
-      <div className="overflow-hidden card-bento">
+      <div className="overflow-x-auto card-bento">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">

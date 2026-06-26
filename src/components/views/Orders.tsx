@@ -201,7 +201,7 @@ export default function Orders() {
       />
 
       {/* Orders table */}
-      <div className="overflow-hidden card-bento">
+      <div className="overflow-x-auto card-bento">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">

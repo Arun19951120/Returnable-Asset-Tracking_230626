@@ -154,7 +154,7 @@ function KPITab({
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Avg Fleet Health",       value: `${avgHealth}%`,  sub: `${fAssets.length} assets`, color: avgHealth >= 75 ? "text-emerald-600" : "text-red-500" },
           { label: "Return Velocity",         value: emptyVelocity,    sub: "Completed inbound returns", color: "text-slate-900" },
@@ -637,7 +637,7 @@ function SalesTab({
       />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs font-medium uppercase tracking-widest text-slate-400">Total Shipments</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{totalShipments}</p>
@@ -1254,7 +1254,7 @@ function CustomerHistoryTab({ locations }: { locations: Location[] }) {
   return (
     <div className="space-y-5">
       {/* KPI summary */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Total Records", value: filtered.length, color: "text-slate-900", bg: "bg-slate-50", icon: Filter },
           { label: "Received",      value: totalReceived,   color: "text-emerald-700", bg: "bg-emerald-50", icon: LogIn },
