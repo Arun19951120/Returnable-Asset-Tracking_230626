@@ -261,7 +261,7 @@ function KPITab({
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="project" tick={{ fontSize: 10, fill: "#64748b" }} angle={-20} textAnchor="end" height={45} interval={0} />
                   <YAxis tick={{ fontSize: 10, fill: "#64748b" }} allowDecimals={true} label={{ value: "Ratio", angle: -90, position: "insideLeft", fontSize: 10, fill: "#94a3b8" }} />
-                  <Tooltip formatter={(v: number, name: string) => [v, name === "ratio" ? "Turnover Ratio" : name]} labelStyle={{ fontWeight: 600 }} contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }} />
+                  <Tooltip formatter={(v: number | string | ReadonlyArray<number | string> | undefined, name: string | number | undefined) => [v, name === "ratio" ? "Turnover Ratio" : String(name ?? "")] as [React.ReactNode, string]} labelStyle={{ fontWeight: 600 }} contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }} />
                   <Bar dataKey="ratio" name="Turnover Ratio" radius={[4, 4, 0, 0]}>
                     {turnoverData.map((r, i) => (
                       <Cell key={i} fill={r.ratio >= 2 ? "#10b981" : r.ratio >= 1 ? "#f59e0b" : "#94a3b8"} />
@@ -702,7 +702,7 @@ function SalesTab({
                 width={65}
               />
               <Tooltip
-                formatter={(value: number) => [formatTooltip(value), "Sales Value"]}
+                formatter={(value: number | string | ReadonlyArray<number | string> | undefined) => [formatTooltip(Number(value ?? 0)), "Sales Value"] as [React.ReactNode, string]}
                 labelStyle={{ fontWeight: 600, fontSize: 12 }}
                 contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
               />
@@ -757,10 +757,10 @@ function SalesTab({
                 width={65}
               />
               <Tooltip
-                formatter={(value: number, name: string) => [
-                  formatTooltip(value),
+                formatter={(value: number | string | ReadonlyArray<number | string> | undefined, name: string | number | undefined) => [
+                  formatTooltip(Number(value ?? 0)),
                   name === "cumulative" ? "Cumulative Sales" : "Period Sales",
-                ]}
+                ] as [React.ReactNode, string]}
                 labelStyle={{ fontWeight: 600, fontSize: 12 }}
                 contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
               />
