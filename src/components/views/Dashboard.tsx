@@ -8,6 +8,7 @@ import {
   Package, Truck, ClipboardCheck, Activity, TrendingUp, AlertTriangle,
   LogIn, LogOut, MapPin, BarChart3, Clock, CheckCircle2, ArrowUpDown,
   CheckCheck, Loader2, X, Search, RefreshCw, ArrowRight,
+  GripVertical, LayoutDashboard, EyeOff, PlusCircle, Eye,
 } from "lucide-react";
 import FilterBar, { DayRange, filterByDays } from "@/components/ui/FilterBar";
 import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
@@ -510,6 +511,65 @@ function CustomerDashboard() {
   );
 }
 
+// ─── WIDGET REGISTRY ─────────────────────────────────────────────────────────
+type WidgetId = "kpi-strip" | "recent-orders" | "quick-movement" | "location-table";
+
+const WIDGET_META: { id: WidgetId; title: string; desc: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "kpi-strip",       title: "KPI Summary",          desc: "6 live performance indicators",    icon: Activity },
+  { id: "recent-orders",   title: "Recent Orders",         desc: "Latest orders with status",        icon: ClipboardCheck },
+  { id: "quick-movement",  title: "Quick Movement",        desc: "Asset dispatch / receive tool",    icon: RefreshCw },
+  { id: "location-table",  title: "Inventory by Location", desc: "Asset breakdown per location",     icon: MapPin },
+];
+
+const DASH_LAYOUT_KEY = "akn_dashboard_layout_v1";
+const DEFAULT_ORDER: WidgetId[] = ["kpi-strip", "recent-orders", "quick-movement", "location-table"];
+
+function DashboardWidget({
+  title, editMode, myIdx, dragIdx, dropIdx,
+  onDragStart, onDragOver, onDrop, onDragEnd, onHide, children,
+}: {
+  title: string; editMode: boolean;
+  myIdx: number; dragIdx: number | null; dropIdx: number | null;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: () => void;
+  onDragEnd: () => void;
+  onHide: () => void;
+  children: React.ReactNode;
+}) {
+  const isDragging = dragIdx === myIdx;
+  const isTarget   = dropIdx === myIdx && dragIdx !== null && dragIdx !== myIdx;
+
+  return (
+    <div
+      draggable={editMode}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={(e) => { e.preventDefault(); onDrop(); }}
+      onDragEnd={onDragEnd}
+      className={`relative transition-all duration-150 ${editMode ? "cursor-grab active:cursor-grabbing" : ""} ${isDragging ? "opacity-40 scale-[0.99]" : ""}`}
+    >
+      {editMode && (
+        <>
+          <div className={`absolute inset-0 z-10 rounded-2xl pointer-events-none ring-2 ${isTarget ? "ring-indigo-500 bg-indigo-50/40" : "ring-dashed ring-indigo-300"}`} />
+          <div className="absolute -top-4 left-4 z-20 flex items-center gap-1.5 rounded-full bg-indigo-600 pl-2 pr-3 py-1 text-[11px] font-semibold text-white shadow-md pointer-events-none select-none">
+            <GripVertical className="h-3 w-3 opacity-70" />
+            {title}
+          </div>
+          <button
+            onClick={onHide}
+            className="absolute -top-4 right-4 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600 transition-colors"
+            title="Hide widget"
+          >
+            <EyeOff className="h-3 w-3" />
+          </button>
+        </>
+      )}
+      <div className={editMode ? "pt-3" : ""}>{children}</div>
+    </div>
+  );
+}
+
 // ─── ADMIN / STAFF DASHBOARD ──────────────────────────────────────────────────
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -524,7 +584,75 @@ export default function Dashboard() {
   const [dayRange,       setDayRange]       = useState<DayRange>("30");
   const [projectFilter,  setProjectFilter]  = useState("");
   const [locationFilter, setLocationFilter] = useState("");
-  const [movLoc,         setMovLoc]         = useState("");   // location for movement widget
+  const [movLoc,         setMovLoc]         = useState("");
+
+  // ── Dashboard layout customization ──────────────────────────────────────────
+  const [editMode,       setEditMode]       = useState(false);
+  const [widgetOrder,    setWidgetOrder]    = useState<WidgetId[]>(DEFAULT_ORDER);
+  const [hiddenWidgets,  setHiddenWidgets]  = useState<WidgetId[]>([]);
+  const [dragIdx,        setDragIdx]        = useState<number | null>(null);
+  const [dropIdx,        setDropIdx]        = useState<number | null>(null);
+
+  // Load persisted layout once on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DASH_LAYOUT_KEY);
+      if (raw) {
+        const { order, hidden } = JSON.parse(raw) as { order: WidgetId[]; hidden: WidgetId[] };
+        if (Array.isArray(order) && order.length) setWidgetOrder(order);
+        if (Array.isArray(hidden)) setHiddenWidgets(hidden);
+      }
+    } catch {}
+  }, []);
+
+  function persistLayout(order: WidgetId[], hidden: WidgetId[]) {
+    try { localStorage.setItem(DASH_LAYOUT_KEY, JSON.stringify({ order, hidden })); } catch {}
+  }
+
+  function hideWidget(id: WidgetId) {
+    const newHidden = [...hiddenWidgets, id];
+    const newOrder  = widgetOrder.filter((w) => w !== id);
+    setHiddenWidgets(newHidden);
+    setWidgetOrder(newOrder);
+    persistLayout(newOrder, newHidden);
+  }
+
+  function showWidget(id: WidgetId) {
+    const newHidden = hiddenWidgets.filter((w) => w !== id);
+    const newOrder  = [...widgetOrder, id];
+    setHiddenWidgets(newHidden);
+    setWidgetOrder(newOrder);
+    persistLayout(newOrder, newHidden);
+  }
+
+  function resetLayout() {
+    setWidgetOrder(DEFAULT_ORDER);
+    setHiddenWidgets([]);
+    persistLayout(DEFAULT_ORDER, []);
+  }
+
+  function handleDragStart(idx: number) {
+    setDragIdx(idx);
+  }
+
+  function handleDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropIdx(idx);
+  }
+
+  function handleDrop(idx: number) {
+    if (dragIdx === null || dragIdx === idx) { setDragIdx(null); setDropIdx(null); return; }
+    const newOrder = [...widgetOrder];
+    const [moved]  = newOrder.splice(dragIdx, 1);
+    newOrder.splice(idx, 0, moved);
+    setWidgetOrder(newOrder);
+    persistLayout(newOrder, hiddenWidgets);
+    setDragIdx(null);
+    setDropIdx(null);
+  }
+
+  function handleDragEnd() { setDragIdx(null); setDropIdx(null); }
 
   const isManager = ["Admin", "Manager"].includes(profile?.role ?? "");
 
@@ -581,6 +709,163 @@ export default function Dashboard() {
   // Global in-transit count
   const globalInTransit = movements.filter((m) => m.status === "In-Transit").length;
 
+  // ── Widget renderer ─────────────────────────────────────────────────────────
+  function renderWidget(id: WidgetId): React.ReactNode {
+    switch (id) {
+      case "kpi-strip":
+        return (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { label: "Total Assets",  value: filteredAssets.length, sub: "All fleet", icon: Package, color: "bg-slate-700", bar: null },
+              { label: "Available",     value: available, sub: `${filteredAssets.length ? Math.round(available/filteredAssets.length*100) : 0}% of fleet`, icon: Activity, color: "bg-emerald-600", bar: { pct: filteredAssets.length ? available/filteredAssets.length*100 : 0, cls: "bg-emerald-500" } },
+              { label: "In-Transit",    value: inTransit, sub: "Active shipments", icon: Truck, color: "bg-blue-600", bar: { pct: filteredAssets.length ? inTransit/filteredAssets.length*100 : 0, cls: "bg-blue-500" } },
+              { label: "Dispatched",    value: filteredAssets.filter((a) => a.status === "Dispatched").length, sub: "At customer sites", icon: ArrowRight, color: "bg-indigo-600", bar: { pct: filteredAssets.length ? filteredAssets.filter((a) => a.status === "Dispatched").length/filteredAssets.length*100 : 0, cls: "bg-indigo-500" } },
+              { label: "Maintenance",   value: maintenance, sub: maintenance > 0 ? "⚠ Needs attention" : "All clear", icon: AlertTriangle, color: maintenance > 0 ? "bg-red-500" : "bg-slate-500", bar: { pct: filteredAssets.length ? maintenance/filteredAssets.length*100 : 0, cls: "bg-red-500" } },
+              { label: "Fleet Health",  value: `${avgHealth}%`, sub: "Avg health score", icon: Activity, color: avgHealth >= 75 ? "bg-emerald-600" : "bg-red-500", bar: { pct: avgHealth, cls: avgHealth >= 75 ? "bg-emerald-400" : "bg-red-400" } },
+            ].map(({ label, value, sub, icon: Icon, color, bar }) => (
+              <div key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+                  <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${color}`}>
+                    <Icon className="h-3.5 w-3.5 text-white" />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-slate-900">{value}</p>
+                {bar && (
+                  <div className="mt-2 h-1 w-full rounded-full bg-slate-100">
+                    <div className={`h-1 rounded-full ${bar.cls} transition-all`} style={{ width: `${Math.min(bar.pct, 100)}%` }} />
+                  </div>
+                )}
+                <p className="mt-1.5 text-xs text-slate-500">{sub}</p>
+              </div>
+            ))}
+          </div>
+        );
+
+      case "recent-orders":
+        return (
+          <div className="card-bento">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <h2 className="font-semibold text-slate-800">Recent Orders</h2>
+              <TrendingUp className="h-4 w-4 text-slate-400" />
+            </div>
+            <div className="divide-y divide-slate-50">
+              {recentOrders.length === 0 && (
+                <div className="flex flex-col items-center py-10 text-slate-400 gap-2">
+                  <ClipboardCheck className="h-8 w-8 opacity-30" />
+                  <p className="text-sm">No orders in this period</p>
+                </div>
+              )}
+              {recentOrders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100">
+                      <Package className="h-4 w-4 text-slate-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 font-mono">#{order.id.slice(-8).toUpperCase()}</p>
+                      <p className="text-xs text-slate-500">{order.origin} → {order.destination}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-400">{new Date(order.createdAt).toLocaleDateString("en-IN")}</span>
+                    <StatusBadge status={order.status} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "quick-movement":
+        return (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 text-slate-500" />
+                <h2 className="text-sm font-bold text-slate-800">Quick Movement</h2>
+                {globalInTransit > 0 && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                    {globalInTransit} in transit globally
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 ml-auto">
+                <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                <select value={movLoc} onChange={(e) => setMovLoc(e.target.value)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500">
+                  <option value="">— select location —</option>
+                  {locations.map((l) => (
+                    <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " ⭐" : ""}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {movLoc ? (
+              <SmartMovementWidget
+                myLoc={movLoc}
+                assets={assets} locations={locations} movements={movements} cycles={cycles}
+                profile={profile} masterWH={masterWH} isManager={isManager}
+                onDone={load}
+              />
+            ) : (
+              <p className="py-6 text-center text-sm text-slate-400">Select a location to view incoming shipments and dispatch assets</p>
+            )}
+          </div>
+        );
+
+      case "location-table":
+        if (!locations.length) return null;
+        return (
+          <div className="card-bento">
+            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
+              <MapPin className="h-4 w-4 text-slate-400" />
+              <h2 className="font-semibold text-slate-800">Inventory by Location</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase tracking-wider text-slate-500">
+                    <th className="px-5 py-3 text-left">Location</th>
+                    <th className="px-4 py-3 text-center">Total</th>
+                    <th className="px-4 py-3 text-center">Available</th>
+                    <th className="px-4 py-3 text-center">In-Transit</th>
+                    <th className="px-4 py-3 text-center">Dispatched</th>
+                    <th className="px-4 py-3 text-center">Maintenance</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {locations.filter((l) => !locationFilter || l.name === locationFilter).map((loc) => {
+                    const la = filteredAssets.filter((a) => a.location === loc.name);
+                    if (!la.length) return null;
+                    return (
+                      <tr key={loc.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`h-2 w-2 rounded-full ${loc.isMasterWarehouse ? "bg-purple-500" : "bg-slate-400"}`} />
+                            <span className="font-medium text-slate-800">{loc.name}</span>
+                            {loc.isMasterWarehouse && <span className="rounded-full bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700">MASTER</span>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center font-bold text-slate-800">{la.length}</td>
+                        {(["Available","In-Transit","Dispatched","Maintenance"] as const).map((st) => (
+                          <td key={st} className="px-4 py-3 text-center">
+                            <span className={la.filter((a) => a.status === st).length > 0 ? "font-semibold text-slate-800" : "text-slate-300"}>
+                              {la.filter((a) => a.status === st).length}
+                            </span>
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -593,15 +878,28 @@ export default function Dashboard() {
               {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
             </p>
           </div>
-          {filteredOrders.filter((o) => o.status === "Pending").length > 0 && (
-            <div className="flex items-center gap-2 rounded-xl bg-amber-500/20 border border-amber-400/30 px-4 py-2.5">
-              <ClipboardCheck className="h-4 w-4 text-amber-300" />
-              <div>
-                <p className="text-lg font-bold text-amber-300">{filteredOrders.filter((o) => o.status === "Pending").length}</p>
-                <p className="text-[10px] text-amber-400 uppercase tracking-wide">Pending Orders</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {filteredOrders.filter((o) => o.status === "Pending").length > 0 && (
+              <div className="flex items-center gap-2 rounded-xl bg-amber-500/20 border border-amber-400/30 px-4 py-2.5">
+                <ClipboardCheck className="h-4 w-4 text-amber-300" />
+                <div>
+                  <p className="text-lg font-bold text-amber-300">{filteredOrders.filter((o) => o.status === "Pending").length}</p>
+                  <p className="text-[10px] text-amber-400 uppercase tracking-wide">Pending Orders</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            <button
+              onClick={() => setEditMode((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all ${
+                editMode
+                  ? "bg-white text-indigo-700 shadow-md"
+                  : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+              }`}
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              {editMode ? "Done Editing" : "Customize"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -611,150 +909,78 @@ export default function Dashboard() {
         locationFilter={locationFilter} locations={locations.map((l) => l.name)} onLocationChange={setLocationFilter}
       />
 
-      {/* Unified KPI strip — one place, no repetition */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {[
-          { label: "Total Assets",  value: filteredAssets.length, sub: "All fleet",               icon: Package,       color: "bg-slate-700",                           bar: null },
-          { label: "Available",     value: available,             sub: `${filteredAssets.length ? Math.round(available/filteredAssets.length*100) : 0}% of fleet`, icon: Activity, color: "bg-emerald-600", bar: { pct: filteredAssets.length ? available/filteredAssets.length*100 : 0, cls: "bg-emerald-500" } },
-          { label: "In-Transit",    value: inTransit,             sub: "Active shipments",        icon: Truck,         color: "bg-blue-600",                            bar: { pct: filteredAssets.length ? inTransit/filteredAssets.length*100 : 0, cls: "bg-blue-500" } },
-          { label: "Dispatched",    value: filteredAssets.filter((a) => a.status === "Dispatched").length, sub: "At customer sites", icon: ArrowRight, color: "bg-indigo-600", bar: { pct: filteredAssets.length ? filteredAssets.filter((a) => a.status === "Dispatched").length/filteredAssets.length*100 : 0, cls: "bg-indigo-500" } },
-          { label: "Maintenance",   value: maintenance,           sub: maintenance > 0 ? "⚠ Needs attention" : "All clear", icon: AlertTriangle, color: maintenance > 0 ? "bg-red-500" : "bg-slate-500", bar: { pct: filteredAssets.length ? maintenance/filteredAssets.length*100 : 0, cls: "bg-red-500" } },
-          { label: "Fleet Health",  value: `${avgHealth}%`,       sub: "Avg health score",        icon: Activity,      color: avgHealth >= 75 ? "bg-emerald-600" : "bg-red-500", bar: { pct: avgHealth, cls: avgHealth >= 75 ? "bg-emerald-400" : "bg-red-400" } },
-        ].map(({ label, value, sub, icon: Icon, color, bar }) => (
-          <div key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-              <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${color}`}>
-                <Icon className="h-3.5 w-3.5 text-white" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
-            {bar && (
-              <div className="mt-2 h-1 w-full rounded-full bg-slate-100">
-                <div className={`h-1 rounded-full ${bar.cls} transition-all`} style={{ width: `${Math.min(bar.pct, 100)}%` }} />
-              </div>
-            )}
-            <p className="mt-1.5 text-xs text-slate-500">{sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent orders */}
-      <div className="card-bento">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <h2 className="font-semibold text-slate-800">Recent Orders</h2>
-            <TrendingUp className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="divide-y divide-slate-50">
-            {recentOrders.length === 0 && (
-              <div className="flex flex-col items-center py-10 text-slate-400 gap-2">
-                <ClipboardCheck className="h-8 w-8 opacity-30" />
-                <p className="text-sm">No orders in this period</p>
-              </div>
-            )}
-            {recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100">
-                    <Package className="h-4 w-4 text-slate-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800 font-mono">#{order.id.slice(-8).toUpperCase()}</p>
-                    <p className="text-xs text-slate-500">{order.origin} → {order.destination}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400">{new Date(order.createdAt).toLocaleDateString("en-IN")}</span>
-                  <StatusBadge status={order.status} />
-                </div>
-              </div>
-            ))}
-          </div>
-      </div>
-
-      {/* ── Quick Movement Widget ─────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4 text-slate-500" />
-            <h2 className="text-sm font-bold text-slate-800">Quick Movement</h2>
-            {globalInTransit > 0 && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                {globalInTransit} in transit globally
+      {/* ── Edit mode toolbar ─────────────────────────────────────────────────── */}
+      {editMode && (
+        <div className="rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50/60 p-4">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4 text-indigo-600" />
+              <p className="text-sm font-semibold text-indigo-800">Dashboard Edit Mode</p>
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-600">
+                Drag to reorder · Click ✕ to hide
               </span>
-            )}
+            </div>
+            <button
+              onClick={resetLayout}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              Reset to default
+            </button>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
-            <MapPin className="h-3.5 w-3.5 text-slate-400" />
-            <select value={movLoc} onChange={(e) => setMovLoc(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500">
-              <option value="">— select location —</option>
-              {locations.map((l) => (
-                <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " ⭐" : ""}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        {movLoc ? (
-          <SmartMovementWidget
-            myLoc={movLoc}
-            assets={assets} locations={locations} movements={movements} cycles={cycles}
-            profile={profile} masterWH={masterWH} isManager={isManager}
-            onDone={load}
-          />
-        ) : (
-          <p className="py-6 text-center text-sm text-slate-400">Select a location to view incoming shipments and dispatch assets</p>
-        )}
-      </div>
-
-      {/* Location breakdown */}
-      {locations.length > 0 && (
-        <div className="card-bento">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-            <MapPin className="h-4 w-4 text-slate-400" />
-            <h2 className="font-semibold text-slate-800">Inventory by Location</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase tracking-wider text-slate-500">
-                  <th className="px-5 py-3 text-left">Location</th>
-                  <th className="px-4 py-3 text-center">Total</th>
-                  <th className="px-4 py-3 text-center">Available</th>
-                  <th className="px-4 py-3 text-center">In-Transit</th>
-                  <th className="px-4 py-3 text-center">Dispatched</th>
-                  <th className="px-4 py-3 text-center">Maintenance</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {locations.filter((l) => !locationFilter || l.name === locationFilter).map((loc) => {
-                  const la = filteredAssets.filter((a) => a.location === loc.name);
-                  if (!la.length) return null;
+          {hiddenWidgets.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-indigo-500">Hidden widgets — click to restore</p>
+              <div className="flex flex-wrap gap-2">
+                {hiddenWidgets.map((id) => {
+                  const meta = WIDGET_META.find((m) => m.id === id)!;
+                  const Icon = meta.icon;
                   return (
-                    <tr key={loc.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`h-2 w-2 rounded-full ${loc.isMasterWarehouse ? "bg-purple-500" : "bg-slate-400"}`} />
-                          <span className="font-medium text-slate-800">{loc.name}</span>
-                          {loc.isMasterWarehouse && <span className="rounded-full bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700">MASTER</span>}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center font-bold text-slate-800">{la.length}</td>
-                      {(["Available","In-Transit","Dispatched","Maintenance"] as const).map((st) => (
-                        <td key={st} className="px-4 py-3 text-center">
-                          <span className={la.filter((a) => a.status === st).length > 0 ? "font-semibold text-slate-800" : "text-slate-300"}>
-                            {la.filter((a) => a.status === st).length}
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
+                    <button
+                      key={id}
+                      onClick={() => showWidget(id)}
+                      className="flex items-center gap-2 rounded-xl border border-dashed border-indigo-300 bg-white px-4 py-2.5 text-sm text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 transition-all group"
+                    >
+                      <Icon className="h-4 w-4 text-indigo-400 group-hover:text-indigo-600" />
+                      <span className="font-medium">{meta.title}</span>
+                      <span className="text-xs text-slate-400">{meta.desc}</span>
+                      <PlusCircle className="h-4 w-4 text-indigo-400 group-hover:text-indigo-600 ml-1" />
+                    </button>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          )}
+          {hiddenWidgets.length === 0 && (
+            <p className="text-xs text-indigo-400 flex items-center gap-1.5">
+              <Eye className="h-3.5 w-3.5" /> All widgets are visible. Hide widgets using the ✕ button on each card.
+            </p>
+          )}
         </div>
       )}
+
+      {/* ── Widget grid (draggable in edit mode) ─────────────────────────────── */}
+      {widgetOrder.map((id, idx) => {
+        const meta = WIDGET_META.find((m) => m.id === id)!;
+        const content = renderWidget(id);
+        if (content === null || content === undefined) return null;
+        return (
+          <DashboardWidget
+            key={id}
+            title={meta.title}
+            editMode={editMode}
+            myIdx={idx}
+            dragIdx={dragIdx}
+            dropIdx={dropIdx}
+            onDragStart={() => handleDragStart(idx)}
+            onDragOver={(e) => handleDragOver(e, idx)}
+            onDrop={() => handleDrop(idx)}
+            onDragEnd={handleDragEnd}
+            onHide={() => hideWidget(id)}
+          >
+            {content}
+          </DashboardWidget>
+        );
+      })}
     </div>
   );
 }
