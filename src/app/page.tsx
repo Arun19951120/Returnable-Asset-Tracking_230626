@@ -23,6 +23,7 @@ import Notifications from "@/components/views/Notifications";
 import AuditLogs from "@/components/views/AuditLogs";
 import Administration from "@/components/views/Administration";
 import CustomerPortal from "@/components/views/CustomerPortal";
+import { ALL_TABS } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import TopBar from "@/components/TopBar";
 
@@ -89,6 +90,7 @@ export default function App() {
         <TopBar
           onNotificationsClick={() => setActiveTab("notifications")}
           onMenuClick={() => setSidebarOpen(true)}
+          pageTitle={ALL_TABS.find(t => t.id === resolvedTab)?.label ?? "Dashboard"}
         />
         <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
           <ActiveView />

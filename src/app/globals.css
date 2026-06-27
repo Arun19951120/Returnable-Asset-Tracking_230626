@@ -102,3 +102,33 @@ html.dark .card-bento:hover            { border-color: #6366f1 !important; }
 /* scrollbar */
 html.dark ::-webkit-scrollbar-track    { background: #1e293b; }
 html.dark ::-webkit-scrollbar-thumb    { background: #475569; border-radius: 4px; }
+
+/* ── Premium scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+/* ── Page-level fade-in ────────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.25s ease both; }
+
+/* ── Sidebar dark theme ────────────────────────────────────────────────────── */
+.sidebar-dark { background: #0f1117; }
+
+/* ── Premium input focus ───────────────────────────────────────────────────── */
+.input-base {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition-all duration-150;
+  @apply focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100;
+}
+
+/* ── Gradient text ─────────────────────────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

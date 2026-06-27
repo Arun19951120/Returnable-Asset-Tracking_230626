@@ -10,9 +10,11 @@ import { useDarkMode } from "@/lib/useDarkMode";
 export default function TopBar({
   onNotificationsClick,
   onMenuClick,
+  pageTitle,
 }: {
   onNotificationsClick: () => void;
   onMenuClick: () => void;
+  pageTitle: string;
 }) {
   const { profile } = useAuth();
   const { dark, toggle } = useDarkMode();
@@ -54,7 +56,7 @@ export default function TopBar({
   };
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 md:px-6">
+    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-white/95 backdrop-blur-sm px-4 md:px-6">
       {/* Hamburger — mobile only */}
       <button
         onClick={onMenuClick}
@@ -63,12 +65,14 @@ export default function TopBar({
       >
         <Menu className="h-4 w-4" />
       </button>
+      {/* Page title — desktop */}
+      <p className="hidden lg:block text-sm font-semibold text-slate-800">{pageTitle}</p>
       <div className="flex items-center gap-2 ml-auto">
       {/* Dark mode toggle */}
       <button
         onClick={toggle}
         title={dark ? "Switch to light mode" : "Switch to dark mode"}
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
       >
         {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </button>
@@ -78,7 +82,7 @@ export default function TopBar({
         <button
           onClick={() => setShowDropdown((v) => !v)}
           title="Notifications"
-          className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+          className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
         >
           <Bell className="h-4 w-4" />
           {unread.length > 0 && (
@@ -94,7 +98,7 @@ export default function TopBar({
             <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
 
             {/* Dropdown */}
-            <div className="absolute right-0 top-10 z-50 w-80 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+            <div className="absolute right-0 top-10 z-50 w-80 sm:w-96 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-2.5">
                 <div className="flex items-center gap-2">
