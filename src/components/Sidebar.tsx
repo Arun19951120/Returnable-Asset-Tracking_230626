@@ -78,8 +78,9 @@ export default function Sidebar({
     >
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30 shrink-0">
-          <Package className="h-4.5 w-4.5 text-white" style={{ height: "1.125rem", width: "1.125rem" }} />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl overflow-hidden bg-white shrink-0 shadow-lg shadow-indigo-500/30">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/Rustoppers_Logo.jpg" alt="RSPL Logo" className="h-full w-full object-contain" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white truncate">RSPL Returnable</p>

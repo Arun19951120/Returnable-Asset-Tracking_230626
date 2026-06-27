@@ -167,10 +167,9 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/40">
-              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V7" />
-              </svg>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-white shadow-lg shadow-indigo-500/40">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Rustoppers_Logo.jpg" alt="RSPL Logo" className="h-full w-full object-contain" />
             </div>
             <div>
               <p className="text-white font-bold text-lg leading-tight">RSPL Returnable Asset Tracking</p>
@@ -217,10 +216,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo (shown only on small screens) */}
           <div className="lg:hidden mb-8 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-200">
-              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V7" />
-              </svg>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl overflow-hidden bg-white shadow-lg shadow-indigo-200">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Rustoppers_Logo.jpg" alt="RSPL Logo" className="h-full w-full object-contain" />
             </div>
             <h1 className="text-xl font-bold text-slate-900">RSPL Returnable Asset Tracking</h1>
           </div>
