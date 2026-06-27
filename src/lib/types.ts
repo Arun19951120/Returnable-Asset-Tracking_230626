@@ -236,6 +236,39 @@ export interface DCLog {
 
 export const BUILT_IN_ROLES = ["Admin", "Manager", "Employee", "Customer"];
 
+export interface Enquiry {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  productInterest?: string;
+  message: string;
+  status: "New" | "Contacted" | "Closed";
+  createdAt: string;
+}
+
+export interface GalleryImage {
+  id: string;
+  url: string;
+  name: string;
+  category?: string;
+  caption?: string;
+  uploadedBy: string;
+  uploadedAt: string;
+}
+
+export interface Expense {
+  id: string;
+  projectId: string;
+  category: "Purchase" | "Maintenance" | "Transport" | "Labour" | "Other";
+  description: string;
+  amount: number;
+  date: string;
+  createdBy: string;
+  createdAt: string;
+}
+
 export const ALL_TABS = [
   { id: "dashboard",     label: "Dashboard" },
   { id: "assets",        label: "Asset Ledger" },
@@ -247,11 +280,13 @@ export const ALL_TABS = [
   { id: "pickups",       label: "Pickup Requests" },
   { id: "customers",     label: "Customers" },
   { id: "projects",      label: "Projects" },
+  { id: "gallery",       label: "Product Gallery" },
   { id: "locations",     label: "Locations" },
   { id: "hardware",      label: "Hardware Config" },
   { id: "forecasting",   label: "AI Forecasting" },
   { id: "inventory",     label: "Inventory Charts" },
   { id: "reports",       label: "Reports & KPI" },
+  { id: "pl",            label: "P&L Analysis" },
   { id: "notifications", label: "Notifications" },
   { id: "audit",         label: "Audit Logs" },
   { id: "admin",         label: "Administration" },

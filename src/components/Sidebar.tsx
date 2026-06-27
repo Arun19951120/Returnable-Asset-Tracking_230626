@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Package, Camera, ArrowRightLeft, ClipboardList,
   Truck, Building2, MapPin, Brain, BarChart2, Bell, FileText,
   ShieldCheck, LogOut, ChevronRight, Bluetooth, Wifi, Settings2,
-  LogIn, RotateCcw, Settings, X,
+  LogIn, RotateCcw, Settings, X, Images, TrendingUp,
 } from "lucide-react";
 import UserProfileDialog from "@/components/dialogs/UserProfileDialog";
 
@@ -30,6 +30,8 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   notifications: Bell,
   audit:         FileText,
   admin:         ShieldCheck,
+  gallery:       Images,
+  pl:            TrendingUp,
 };
 
 interface DeviceStatus { rfid: boolean; ble: boolean }

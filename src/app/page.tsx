@@ -23,6 +23,8 @@ import Notifications from "@/components/views/Notifications";
 import AuditLogs from "@/components/views/AuditLogs";
 import Administration from "@/components/views/Administration";
 import CustomerPortal from "@/components/views/CustomerPortal";
+import Gallery from "@/components/views/Gallery";
+import ProfitLoss from "@/components/views/ProfitLoss";
 import { ALL_TABS } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import TopBar from "@/components/TopBar";
@@ -46,6 +48,8 @@ const VIEWS: Record<string, React.ComponentType> = {
   notifications: Notifications,
   audit: AuditLogs,
   admin: Administration,
+  gallery: Gallery,
+  pl: ProfitLoss,
 };
 
 export default function App() {
