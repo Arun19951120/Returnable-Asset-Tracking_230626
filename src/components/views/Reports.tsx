@@ -1964,7 +1964,7 @@ function LocationMovementTab({
       // Header
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text("AKN Returnable Asset Tracking", 14, 14);
+      doc.text("RSPL Returnable Asset Tracking", 14, 14);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.text("Location-to-Location Movement Report", 14, 20);
@@ -2009,7 +2009,7 @@ function LocationMovementTab({
         doc.setPage(i);
         doc.setFontSize(7);
         doc.setTextColor(150);
-        doc.text(`Page ${i} of ${pageCount} — AKN Returnable Asset Tracking`, 14, doc.internal.pageSize.height - 6);
+        doc.text(`Page ${i} of ${pageCount} — RSPL Returnable Asset Tracking`, 14, doc.internal.pageSize.height - 6);
       }
 
       const label = [

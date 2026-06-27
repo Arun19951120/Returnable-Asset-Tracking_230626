@@ -19,7 +19,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AKN Returnable Asset Tracking",
+  title: "RSPL Returnable Asset Tracking",
   description: "Returnable asset tracking and circular supply chain management",
 };
 

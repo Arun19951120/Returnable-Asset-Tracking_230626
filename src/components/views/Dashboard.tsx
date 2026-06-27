@@ -947,7 +947,7 @@ export default function Dashboard() {
       <div className="rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-800 px-6 py-5 text-white shadow-lg shadow-indigo-200/40">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">AKN Returnable Asset Tracking</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">RSPL Returnable Asset Tracking</p>
             <h1 className="mt-1 text-2xl font-bold">Operations Dashboard</h1>
             <p className="mt-1 text-sm text-slate-400">
               {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}

@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Upload, X, Loader2, Image as ImageIcon, Tag, Plus, Trash2 } from "lucide-react";
 
 const CATEGORIES = ["FLC", "PLS", "Thermoform Tray", "RSR", "Bins", "Other"];
-const WATERMARK_TEXT = "AKN Design Tech";
+const WATERMARK_TEXT = "RSPL Returnable Asset Tracking";
 
 function applyWatermark(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {

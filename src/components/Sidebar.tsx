@@ -82,7 +82,7 @@ export default function Sidebar({
           <Package className="h-4.5 w-4.5 text-white" style={{ height: "1.125rem", width: "1.125rem" }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white truncate">AKN Returnable</p>
+          <p className="text-sm font-bold text-white truncate">RSPL Returnable</p>
           <p className="text-[10px] text-slate-500 font-mono">v3.1.0</p>
         </div>
         {/* Device pills */}

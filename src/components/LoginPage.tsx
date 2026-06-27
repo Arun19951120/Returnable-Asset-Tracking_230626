@@ -173,7 +173,7 @@ export default function LoginPage() {
               </svg>
             </div>
             <div>
-              <p className="text-white font-bold text-lg leading-tight">AKN Design Tech</p>
+              <p className="text-white font-bold text-lg leading-tight">RSPL Returnable Asset Tracking</p>
               <p className="text-indigo-300/60 text-xs">Engineering Your Vision</p>
             </div>
           </div>
@@ -208,7 +208,7 @@ export default function LoginPage() {
 
         {/* Bottom badge */}
         <div className="relative z-10">
-          <p className="text-slate-600 text-xs">© 2026 AKN Design Tech · All rights reserved</p>
+          <p className="text-slate-600 text-xs">© 2026 RSPL Returnable Asset Tracking · All rights reserved</p>
         </div>
       </div>
 
@@ -222,7 +222,7 @@ export default function LoginPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 10V7" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-slate-900">AKN Returnable Asset Tracking</h1>
+            <h1 className="text-xl font-bold text-slate-900">RSPL Returnable Asset Tracking</h1>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
