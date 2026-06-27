@@ -9,6 +9,7 @@ import {
   LogIn, LogOut, MapPin, BarChart3, Clock, CheckCircle2, ArrowUpDown,
   CheckCheck, Loader2, X, Search, RefreshCw, ArrowRight,
   GripVertical, LayoutDashboard, EyeOff, PlusCircle, Eye,
+  Wrench, ShieldAlert, HelpCircle,
 } from "lucide-react";
 import FilterBar, { DayRange, filterByDays } from "@/components/ui/FilterBar";
 import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
@@ -512,17 +513,18 @@ function CustomerDashboard() {
 }
 
 // ─── WIDGET REGISTRY ─────────────────────────────────────────────────────────
-type WidgetId = "kpi-strip" | "recent-orders" | "quick-movement" | "location-table";
+type WidgetId = "kpi-strip" | "recent-orders" | "quick-movement" | "location-table" | "asset-condition";
 
 const WIDGET_META: { id: WidgetId; title: string; desc: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "kpi-strip",       title: "KPI Summary",          desc: "6 live performance indicators",    icon: Activity },
-  { id: "recent-orders",   title: "Recent Orders",         desc: "Latest orders with status",        icon: ClipboardCheck },
-  { id: "quick-movement",  title: "Quick Movement",        desc: "Asset dispatch / receive tool",    icon: RefreshCw },
-  { id: "location-table",  title: "Inventory by Location", desc: "Asset breakdown per location",     icon: MapPin },
+  { id: "kpi-strip",        title: "KPI Summary",          desc: "6 live performance indicators",    icon: Activity },
+  { id: "asset-condition",  title: "Asset Condition",       desc: "Repair / Damaged / Lost tracker",  icon: ShieldAlert },
+  { id: "recent-orders",    title: "Recent Orders",         desc: "Latest orders with status",        icon: ClipboardCheck },
+  { id: "quick-movement",   title: "Quick Movement",        desc: "Asset dispatch / receive tool",    icon: RefreshCw },
+  { id: "location-table",   title: "Inventory by Location", desc: "Asset breakdown per location",     icon: MapPin },
 ];
 
 const DASH_LAYOUT_KEY = "akn_dashboard_layout_v1";
-const DEFAULT_ORDER: WidgetId[] = ["kpi-strip", "recent-orders", "quick-movement", "location-table"];
+const DEFAULT_ORDER: WidgetId[] = ["kpi-strip", "asset-condition", "recent-orders", "quick-movement", "location-table"];
 
 function DashboardWidget({
   title, editMode, myIdx, dragIdx, dropIdx,
@@ -712,6 +714,79 @@ export default function Dashboard() {
   // ── Widget renderer ─────────────────────────────────────────────────────────
   function renderWidget(id: WidgetId): React.ReactNode {
     switch (id) {
+      case "asset-condition": {
+        const underRepair = filteredAssets.filter((a) => a.status === "Under Repair");
+        const damaged     = filteredAssets.filter((a) => a.status === "Damaged");
+        const lost        = filteredAssets.filter((a) => a.status === "Lost");
+        const total       = underRepair.length + damaged.length + lost.length;
+        return (
+          <div className="card-bento">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-red-400" />
+                <h2 className="font-semibold text-slate-800">Asset Condition Tracker</h2>
+              </div>
+              {total > 0 && (
+                <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-600">
+                  {total} at risk
+                </span>
+              )}
+            </div>
+            {total === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-10 text-slate-400">
+                <CheckCircle2 className="h-8 w-8 text-emerald-400 opacity-60" />
+                <p className="text-sm">All assets in good condition</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-50">
+                {/* Summary row */}
+                <div className="grid grid-cols-3 gap-4 px-5 py-4">
+                  {[
+                    { label: "Under Repair", count: underRepair.length, color: "bg-yellow-50 border-yellow-200", dot: "bg-yellow-400", text: "text-yellow-700", icon: Wrench },
+                    { label: "Damaged",      count: damaged.length,     color: "bg-red-50 border-red-200",       dot: "bg-red-500",    text: "text-red-700",    icon: ShieldAlert },
+                    { label: "Lost",         count: lost.length,        color: "bg-rose-50 border-rose-200",     dot: "bg-rose-600",   text: "text-rose-800",   icon: HelpCircle },
+                  ].map(({ label, count, color, dot, text, icon: Icon }) => (
+                    <div key={label} className={`rounded-xl border p-4 text-center ${color}`}>
+                      <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <span className={`h-2 w-2 rounded-full ${dot}`} />
+                        <p className={`text-xs font-semibold ${text}`}>{label}</p>
+                      </div>
+                      <p className={`text-3xl font-bold ${text}`}>{count}</p>
+                      <Icon className={`h-4 w-4 mx-auto mt-1 opacity-40 ${text}`} />
+                    </div>
+                  ))}
+                </div>
+                {/* Asset list */}
+                {[...underRepair, ...damaged, ...lost].slice(0, 8).map((a) => (
+                  <div key={a.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors">
+                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                      a.status === "Under Repair" ? "bg-yellow-400"
+                      : a.status === "Damaged"    ? "bg-red-500"
+                      : "bg-rose-600"
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">{a.name}</p>
+                      {a.conditionNotes && <p className="text-xs text-slate-400 truncate">{a.conditionNotes}</p>}
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5 shrink-0">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        a.status === "Under Repair" ? "bg-yellow-100 text-yellow-700"
+                        : a.status === "Damaged"    ? "bg-red-100 text-red-700"
+                        : "bg-rose-100 text-rose-800"
+                      }`}>{a.status}</span>
+                      <span className="text-[10px] text-slate-400">{a.location}</span>
+                    </div>
+                  </div>
+                ))}
+                {total > 8 && (
+                  <p className="px-5 py-3 text-xs text-slate-400 text-center">+{total - 8} more — view in Asset Ledger</p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       case "kpi-strip":
         return (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

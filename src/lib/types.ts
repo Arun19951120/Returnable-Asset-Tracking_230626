@@ -25,7 +25,7 @@ export interface Asset {
   id: string;
   name: string;
   uuid: string;
-  status: "Available" | "Dispatched" | "In-Transit" | "Maintenance" | "Retired";
+  status: "Available" | "Dispatched" | "In-Transit" | "Maintenance" | "Retired" | "Under Repair" | "Damaged" | "Lost";
   location: string;
   healthScore: number;
   lastUpdated: string;
@@ -40,6 +40,8 @@ export interface Asset {
   retireCategory?: "Damaged" | "End of Life" | "Lost" | "Other";
   retireReason?: string;
   retiredAt?: string;
+  conditionNotes?: string;
+  conditionUpdatedAt?: string;
 }
 
 /** One full round-trip: Master WH → field locations → Master WH */

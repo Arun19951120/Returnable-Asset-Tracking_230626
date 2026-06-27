@@ -30,9 +30,14 @@ function HealthBar({ score }: { score: number }) {
 
 function StatusBadge({ status }: { status: Asset["status"] }) {
   const s: Record<Asset["status"], string> = {
-    Available: "bg-emerald-100 text-emerald-700", Dispatched: "bg-blue-100 text-blue-700",
-    "In-Transit": "bg-amber-100 text-amber-700", Maintenance: "bg-red-100 text-red-700",
-    Retired: "bg-slate-200 text-slate-500",
+    Available:      "bg-emerald-100 text-emerald-700",
+    Dispatched:     "bg-blue-100 text-blue-700",
+    "In-Transit":   "bg-amber-100 text-amber-700",
+    Maintenance:    "bg-orange-100 text-orange-700",
+    Retired:        "bg-slate-200 text-slate-500",
+    "Under Repair": "bg-yellow-100 text-yellow-700",
+    Damaged:        "bg-red-100 text-red-700",
+    Lost:           "bg-rose-100 text-rose-800",
   };
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${s[status]}`}>{status}</span>;
 }
@@ -118,6 +123,10 @@ export default function AssetLedger() {
   const [retireAsset, setRetireAsset] = useState<Asset | null>(null);
   const [retireCategory, setRetireCategory] = useState<"Damaged"|"End of Life"|"Lost"|"Other">("Damaged");
   const [retireReason, setRetireReason] = useState("");
+  const [markAsset, setMarkAsset] = useState<Asset | null>(null);
+  const [markStatus, setMarkStatus] = useState<"Under Repair" | "Damaged" | "Lost">("Under Repair");
+  const [markNotes, setMarkNotes] = useState("");
+  const [markSaving, setMarkSaving] = useState(false);
   const [retireSaving, setRetireSaving] = useState(false);
   const [showBulkTx, setShowBulkTx] = useState(false);
   // QR modal
@@ -326,6 +335,31 @@ export default function AssetLedger() {
 
   const uniqueLocations = [...new Set(assets.map((a) => a.location).filter(Boolean))].sort();
 
+  async function handleMarkCondition() {
+    if (!markAsset) return;
+    setMarkSaving(true);
+    try {
+      await updateDocument("assets", markAsset.id, {
+        status: markStatus,
+        conditionNotes: markNotes,
+        conditionUpdatedAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+      });
+      await logAudit({
+        userId: profile?.uid ?? "",
+        userEmail: profile?.email ?? "",
+        action: `Asset marked as ${markStatus}: ${markAsset.name}`,
+        category: "Asset",
+        details: markNotes || markAsset.id,
+      });
+      setMarkAsset(null);
+      setMarkNotes("");
+      load();
+    } finally {
+      setMarkSaving(false);
+    }
+  }
+
   async function handleRetire() {
     if (!retireAsset) return;
     setRetireSaving(true);
@@ -490,6 +524,24 @@ export default function AssetLedger() {
                                 {label}
                               </button>
                             ))}
+                            {!["Retired","Lost"].includes(asset.status) && (
+                              <>
+                                <div className="my-1 border-t border-slate-100" />
+                                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Mark Condition</p>
+                                {([
+                                  { s: "Under Repair" as const, label: "Under Repair", color: "text-yellow-600", bg: "hover:bg-yellow-50" },
+                                  { s: "Damaged"      as const, label: "Damaged",      color: "text-red-600",    bg: "hover:bg-red-50" },
+                                  { s: "Lost"         as const, label: "Lost",          color: "text-rose-700",   bg: "hover:bg-rose-50" },
+                                ]).map(({ s, label, color, bg }) => (
+                                  <button key={s}
+                                    onClick={() => { setMenuOpenId(null); setMarkStatus(s); setMarkNotes(""); setMarkAsset(asset); }}
+                                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-sm font-medium text-slate-700 ${bg} transition-colors`}>
+                                    <span className={`h-2.5 w-2.5 rounded-full ${s === "Under Repair" ? "bg-yellow-400" : s === "Damaged" ? "bg-red-500" : "bg-rose-600"}`} />
+                                    <span className={color}>{label}</span>
+                                  </button>
+                                ))}
+                              </>
+                            )}
                             {asset.status !== "Retired" && (
                               <>
                                 <div className="my-1 border-t border-slate-100" />
@@ -1098,6 +1150,75 @@ export default function AssetLedger() {
                 <button onClick={handleRetire} disabled={retireSaving}
                   className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
                   {retireSaving ? "Retiring…" : "Confirm Retire"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Mark As Condition Dialog ── */}
+      {markAsset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setMarkAsset(null)}>
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
+            <div className={`flex items-center justify-between px-5 py-4 text-white ${markStatus === "Under Repair" ? "bg-yellow-500" : markStatus === "Damaged" ? "bg-red-600" : "bg-rose-700"}`}>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Mark Asset Condition</p>
+                <span className="font-semibold text-base">Mark as {markStatus}</span>
+              </div>
+              <button onClick={() => setMarkAsset(null)} className="text-white/80 hover:text-white">✕</button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-slate-600">
+                Asset: <span className="font-semibold text-slate-800">{markAsset.name}</span>
+                <span className="ml-2 font-mono text-xs text-slate-400">({markAsset.uuid})</span>
+              </p>
+
+              {/* Status selector */}
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Condition</label>
+                <div className="flex gap-2">
+                  {(["Under Repair","Damaged","Lost"] as const).map((s) => (
+                    <button key={s} onClick={() => setMarkStatus(s)}
+                      className={`flex-1 rounded-lg border py-2 text-sm font-semibold transition-all ${
+                        markStatus === s
+                          ? s === "Under Repair" ? "border-yellow-400 bg-yellow-50 text-yellow-700"
+                            : s === "Damaged"    ? "border-red-400 bg-red-50 text-red-700"
+                            : "border-rose-500 bg-rose-50 text-rose-800"
+                          : "border-slate-200 text-slate-500 hover:border-slate-300"
+                      }`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-600">Notes / Reason <span className="font-normal text-slate-400">(optional)</span></label>
+                <textarea
+                  rows={3}
+                  value={markNotes}
+                  onChange={(e) => setMarkNotes(e.target.value)}
+                  placeholder={markStatus === "Under Repair" ? "e.g. Sent to workshop for welding repair" : markStatus === "Damaged" ? "e.g. Dropped during transit, dented frame" : "e.g. Not found after site audit on 2026-06-26"}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setMarkAsset(null)}
+                  className="flex-1 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                  Cancel
+                </button>
+                <button onClick={handleMarkCondition} disabled={markSaving}
+                  className={`flex-1 rounded-lg py-2 text-sm font-semibold text-white disabled:opacity-60 ${
+                    markStatus === "Under Repair" ? "bg-yellow-500 hover:bg-yellow-600"
+                    : markStatus === "Damaged"    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-rose-700 hover:bg-rose-800"
+                  }`}>
+                  {markSaving ? "Saving…" : `Mark as ${markStatus}`}
                 </button>
               </div>
             </div>
