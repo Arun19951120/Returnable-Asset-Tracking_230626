@@ -281,6 +281,7 @@ export const ALL_TABS = [
   { id: "customers",     label: "Customers" },
   { id: "projects",      label: "Projects" },
   { id: "gallery",       label: "Product Gallery" },
+  { id: "sustainability", label: "Sustainability" },
   { id: "locations",     label: "Locations" },
   { id: "hardware",      label: "Hardware Config" },
   { id: "forecasting",   label: "AI Forecasting" },
