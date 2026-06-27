@@ -260,7 +260,9 @@ export default function UserProfileDialog({ onClose }: Props) {
             {([
               { id: "profile" as Tab, label: "My Profile",       icon: User },
               { id: "assets"  as Tab, label: "Assets",           icon: Package },
-              { id: "users"   as Tab, label: "User Management",  icon: Users },
+              ...(me?.role === "Admin" || me?.role === "Manager"
+                ? [{ id: "users" as Tab, label: "User Management", icon: Users }]
+                : []),
             ]).map(({ id, label, icon: Icon }) => (
               <button key={id} onClick={() => setTab(id)}
                 className={`flex items-center justify-center gap-1.5 flex-1 py-2.5 text-xs font-semibold transition-colors ${
