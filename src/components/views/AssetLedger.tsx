@@ -8,8 +8,9 @@ import {
   Search, Plus, Download, QrCode, X, Loader2,
   Upload, FileSpreadsheet,
   Wifi, Trash2, MoreHorizontal, LogOut, LogIn, ArrowRightLeft, Archive,
-  ChevronDown, ChevronRight, Layers, List,
+  ChevronDown, ChevronRight, Layers, List, Columns3, Clock, RotateCcw,
 } from "lucide-react";
+import { AssetMovement } from "@/lib/types";
 import { KitItem } from "@/lib/types";
 import CheckInOutDialog from "@/components/dialogs/CheckInOutDialog";
 import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
@@ -135,8 +136,45 @@ export default function AssetLedger() {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   // Add asset modal
+  const [movements, setMovements] = useState<AssetMovement[]>([]);
   const [viewMode, setViewMode] = useState<"list" | "grouped">("grouped");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [showColumnPicker, setShowColumnPicker] = useState(false);
+
+  // All available columns — persisted to localStorage
+  const ALL_COLUMNS = [
+    { id: "uuid",        label: "UUID" },
+    { id: "project",     label: "Project" },
+    { id: "description", label: "Description" },
+    { id: "status",      label: "Status" },
+    { id: "location",    label: "Location" },
+    { id: "cycleDays",   label: "Cycle Days" },
+    { id: "cycleCount",  label: "Cycle Count" },
+    { id: "health",      label: "Health Score" },
+    { id: "tags",        label: "RFID / BLE Tags" },
+    { id: "updated",     label: "Last Updated" },
+  ] as const;
+  type ColId = typeof ALL_COLUMNS[number]["id"];
+
+  const DEFAULT_COLS: ColId[] = ["uuid", "project", "status", "location", "cycleDays", "cycleCount", "health", "tags", "updated"];
+
+  const [visibleCols, setVisibleCols] = useState<ColId[]>(() => {
+    try {
+      const saved = localStorage.getItem("asset_ledger_cols_v1");
+      if (saved) return JSON.parse(saved) as ColId[];
+    } catch {}
+    return DEFAULT_COLS;
+  });
+
+  function toggleCol(id: ColId) {
+    setVisibleCols((prev) => {
+      const next = prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id];
+      localStorage.setItem("asset_ledger_cols_v1", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function col(id: ColId) { return visibleCols.includes(id); }
 
   const [showAdd, setShowAdd] = useState(false);
   const [addMode, setAddMode] = useState<"single" | "bulk" | "csv">("single");
@@ -170,14 +208,16 @@ export default function AssetLedger() {
   const [csvSaving, setCsvSaving] = useState(false);
 
   const load = useCallback(async () => {
-    const [a, l, p] = await Promise.all([
+    const [a, l, p, m] = await Promise.all([
       fetchAll<Asset>("assets"),
       fetchAll<Location>("locations"),
       fetchAll<Project>("projects"),
+      fetchAll<AssetMovement>("movements"),
     ]);
     setAssets(a);
     setLocations(l);
     setProjects(p.filter((p) => p.status === "Active"));
+    setMovements(m);
   }, []);
 
   // Master warehouses — the only valid initial registration points
@@ -186,6 +226,23 @@ export default function AssetLedger() {
   useEffect(() => { load(); }, [load]);
 
   const pm = Object.fromEntries(projects.map((p) => [p.id, p.name]));
+
+  // Master warehouse names set for cycle-day calculation
+  const masterWhNames = new Set(locations.filter((l) => l.isMasterWarehouse).map((l) => l.name));
+
+  // cycleDaysMap: assetId → days since last dispatch from master warehouse (null if not dispatched)
+  const cycleDaysMap: Record<string, number | null> = {};
+  for (const asset of assets) {
+    const dispatches = movements
+      .filter((m) => m.assetId === asset.id && m.movementType === "Checkout" && masterWhNames.has(m.fromLocation))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (dispatches.length > 0) {
+      const days = Math.floor((Date.now() - new Date(dispatches[0].createdAt).getTime()) / 86_400_000);
+      cycleDaysMap[asset.id] = days;
+    } else {
+      cycleDaysMap[asset.id] = null;
+    }
+  }
 
   const filtered = filterByDays(assets, dayRange, "lastUpdated").filter((a) => {
     const s = search.toLowerCase();
@@ -454,6 +511,33 @@ export default function AssetLedger() {
           <p className="text-sm text-slate-500">{filtered.length} of {assets.length} assets</p>
         </div>
         <div className="flex gap-2">
+          {/* Column picker */}
+          <div className="relative">
+            <button onClick={() => setShowColumnPicker((v) => !v)}
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${showColumnPicker ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>
+              <Columns3 className="h-4 w-4" /> Columns
+            </button>
+            {showColumnPicker && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={() => setShowColumnPicker(false)} />
+                <div className="absolute right-0 top-full z-30 mt-1 w-52 rounded-xl border border-slate-200 bg-white shadow-xl p-2">
+                  <div className="flex items-center justify-between px-2 py-1.5 mb-1">
+                    <p className="text-xs font-bold text-slate-700">Show / Hide Columns</p>
+                    <button onClick={() => { setVisibleCols([...DEFAULT_COLS]); localStorage.setItem("asset_ledger_cols_v1", JSON.stringify(DEFAULT_COLS)); }}
+                      className="text-[10px] text-indigo-600 hover:underline font-semibold">Reset</button>
+                  </div>
+                  {ALL_COLUMNS.map(({ id, label }) => (
+                    <label key={id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-slate-50 cursor-pointer">
+                      <input type="checkbox" checked={visibleCols.includes(id)} onChange={() => toggleCol(id)}
+                        className="rounded border-slate-300 text-indigo-600" />
+                      <span className="text-sm text-slate-700">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
           {/* View mode toggle */}
           <div className="flex rounded-lg border border-slate-200 bg-white overflow-hidden">
             <button onClick={() => setViewMode("grouped")}
@@ -566,13 +650,43 @@ export default function AssetLedger() {
                     <p className="text-xs text-slate-500 truncate">{group.locations.join(", ")}</p>
                   </div>
 
-                  {/* Avg health */}
-                  <div className="shrink-0 flex items-center gap-2">
-                    <div className="h-1.5 w-14 rounded-full bg-slate-100">
-                      <div className={`h-1.5 rounded-full ${avgColor}`} style={{ width: `${group.avgHealth}%` }} />
+                  {/* Cycle days (max in group) */}
+                  {col("cycleDays") && (
+                    <div className="hidden md:flex shrink-0 flex-col items-end gap-0.5">
+                      {(() => {
+                        const days = group.assets.map((a) => cycleDaysMap[a.id]).filter((d): d is number => d !== null);
+                        if (!days.length) return <span className="text-xs text-slate-300">—</span>;
+                        const max = Math.max(...days);
+                        return (
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${max > 30 ? "bg-red-100 text-red-700" : max > 14 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                            <Clock className="h-3 w-3" />{max}d
+                          </span>
+                        );
+                      })()}
+                      <p className="text-[9px] text-slate-400">max cycle</p>
                     </div>
-                    <span className="font-mono text-xs text-slate-500 w-6">{group.avgHealth}</span>
-                  </div>
+                  )}
+
+                  {/* Cycle count (sum in group) */}
+                  {col("cycleCount") && (
+                    <div className="hidden md:flex shrink-0 flex-col items-end gap-0.5">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                        <RotateCcw className="h-3 w-3" />
+                        {group.assets.reduce((s, a) => s + (a.cycleCount ?? 0), 0)}
+                      </span>
+                      <p className="text-[9px] text-slate-400">total cycles</p>
+                    </div>
+                  )}
+
+                  {/* Avg health */}
+                  {col("health") && (
+                    <div className="shrink-0 flex items-center gap-2">
+                      <div className="h-1.5 w-14 rounded-full bg-slate-100">
+                        <div className={`h-1.5 rounded-full ${avgColor}`} style={{ width: `${group.avgHealth}%` }} />
+                      </div>
+                      <span className="font-mono text-xs text-slate-500 w-6">{group.avgHealth}</span>
+                    </div>
+                  )}
 
                   {/* Count badge */}
                   <div className="shrink-0">
@@ -599,28 +713,56 @@ export default function AssetLedger() {
                                   : [...new Set([...prev, ...allIds])]);
                               }} />
                           </th>
-                          {["UUID", "Status", "Location", "Health", "Tags", "Updated", ""].map((h) => (
-                            <th key={h} className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
-                          ))}
+                          {col("uuid")        && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">UUID</th>}
+                          {col("description") && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Description</th>}
+                          {col("status")      && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Status</th>}
+                          {col("location")    && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Location</th>}
+                          {col("cycleDays")   && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Cycle Days</th>}
+                          {col("cycleCount")  && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Cycles</th>}
+                          {col("health")      && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Health</th>}
+                          {col("tags")        && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Tags</th>}
+                          {col("updated")     && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Updated</th>}
+                          <th className="px-3 py-2.5" />
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        {group.assets.map((asset) => (
+                        {group.assets.map((asset) => {
+                          const cd = cycleDaysMap[asset.id];
+                          return (
                           <tr key={asset.id} className="hover:bg-indigo-50/30 transition-colors">
                             <td className="px-4 py-2.5">
                               <input type="checkbox" className="rounded" checked={selected.includes(asset.id)} onChange={() => toggleSelect(asset.id)} />
                             </td>
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{asset.uuid}</td>
-                            <td className="px-3 py-2.5"><StatusBadge status={asset.status} /></td>
-                            <td className="px-3 py-2.5 text-xs text-slate-600">{asset.location}</td>
-                            <td className="px-3 py-2.5"><HealthBar score={asset.healthScore} /></td>
-                            <td className="px-3 py-2.5">
-                              <div className="flex flex-col gap-0.5">
-                                {asset.rfidTag && <span className="font-mono text-[10px] text-slate-400">RFID:{asset.rfidTag}</span>}
-                                {asset.bleTag  && <span className="font-mono text-[10px] text-blue-400">BLE:{asset.bleTag}</span>}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{new Date(asset.lastUpdated).toLocaleDateString()}</td>
+                            {col("uuid")        && <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{asset.uuid}</td>}
+                            {col("description") && <td className="px-3 py-2.5 text-xs text-slate-500">{asset.description ?? "—"}</td>}
+                            {col("status")      && <td className="px-3 py-2.5"><StatusBadge status={asset.status} /></td>}
+                            {col("location")    && <td className="px-3 py-2.5 text-xs text-slate-600">{asset.location}</td>}
+                            {col("cycleDays")   && (
+                              <td className="px-3 py-2.5">
+                                {cd !== null
+                                  ? <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${cd > 30 ? "bg-red-100 text-red-700" : cd > 14 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                                      <Clock className="h-3 w-3" />{cd}d
+                                    </span>
+                                  : <span className="text-xs text-slate-300">—</span>}
+                              </td>
+                            )}
+                            {col("cycleCount")  && (
+                              <td className="px-3 py-2.5">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                                  <RotateCcw className="h-3 w-3" />{asset.cycleCount ?? 0}
+                                </span>
+                              </td>
+                            )}
+                            {col("health")      && <td className="px-3 py-2.5"><HealthBar score={asset.healthScore} /></td>}
+                            {col("tags")        && (
+                              <td className="px-3 py-2.5">
+                                <div className="flex flex-col gap-0.5">
+                                  {asset.rfidTag && <span className="font-mono text-[10px] text-slate-400">RFID:{asset.rfidTag}</span>}
+                                  {asset.bleTag  && <span className="font-mono text-[10px] text-blue-400">BLE:{asset.bleTag}</span>}
+                                </div>
+                              </td>
+                            )}
+                            {col("updated")     && <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{new Date(asset.lastUpdated).toLocaleDateString()}</td>}
                             <td className="px-3 py-2.5">
                               <div className="flex items-center gap-1">
                                 <button onClick={async () => { const url = await buildQRDataUrl(asset.uuid); setQrDataUrl(url); setQrAsset(asset); }}
@@ -661,7 +803,7 @@ export default function AssetLedger() {
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        ); })}
                       </tbody>
                     </table>
                   </div>
@@ -682,37 +824,69 @@ export default function AssetLedger() {
                   checked={selected.length === filtered.length && filtered.length > 0}
                   onChange={() => setSelected(selected.length === filtered.length ? [] : filtered.map((a) => a.id))} />
               </th>
-              {["Asset Name", "UUID", "Project", "Status", "Location", "Health", "Tags", "Updated", ""].map((h) => (
-                <th key={h} className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{h}</th>
-              ))}
+              <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Asset Name</th>
+              {col("uuid")        && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">UUID</th>}
+              {col("project")     && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Project</th>}
+              {col("description") && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Description</th>}
+              {col("status")      && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>}
+              {col("location")    && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Location</th>}
+              {col("cycleDays")   && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Cycle Days</th>}
+              {col("cycleCount")  && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Cycles</th>}
+              {col("health")      && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Health</th>}
+              {col("tags")        && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Tags</th>}
+              {col("updated")     && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Updated</th>}
+              <th className="px-3 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {filtered.length === 0 && (
-              <tr><td colSpan={9} className="py-12 text-center text-slate-400">No assets match your filters</td></tr>
+              <tr><td colSpan={12} className="py-12 text-center text-slate-400">No assets match your filters</td></tr>
             )}
-            {filtered.map((asset) => (
+            {filtered.map((asset) => {
+              const cd = cycleDaysMap[asset.id];
+              return (
               <tr key={asset.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-3">
                   <input type="checkbox" className="rounded" checked={selected.includes(asset.id)} onChange={() => toggleSelect(asset.id)} />
                 </td>
                 <td className="px-3 py-3 font-medium text-slate-800 whitespace-nowrap">{asset.name}</td>
-                <td className="px-3 py-3 font-mono text-xs text-slate-400">{asset.uuid}</td>
-                <td className="px-3 py-3">
-                  {asset.projectId && pm[asset.projectId]
-                    ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 whitespace-nowrap">{pm[asset.projectId]}</span>
-                    : <span className="text-xs text-slate-300">—</span>}
-                </td>
-                <td className="px-3 py-3"><StatusBadge status={asset.status} /></td>
-                <td className="px-3 py-3 text-slate-600 text-xs whitespace-nowrap">{asset.location}</td>
-                <td className="px-3 py-3"><HealthBar score={asset.healthScore} /></td>
-                <td className="px-3 py-3">
-                  <div className="flex flex-col gap-0.5">
-                    {asset.rfidTag && <span className="font-mono text-[10px] text-slate-400">RFID:{asset.rfidTag}</span>}
-                    {asset.bleTag && <span className="font-mono text-[10px] text-blue-400">BLE:{asset.bleTag}</span>}
-                  </div>
-                </td>
-                <td className="px-3 py-3 text-xs text-slate-400 font-mono whitespace-nowrap">{new Date(asset.lastUpdated).toLocaleDateString()}</td>
+                {col("uuid")        && <td className="px-3 py-3 font-mono text-xs text-slate-400">{asset.uuid}</td>}
+                {col("project")     && (
+                  <td className="px-3 py-3">
+                    {asset.projectId && pm[asset.projectId]
+                      ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 whitespace-nowrap">{pm[asset.projectId]}</span>
+                      : <span className="text-xs text-slate-300">—</span>}
+                  </td>
+                )}
+                {col("description") && <td className="px-3 py-3 text-xs text-slate-500">{asset.description ?? "—"}</td>}
+                {col("status")      && <td className="px-3 py-3"><StatusBadge status={asset.status} /></td>}
+                {col("location")    && <td className="px-3 py-3 text-slate-600 text-xs whitespace-nowrap">{asset.location}</td>}
+                {col("cycleDays")   && (
+                  <td className="px-3 py-3">
+                    {cd !== null
+                      ? <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${cd > 30 ? "bg-red-100 text-red-700" : cd > 14 ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                          <Clock className="h-3 w-3" />{cd}d
+                        </span>
+                      : <span className="text-xs text-slate-300">—</span>}
+                  </td>
+                )}
+                {col("cycleCount")  && (
+                  <td className="px-3 py-3">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                      <RotateCcw className="h-3 w-3" />{asset.cycleCount ?? 0}
+                    </span>
+                  </td>
+                )}
+                {col("health")      && <td className="px-3 py-3"><HealthBar score={asset.healthScore} /></td>}
+                {col("tags")        && (
+                  <td className="px-3 py-3">
+                    <div className="flex flex-col gap-0.5">
+                      {asset.rfidTag && <span className="font-mono text-[10px] text-slate-400">RFID:{asset.rfidTag}</span>}
+                      {asset.bleTag && <span className="font-mono text-[10px] text-blue-400">BLE:{asset.bleTag}</span>}
+                    </div>
+                  </td>
+                )}
+                {col("updated")     && <td className="px-3 py-3 text-xs text-slate-400 font-mono whitespace-nowrap">{new Date(asset.lastUpdated).toLocaleDateString()}</td>}
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-1">
                     {/* QR button */}
@@ -792,7 +966,7 @@ export default function AssetLedger() {
                   </div>
                 </td>
               </tr>
-            ))}
+            ); })}
           </tbody>
         </table>
       </div>}
