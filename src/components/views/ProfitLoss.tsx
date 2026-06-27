@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   TrendingUp, TrendingDown, DollarSign, Plus, X, Loader2,
   ChevronDown, ChevronUp, BarChart2, Upload, FileText,
-  Download, AlertCircle, CheckCircle2, Table2,
+  Download, AlertCircle, CheckCircle2, Table2, Filter, Calendar, RefreshCw,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -80,7 +80,16 @@ export default function ProfitLoss() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProject, setSelectedProject] = useState<string>("all");
+
+  // ── Filters ──────────────────────────────────────────────────────────────────
+  const [selectedProject,  setSelectedProject]  = useState<string>("all");
+  const [selectedStatus,   setSelectedStatus]   = useState<"all" | "Active" | "Closed">("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [duration,         setDuration]         = useState<string>("all");
+  const [dateFrom,         setDateFrom]         = useState<string>("");
+  const [dateTo,           setDateTo]           = useState<string>("");
+  const [showFilters,      setShowFilters]       = useState(false);
+
   const [showForm, setShowForm] = useState(false);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -121,18 +130,57 @@ export default function ProfitLoss() {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── Date range helpers ────────────────────────────────────────────────────────
+  function getDateRange(): { from: Date | null; to: Date | null } {
+    const now = new Date();
+    if (duration === "custom") {
+      return {
+        from: dateFrom ? new Date(dateFrom) : null,
+        to:   dateTo   ? new Date(dateTo + "T23:59:59") : null,
+      };
+    }
+    const y = now.getFullYear(), m = now.getMonth();
+    if (duration === "this_month")  return { from: new Date(y, m, 1),      to: now };
+    if (duration === "last_month")  return { from: new Date(y, m - 1, 1),  to: new Date(y, m, 0, 23, 59, 59) };
+    if (duration === "q1")          return { from: new Date(y, 0, 1),      to: new Date(y, 2, 31, 23, 59, 59) };
+    if (duration === "q2")          return { from: new Date(y, 3, 1),      to: new Date(y, 5, 30, 23, 59, 59) };
+    if (duration === "q3")          return { from: new Date(y, 6, 1),      to: new Date(y, 8, 30, 23, 59, 59) };
+    if (duration === "q4")          return { from: new Date(y, 9, 1),      to: new Date(y, 11, 31, 23, 59, 59) };
+    if (duration === "last_3m")     return { from: new Date(y, m - 3, 1),  to: now };
+    if (duration === "last_6m")     return { from: new Date(y, m - 6, 1),  to: now };
+    if (duration === "this_year")   return { from: new Date(y, 0, 1),      to: now };
+    if (duration === "last_year")   return { from: new Date(y - 1, 0, 1),  to: new Date(y - 1, 11, 31, 23, 59, 59) };
+    return { from: null, to: null };
+  }
+
+  function inRange(dateStr: string, from: Date | null, to: Date | null) {
+    if (!from && !to) return true;
+    const d = new Date(dateStr);
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
+  }
+
   function calcPL(projectId: string) {
+    const { from, to } = getDateRange();
     const projectAssets = assets.filter((a) => a.projectId === projectId);
     const assetCost = projectAssets.reduce((s, a) => s + (a.cost ?? 0), 0);
-    const projectExpenses = expenses.filter((e) => e.projectId === projectId);
+
+    const projectExpenses = expenses.filter((e) => {
+      if (e.projectId !== projectId) return false;
+      if (selectedCategory !== "all" && e.category !== selectedCategory) return false;
+      if (!inRange(e.date, from, to)) return false;
+      return true;
+    });
     const totalExpenses = projectExpenses.reduce((s, e) => s + e.amount, 0) + assetCost;
 
-    // Revenue: dispatched orders for assets in this project
     const projectAssetIds = new Set(projectAssets.map((a) => a.id));
-    const projectOrders = orders.filter(
-      (o) => projectAssetIds.has(o.assetId) && (o.status === "Dispatched" || o.status === "Received")
-    );
-    // Estimate revenue from project's poPrice × completed order count
+    const projectOrders = orders.filter((o) => {
+      if (!projectAssetIds.has(o.assetId)) return false;
+      if (o.status !== "Dispatched" && o.status !== "Received") return false;
+      if (!inRange(o.updatedAt, from, to)) return false;
+      return true;
+    });
     const proj = projects.find((p) => p.id === projectId);
     const revenue = proj?.poPrice ? proj.poPrice * projectOrders.length : 0;
 
@@ -222,7 +270,28 @@ export default function ProfitLoss() {
     a.click();
   }
 
-  const filteredProjects = selectedProject === "all" ? projects : projects.filter((p) => p.id === selectedProject);
+  const filteredProjects = projects.filter((p) => {
+    if (selectedProject !== "all" && p.id !== selectedProject) return false;
+    if (selectedStatus   !== "all" && p.status !== selectedStatus) return false;
+    return true;
+  });
+
+  const activeFilterCount = [
+    duration !== "all",
+    selectedProject !== "all",
+    selectedStatus !== "all",
+    selectedCategory !== "all",
+    duration === "custom" && (dateFrom || dateTo),
+  ].filter(Boolean).length;
+
+  function resetFilters() {
+    setDuration("all");
+    setSelectedProject("all");
+    setSelectedStatus("all");
+    setSelectedCategory("all");
+    setDateFrom("");
+    setDateTo("");
+  }
 
   // Summary across all or selected projects
   const summary = filteredProjects.reduce(
@@ -254,20 +323,28 @@ export default function ProfitLoss() {
           <h1 className="text-xl font-bold text-slate-900">P&amp;L Analysis</h1>
           <p className="text-sm text-slate-500">Profit &amp; Loss per project — Admin only</p>
         </div>
-        <div className="flex gap-2">
-          <select
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all ${
+              showFilters || activeFilterCount > 0
+                ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
           >
-            <option value="all">All Projects</option>
-            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+            <Filter className="h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => { setShowImport(true); setImportTab("csv"); setCsvRows([]); setCsvError(""); setCsvDone(false); setDocDone(null); }}
             className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
           >
-            <Upload className="h-4 w-4" /> Import Old P&amp;L
+            <Upload className="h-4 w-4" /> Import
           </button>
           <button
             onClick={() => setShowForm(true)}
@@ -277,6 +354,126 @@ export default function ProfitLoss() {
           </button>
         </div>
       </div>
+
+      {/* ── Filter panel ─────────────────────────────────────────────────────── */}
+      {showFilters && (
+        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-indigo-500" />
+              <p className="text-sm font-semibold text-slate-800">Filter P&amp;L Data</p>
+            </div>
+            {activeFilterCount > 0 && (
+              <button onClick={resetFilters}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors">
+                <RefreshCw className="h-3 w-3" /> Clear all
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Duration */}
+            <div>
+              <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-600">
+                <Calendar className="h-3 w-3" /> Duration
+              </label>
+              <select value={duration} onChange={(e) => setDuration(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+                <option value="all">All Time</option>
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="last_3m">Last 3 Months</option>
+                <option value="last_6m">Last 6 Months</option>
+                <option value="this_year">This Year</option>
+                <option value="last_year">Last Year</option>
+                <option value="q1">Q1 (Jan–Mar)</option>
+                <option value="q2">Q2 (Apr–Jun)</option>
+                <option value="q3">Q3 (Jul–Sep)</option>
+                <option value="q4">Q4 (Oct–Dec)</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+
+            {/* Project */}
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">Project</label>
+              <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+                <option value="all">All Projects</option>
+                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+
+            {/* Expense Category */}
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">Expense Category</label>
+              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+                <option value="all">All Categories</option>
+                {EXPENSE_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+
+            {/* Project Status */}
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-600">Project Status</label>
+              <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value as "all" | "Active" | "Closed")}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+                <option value="all">Active &amp; Closed</option>
+                <option value="Active">Active only</option>
+                <option value="Closed">Closed only</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Custom date range */}
+          {duration === "custom" && (
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">From Date</label>
+                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">To Date</label>
+                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+              </div>
+            </div>
+          )}
+
+          {/* Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1 border-t border-indigo-100">
+              {duration !== "all" && (
+                <span className="flex items-center gap-1 rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
+                  <Calendar className="h-3 w-3" />
+                  {duration === "custom" ? `${dateFrom || "…"} → ${dateTo || "…"}` : duration.replace(/_/g, " ")}
+                  <button onClick={() => { setDuration("all"); setDateFrom(""); setDateTo(""); }} className="ml-1 hover:text-indigo-200"><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {selectedProject !== "all" && (
+                <span className="flex items-center gap-1 rounded-full bg-violet-600 px-3 py-1 text-xs font-semibold text-white">
+                  {projects.find((p) => p.id === selectedProject)?.name}
+                  <button onClick={() => setSelectedProject("all")} className="ml-1 hover:text-violet-200"><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {selectedCategory !== "all" && (
+                <span className="flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+                  {selectedCategory}
+                  <button onClick={() => setSelectedCategory("all")} className="ml-1 hover:text-emerald-200"><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {selectedStatus !== "all" && (
+                <span className="flex items-center gap-1 rounded-full bg-amber-600 px-3 py-1 text-xs font-semibold text-white">
+                  {selectedStatus}
+                  <button onClick={() => setSelectedStatus("all")} className="ml-1 hover:text-amber-200"><X className="h-3 w-3" /></button>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* KPI strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
