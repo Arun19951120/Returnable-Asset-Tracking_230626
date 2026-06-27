@@ -8,6 +8,7 @@ import {
   Search, Plus, Download, QrCode, X, Loader2,
   Upload, FileSpreadsheet,
   Wifi, Trash2, MoreHorizontal, LogOut, LogIn, ArrowRightLeft, Archive,
+  ChevronDown, ChevronRight, Layers, List,
 } from "lucide-react";
 import { KitItem } from "@/lib/types";
 import CheckInOutDialog from "@/components/dialogs/CheckInOutDialog";
@@ -134,6 +135,9 @@ export default function AssetLedger() {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   // Add asset modal
+  const [viewMode, setViewMode] = useState<"list" | "grouped">("grouped");
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
   const [showAdd, setShowAdd] = useState(false);
   const [addMode, setAddMode] = useState<"single" | "bulk" | "csv">("single");
   const [form, setForm] = useState({ ...EMPTY });
@@ -384,6 +388,63 @@ export default function AssetLedger() {
     }
   }
 
+  // ── Grouped view logic ────────────────────────────────────────────────────────
+  interface AssetGroup {
+    key: string;
+    name: string;
+    description: string;
+    projectId: string;
+    assets: Asset[];
+    statusCounts: Partial<Record<Asset["status"], number>>;
+    locations: string[];
+    avgHealth: number;
+  }
+
+  const groupedData: AssetGroup[] = Object.values(
+    filtered.reduce<Record<string, AssetGroup>>((acc, asset) => {
+      // Group key: name + projectId (same part in same project = one group)
+      const key = `${asset.name}__${asset.projectId ?? ""}`;
+      if (!acc[key]) {
+        acc[key] = {
+          key,
+          name: asset.name,
+          description: asset.description ?? "",
+          projectId: asset.projectId ?? "",
+          assets: [],
+          statusCounts: {},
+          locations: [],
+          avgHealth: 0,
+        };
+      }
+      acc[key].assets.push(asset);
+      acc[key].statusCounts[asset.status] = (acc[key].statusCounts[asset.status] ?? 0) + 1;
+      if (!acc[key].locations.includes(asset.location)) acc[key].locations.push(asset.location);
+      return acc;
+    }, {})
+  ).map((g) => ({
+    ...g,
+    avgHealth: Math.round(g.assets.reduce((s, a) => s + a.healthScore, 0) / g.assets.length),
+  }));
+
+  function toggleGroup(key: string) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  const STATUS_COLORS: Partial<Record<Asset["status"], string>> = {
+    Available:      "bg-emerald-100 text-emerald-700",
+    Dispatched:     "bg-blue-100 text-blue-700",
+    "In-Transit":   "bg-amber-100 text-amber-700",
+    Maintenance:    "bg-orange-100 text-orange-700",
+    Retired:        "bg-slate-200 text-slate-500",
+    "Under Repair": "bg-yellow-100 text-yellow-700",
+    Damaged:        "bg-red-100 text-red-700",
+    Lost:           "bg-rose-100 text-rose-800",
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -393,6 +454,19 @@ export default function AssetLedger() {
           <p className="text-sm text-slate-500">{filtered.length} of {assets.length} assets</p>
         </div>
         <div className="flex gap-2">
+          {/* View mode toggle */}
+          <div className="flex rounded-lg border border-slate-200 bg-white overflow-hidden">
+            <button onClick={() => setViewMode("grouped")}
+              title="Grouped view"
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${viewMode === "grouped" ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+              <Layers className="h-4 w-4" /> Grouped
+            </button>
+            <button onClick={() => setViewMode("list")}
+              title="List view"
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-50"}`}>
+              <List className="h-4 w-4" /> List
+            </button>
+          </div>
           <button onClick={() => exportCSV(filtered, projects)}
             className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
             <Download className="h-4 w-4" /> Export CSV
@@ -440,8 +514,166 @@ export default function AssetLedger() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      {/* ── Grouped view ── */}
+      {viewMode === "grouped" && (
+        <div className="space-y-3">
+          {groupedData.length === 0 && (
+            <div className="flex h-32 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm text-slate-400">
+              No assets match your filters
+            </div>
+          )}
+          {groupedData.map((group) => {
+            const expanded = expandedGroups.has(group.key);
+            const avgColor = group.avgHealth >= 80 ? "bg-emerald-500" : group.avgHealth >= 50 ? "bg-amber-400" : "bg-red-500";
+            return (
+              <div key={group.key} className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                {/* Group header row */}
+                <button
+                  onClick={() => toggleGroup(group.key)}
+                  className="flex w-full items-center gap-4 px-4 py-3.5 hover:bg-slate-50 transition-colors text-left"
+                >
+                  {/* Expand icon */}
+                  <div className="shrink-0 text-slate-400">
+                    {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </div>
+
+                  {/* Name + description */}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900 truncate">{group.name}</p>
+                    {group.description && (
+                      <p className="text-xs text-slate-400 truncate mt-0.5">{group.description}</p>
+                    )}
+                  </div>
+
+                  {/* Project */}
+                  <div className="hidden sm:block shrink-0 w-32">
+                    {group.projectId && pm[group.projectId]
+                      ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">{pm[group.projectId]}</span>
+                      : <span className="text-xs text-slate-300">—</span>}
+                  </div>
+
+                  {/* Status breakdown chips */}
+                  <div className="hidden md:flex flex-wrap gap-1 shrink-0 max-w-xs">
+                    {(Object.entries(group.statusCounts) as [Asset["status"], number][]).map(([st, cnt]) => (
+                      <span key={st} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_COLORS[st] ?? "bg-slate-100 text-slate-600"}`}>
+                        {cnt} {st}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Locations */}
+                  <div className="hidden lg:block shrink-0 max-w-[160px]">
+                    <p className="text-xs text-slate-500 truncate">{group.locations.join(", ")}</p>
+                  </div>
+
+                  {/* Avg health */}
+                  <div className="shrink-0 flex items-center gap-2">
+                    <div className="h-1.5 w-14 rounded-full bg-slate-100">
+                      <div className={`h-1.5 rounded-full ${avgColor}`} style={{ width: `${group.avgHealth}%` }} />
+                    </div>
+                    <span className="font-mono text-xs text-slate-500 w-6">{group.avgHealth}</span>
+                  </div>
+
+                  {/* Count badge */}
+                  <div className="shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                      {group.assets.length}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Expanded individual assets */}
+                {expanded && (
+                  <div className="border-t border-slate-100">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          <th className="px-4 py-2.5">
+                            <input type="checkbox" className="rounded"
+                              checked={group.assets.every((a) => selected.includes(a.id))}
+                              onChange={() => {
+                                const allIds = group.assets.map((a) => a.id);
+                                const allSelected = allIds.every((id) => selected.includes(id));
+                                setSelected((prev) => allSelected
+                                  ? prev.filter((id) => !allIds.includes(id))
+                                  : [...new Set([...prev, ...allIds])]);
+                              }} />
+                          </th>
+                          {["UUID", "Status", "Location", "Health", "Tags", "Updated", ""].map((h) => (
+                            <th key={h} className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {group.assets.map((asset) => (
+                          <tr key={asset.id} className="hover:bg-indigo-50/30 transition-colors">
+                            <td className="px-4 py-2.5">
+                              <input type="checkbox" className="rounded" checked={selected.includes(asset.id)} onChange={() => toggleSelect(asset.id)} />
+                            </td>
+                            <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{asset.uuid}</td>
+                            <td className="px-3 py-2.5"><StatusBadge status={asset.status} /></td>
+                            <td className="px-3 py-2.5 text-xs text-slate-600">{asset.location}</td>
+                            <td className="px-3 py-2.5"><HealthBar score={asset.healthScore} /></td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex flex-col gap-0.5">
+                                {asset.rfidTag && <span className="font-mono text-[10px] text-slate-400">RFID:{asset.rfidTag}</span>}
+                                {asset.bleTag  && <span className="font-mono text-[10px] text-blue-400">BLE:{asset.bleTag}</span>}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{new Date(asset.lastUpdated).toLocaleDateString()}</td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-1">
+                                <button onClick={async () => { const url = await buildQRDataUrl(asset.uuid); setQrDataUrl(url); setQrAsset(asset); }}
+                                  title="QR Code" className="rounded border border-slate-200 p-1.5 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                                  <QrCode className="h-3.5 w-3.5" />
+                                </button>
+                                <div className="relative">
+                                  <button onClick={() => setMenuOpenId(menuOpenId === asset.id ? null : asset.id)}
+                                    className="rounded border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-100 transition-colors">
+                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                  </button>
+                                  {menuOpenId === asset.id && (
+                                    <>
+                                      <div className="fixed inset-0 z-20" onClick={() => setMenuOpenId(null)} />
+                                      <div className="absolute right-0 top-full z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+                                        <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Actions</p>
+                                        <button onClick={() => { setCheckoutMode("checkout"); setCheckoutAsset(asset); setMenuOpenId(null); }}
+                                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><LogOut className="h-3.5 w-3.5 text-blue-500" /> Check Out</button>
+                                        <button onClick={() => { setCheckoutMode("checkin"); setCheckoutAsset(asset); setMenuOpenId(null); }}
+                                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><LogIn className="h-3.5 w-3.5 text-emerald-500" /> Check In</button>
+                                        <button onClick={() => { setCheckoutMode("transfer"); setCheckoutAsset(asset); setMenuOpenId(null); }}
+                                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><ArrowRightLeft className="h-3.5 w-3.5 text-violet-500" /> Transfer</button>
+                                        <div className="my-1 border-t border-slate-100" />
+                                        <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Mark Condition</p>
+                                        {(["Under Repair", "Damaged", "Lost"] as const).map((st) => (
+                                          <button key={st} onClick={() => { setMarkAsset(asset); setMarkStatus(st); setMenuOpenId(null); }}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                                            <span className={`h-2 w-2 rounded-full ${st === "Under Repair" ? "bg-yellow-400" : st === "Damaged" ? "bg-red-400" : "bg-rose-600"}`} /> {st}
+                                          </button>
+                                        ))}
+                                        <div className="my-1 border-t border-slate-100" />
+                                        <button onClick={() => { setRetireAsset(asset); setMenuOpenId(null); }}
+                                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"><Archive className="h-3.5 w-3.5" /> Retire Asset</button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── List view (original table) ── */}
+      {viewMode === "list" && <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
@@ -563,7 +795,7 @@ export default function AssetLedger() {
             ))}
           </tbody>
         </table>
-      </div>
+      </div>}
 
       {/* ── Add Asset Modal ─────────────────────────────────────────────────── */}
       {showAdd && (
