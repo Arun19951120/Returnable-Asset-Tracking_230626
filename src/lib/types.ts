@@ -261,7 +261,7 @@ export interface GalleryImage {
 export interface Expense {
   id: string;
   projectId: string;
-  category: "Purchase" | "Maintenance" | "Transport" | "Labour" | "Other";
+  category: "Purchase" | "Maintenance" | "Transport" | "Labour" | "Rent" | "Other";
   description: string;
   amount: number;
   date: string;

@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, Cell,
 } from "recharts";
 
-const EXPENSE_CATEGORIES: Expense["category"][] = ["Purchase", "Maintenance", "Transport", "Labour", "Other"];
+const EXPENSE_CATEGORIES: Expense["category"][] = ["Purchase", "Maintenance", "Transport", "Labour", "Rent", "Other"];
 
 function fmt(n: number) {
   return "₹" + n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
