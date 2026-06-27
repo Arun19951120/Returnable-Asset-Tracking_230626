@@ -6,7 +6,7 @@ import { GalleryImage } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { Upload, X, Loader2, Image as ImageIcon, Tag, Plus, Trash2 } from "lucide-react";
 
-const CATEGORIES = ["FLC", "PLS", "Thermoform Tray", "RSR", "Bins", "Corrugation Box", "Wooden Crate", "Pallet", "Foam Insert", "Custom Packaging", "Other"];
+const CATEGORIES = ["FLC", "PLS", "Thermoform Tray", "RSR", "Bins", "Wooden Crate", "Other"];
 const WATERMARK_TEXT = "AKN Design Tech";
 
 function applyWatermark(dataUrl: string): Promise<string> {
