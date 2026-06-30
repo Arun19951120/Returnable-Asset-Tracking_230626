@@ -170,7 +170,7 @@ export interface AuditLog {
   userId: string;
   userEmail: string;
   action: string;
-  category: "Asset" | "Order" | "User" | "Role" | "Pickup" | "Transfer" | "Report";
+  category: "Asset" | "Order" | "User" | "Role" | "Pickup" | "Transfer" | "Report" | "Project";
   details: string;
 }
 

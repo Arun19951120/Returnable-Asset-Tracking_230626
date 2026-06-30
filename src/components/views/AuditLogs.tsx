@@ -11,7 +11,7 @@ const CATEGORY_STYLES: Record<AuditLog["category"], string> = {
   Asset: "bg-blue-100 text-blue-700", Order: "bg-amber-100 text-amber-700",
   User: "bg-purple-100 text-purple-700", Role: "bg-slate-100 text-slate-600",
   Pickup: "bg-emerald-100 text-emerald-700", Transfer: "bg-orange-100 text-orange-700",
-  Report: "bg-pink-100 text-pink-700",
+  Report: "bg-pink-100 text-pink-700", Project: "bg-indigo-100 text-indigo-700",
 };
 
 function exportCSV(logs: AuditLog[]) {
