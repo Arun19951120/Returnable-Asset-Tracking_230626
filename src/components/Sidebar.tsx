@@ -9,66 +9,88 @@ import {
   Truck, Building2, MapPin, Brain, BarChart2, Bell, FileText,
   ShieldCheck, LogOut, Bluetooth, Wifi, Settings2,
   LogIn, RotateCcw, Settings, X, Images, TrendingUp, Leaf,
-  FolderKanban, DollarSign, ChevronDown,
+  FolderKanban, DollarSign, ChevronDown, LogOut as CheckOut,
+  Archive,
 } from "lucide-react";
 import UserProfileDialog from "@/components/dialogs/UserProfileDialog";
 
-const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  dashboard:      LayoutDashboard,
-  assets:         Package,
-  scanner:        Camera,
-  movements:      LogIn,
-  transfers:      ArrowRightLeft,
-  cycles:         RotateCcw,
-  orders:         ClipboardList,
-  pickups:        Truck,
-  customers:      Building2,
-  projects:       FolderKanban,
-  gallery:        Images,
-  sustainability: Leaf,
-  locations:      MapPin,
-  hardware:       Settings2,
-  forecasting:    Brain,
-  inventory:      BarChart2,
-  reports:        BarChart2,
-  pl:             DollarSign,
-  notifications:  Bell,
-  audit:          FileText,
-  admin:          ShieldCheck,
-};
+interface NavItem {
+  /** Display label */
+  label: string;
+  /** Icon component */
+  icon: React.ComponentType<{ className?: string }>;
+  /** The tab activated when this item is clicked */
+  tabId: string;
+  /** The permission key checked against allowedTabs (defaults to tabId) */
+  permId?: string;
+  /** Unique key for this nav entry (defaults to tabId) */
+  navKey?: string;
+}
 
-// Section groups — tabs are rendered in this order under their heading
-// Tabs not present in allowedTabs are automatically hidden
-const NAV_GROUPS = [
+interface NavGroup {
+  id: string;
+  label: string | null;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
     id: "main",
-    label: null, // no heading for top-level single items
-    tabs: ["dashboard"],
+    label: null,
+    items: [
+      { label: "Dashboard",   icon: LayoutDashboard, tabId: "dashboard" },
+    ],
   },
   {
     id: "assets",
     label: "MANAGE ASSETS",
-    tabs: ["assets", "scanner", "gallery"],
+    items: [
+      { label: "Inventory",       icon: Package,  tabId: "assets" },
+      { label: "Asset Scanner",   icon: Camera,   tabId: "scanner" },
+      { label: "Product Gallery", icon: Images,   tabId: "gallery" },
+    ],
   },
   {
     id: "transactions",
     label: "TRANSACTIONS",
-    tabs: ["movements", "transfers", "cycles", "orders", "pickups"],
+    items: [
+      { label: "Check Out",        icon: LogOut,          tabId: "movements",  permId: "movements",  navKey: "checkout" },
+      { label: "Check In",         icon: LogIn,           tabId: "movements",  permId: "movements",  navKey: "checkin" },
+      { label: "Transfer",         icon: ArrowRightLeft,  tabId: "transfers",  permId: "transfers" },
+      { label: "Cycle Report",     icon: RotateCcw,       tabId: "cycles" },
+      { label: "Orders",           icon: ClipboardList,   tabId: "orders" },
+      { label: "Pickup Requests",  icon: Truck,           tabId: "pickups" },
+    ],
   },
   {
     id: "projects",
     label: "PROJECTS & CUSTOMERS",
-    tabs: ["projects", "customers"],
+    items: [
+      { label: "Projects",   icon: FolderKanban, tabId: "projects" },
+      { label: "Customers",  icon: Building2,    tabId: "customers" },
+    ],
   },
   {
     id: "analytics",
     label: "REPORTS & ANALYTICS",
-    tabs: ["inventory", "reports", "pl", "sustainability", "forecasting"],
+    items: [
+      { label: "Inventory Charts", icon: BarChart2,   tabId: "inventory" },
+      { label: "Reports & KPI",    icon: BarChart2,   tabId: "reports" },
+      { label: "P&L Analysis",     icon: DollarSign,  tabId: "pl" },
+      { label: "Sustainability",   icon: Leaf,        tabId: "sustainability" },
+      { label: "AI Forecasting",   icon: Brain,       tabId: "forecasting" },
+    ],
   },
   {
     id: "admin",
     label: "ADMIN",
-    tabs: ["locations", "hardware", "notifications", "audit", "admin"],
+    items: [
+      { label: "Locations",       icon: MapPin,      tabId: "locations" },
+      { label: "Hardware Config", icon: Settings2,   tabId: "hardware" },
+      { label: "Notifications",   icon: Bell,        tabId: "notifications" },
+      { label: "Audit Logs",      icon: FileText,    tabId: "audit" },
+      { label: "Administration",  icon: ShieldCheck, tabId: "admin" },
+    ],
   },
 ];
 
@@ -86,7 +108,6 @@ export default function Sidebar({
   const [unreadCount, setUnreadCount] = useState(0);
   const [devices, setDevices] = useState<DeviceStatus>({ rfid: false, ble: false });
   const [showProfile, setShowProfile] = useState(false);
-  // Track which groups are collapsed (all expanded by default)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -106,12 +127,11 @@ export default function Sidebar({
     return () => clearInterval(id);
   }, []);
 
+  const allowedSet = new Set(allowedTabs);
+
   function toggleGroup(id: string) {
     setCollapsed((p) => ({ ...p, [id]: !p[id] }));
   }
-
-  // Build a flat set of allowed tab ids for quick lookup
-  const allowedSet = new Set(allowedTabs);
 
   return (
     <aside
@@ -128,7 +148,6 @@ export default function Sidebar({
           <p className="text-sm font-bold text-white truncate">RSPL Returnable</p>
           <p className="text-[10px] text-slate-500 font-mono">v3.1.0</p>
         </div>
-        {/* Device pills */}
         <div className="flex flex-col gap-0.5 shrink-0">
           <span className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${devices.rfid ? "bg-blue-500/20 text-blue-400" : "bg-white/5 text-slate-600"}`}>
             <Wifi className="h-2.5 w-2.5" /> RFID
@@ -145,15 +164,19 @@ export default function Sidebar({
       {/* ── Nav ── */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
         {NAV_GROUPS.map((group) => {
-          // Only render tabs this user can see
-          const visibleTabs = group.tabs.filter((id) => allowedSet.has(id));
-          if (visibleTabs.length === 0) return null;
+          // Filter to items this user has permission for
+          const visibleItems = group.items.filter((item) =>
+            allowedSet.has(item.permId ?? item.tabId)
+          );
+          // Deduplicate: for movements, only show checkout+checkin once each
+          // (both have permId "movements" so both show when movements is allowed)
+          if (visibleItems.length === 0) return null;
 
           const isCollapsed = !!collapsed[group.id];
+          const anyDeviceOn = devices.rfid || devices.ble;
 
           return (
             <div key={group.id}>
-              {/* Section heading (collapsible) */}
               {group.label && (
                 <button
                   onClick={() => toggleGroup(group.id)}
@@ -166,29 +189,17 @@ export default function Sidebar({
                 </button>
               )}
 
-              {/* Tab buttons */}
               {!isCollapsed && (
                 <div className="space-y-0.5">
-                  {visibleTabs.map((tabId) => {
-                    const Icon = ICONS[tabId] ?? LayoutDashboard;
-                    const active = activeTab === tabId;
-                    const anyDeviceOn = devices.rfid || devices.ble;
-
-                    // Find the label from ALL_TABS equivalent mapping
-                    const LABELS: Record<string, string> = {
-                      dashboard: "Dashboard", assets: "Asset Ledger", scanner: "Asset Scanner",
-                      movements: "Asset Movement", transfers: "Transfers", cycles: "Cycle Report",
-                      orders: "Orders", pickups: "Pickup Requests", customers: "Customers",
-                      projects: "Projects", gallery: "Product Gallery", sustainability: "Sustainability",
-                      locations: "Locations", hardware: "Hardware Config", forecasting: "AI Forecasting",
-                      inventory: "Inventory Charts", reports: "Reports & KPI", pl: "P&L Analysis",
-                      notifications: "Notifications", audit: "Audit Logs", admin: "Administration",
-                    };
+                  {visibleItems.map((item) => {
+                    const navKey = item.navKey ?? item.tabId;
+                    const Icon = item.icon;
+                    const active = activeTab === item.tabId;
 
                     return (
                       <button
-                        key={tabId}
-                        onClick={() => { onTabChange(tabId); onClose(); }}
+                        key={navKey}
+                        onClick={() => { onTabChange(item.tabId); onClose(); }}
                         className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                           active
                             ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/25"
@@ -197,21 +208,21 @@ export default function Sidebar({
                       >
                         <div className="relative shrink-0">
                           <Icon className="h-4 w-4" />
-                          {tabId === "scanner" && anyDeviceOn && (
+                          {item.tabId === "scanner" && anyDeviceOn && (
                             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 border border-[#0f1117] animate-pulse" />
                           )}
-                          {tabId === "hardware" && anyDeviceOn && (
+                          {item.tabId === "hardware" && anyDeviceOn && (
                             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-400 border border-[#0f1117]" />
                           )}
                         </div>
-                        <span className="flex-1 text-left">{LABELS[tabId] ?? tabId}</span>
-                        {tabId === "scanner" && (
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {item.tabId === "scanner" && (
                           <div className="flex items-center gap-0.5">
                             <Wifi className={`h-3 w-3 ${devices.rfid ? "text-blue-400" : "text-slate-700"}`} />
                             <Bluetooth className={`h-3 w-3 ${devices.ble ? "text-violet-400" : "text-slate-700"}`} />
                           </div>
                         )}
-                        {tabId === "notifications" && unreadCount > 0 && (
+                        {item.tabId === "notifications" && unreadCount > 0 && (
                           <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${active ? "bg-white/20 text-white" : "bg-red-500 text-white"}`}>
                             {unreadCount}
                           </span>

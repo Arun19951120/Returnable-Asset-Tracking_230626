@@ -271,7 +271,7 @@ export interface Expense {
 
 export const ALL_TABS = [
   { id: "dashboard",     label: "Dashboard" },
-  { id: "assets",        label: "Asset Ledger" },
+  { id: "assets",        label: "Inventory" },
   { id: "scanner",       label: "Asset Scanner" },
   { id: "movements",     label: "Asset Movement" },
   { id: "transfers",     label: "Transfers" },

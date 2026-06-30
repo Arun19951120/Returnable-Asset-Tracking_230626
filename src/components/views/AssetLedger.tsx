@@ -507,7 +507,7 @@ export default function AssetLedger() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Asset Ledger</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Inventory</h1>
           <p className="text-sm text-slate-500">{filtered.length} of {assets.length} assets</p>
         </div>
         <div className="flex gap-2">
