@@ -218,7 +218,7 @@ async function addLocationToCycle(assetId: string, location: string, existingCyc
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-export default function AssetMovement() {
+export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" }) {
   const { profile } = useAuth();
   const isRestricted = RESTRICTED_ROLES.includes(profile?.role ?? "");
   const isManager    = MANAGER_ROLES.includes(profile?.role ?? "");
@@ -231,15 +231,17 @@ export default function AssetMovement() {
   const [cycles,    setCycles]    = useState<AssetCycle[]>([]);
 
   const [activeTab, setActiveTab] = useState<"movement"|"dc">("movement");
+  const [defaultCheckoutLocation, setDefaultCheckoutLocation] = useState<string>("");
 
   const load = useCallback(async () => {
-    const [a, l, p, m, c, cy] = await Promise.all([
+    const [a, l, p, m, c, cy, cfg] = await Promise.all([
       fetchAll<Asset>("assets"),
       fetchAll<Location>("locations"),
       fetchAll<Project>("projects"),
       fetchAll<AssetMovement>("movements"),
       fetchAll<DCCancellation>("dc_cancellations"),
       fetchAll<AssetCycle>("asset_cycles"),
+      fetch("/api/hardware-config").then((r) => r.ok ? r.json() : {}),
     ]);
     setAssets(a);
     setLocations(l.filter((x) => x.status === "Active"));
@@ -247,6 +249,7 @@ export default function AssetMovement() {
     setMovements(m);
     setCancels(c);
     setCycles(cy);
+    setDefaultCheckoutLocation((cfg as { defaultCheckoutLocation?: string }).defaultCheckoutLocation ?? "");
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -295,6 +298,13 @@ export default function AssetMovement() {
           movements={movements} cycles={cycles}
           profile={profile} isRestricted={isRestricted} isManager={isManager}
           masterWH={masterWH} onDone={load}
+          initialLoc={
+            mode === "checkin"
+              ? (profile?.allowedLocations?.[0] ?? "")
+              : mode === "checkout"
+              ? defaultCheckoutLocation
+              : ""
+          }
         />
       )}
       {activeTab === "dc" && (
@@ -744,19 +754,20 @@ function BulkScanner({ scannedIds, availableAssets, onAdd, onRemove, placeholder
 // ─────────────────────────────────────────────────────────────────────────────
 type QueuedAsset = { assetId: string; mode: "receive" | "dispatch" };
 
-function SmartMovementPanel({ assets, locations, projects, movements, cycles, profile, isRestricted, isManager, masterWH, onDone }: {
+function SmartMovementPanel({ assets, locations, projects, movements, cycles, profile, isRestricted, isManager, masterWH, onDone, initialLoc }: {
   assets: Asset[]; locations: Location[]; projects: Project[];
   movements: AssetMovement[]; cycles: AssetCycle[];
   profile: ReturnType<typeof useAuth>["profile"];
   isRestricted: boolean; isManager: boolean; masterWH: Location | undefined; onDone: () => void;
+  initialLoc?: string;
 }) {
   const accessibleLocs = isRestricted && profile?.allowedLocations?.length
     ? locations.filter((l) => profile.allowedLocations!.includes(l.name))
     : locations;
 
   const [myLoc,         setMyLoc]         = useState("");
-  const [queue,         setQueue]         = useState<QueuedAsset[]>([]);   // assets staged for approval
-  const [dispatchTo,    setDispatchTo]    = useState("");                   // destination for dispatch queue
+  const [queue,         setQueue]         = useState<QueuedAsset[]>([]);
+  const [dispatchTo,    setDispatchTo]    = useState("");
   const [approving,     setApproving]     = useState(false);
   const [showConfirm,   setShowConfirm]   = useState(false);
   const [showBulkDC,    setShowBulkDC]    = useState(false);
@@ -764,10 +775,17 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
   const sigRef = useRef<HTMLInputElement>(null);
   const [sigImg, setSigImg] = useState<string | undefined>();
 
-  // Auto-default location
+  // Auto-default location: prefer initialLoc (from mode), then first accessible
   useEffect(() => {
-    if (!myLoc && accessibleLocs.length > 0) setMyLoc(accessibleLocs[0].name);
-  }, [myLoc, accessibleLocs]);
+    if (!myLoc) {
+      if (initialLoc && accessibleLocs.some((l) => l.name === initialLoc)) {
+        setMyLoc(initialLoc);
+      } else if (accessibleLocs.length > 0) {
+        setMyLoc(accessibleLocs[0].name);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessibleLocs]);
 
   // In-transit arrivals to myLoc
   const incomingMovs = movements.filter((m) => m.status === "In-Transit" && m.toLocation === myLoc);

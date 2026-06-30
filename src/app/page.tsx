@@ -57,6 +57,7 @@ const VIEWS: Record<string, React.ComponentType> = {
 export default function App() {
   const { user, loading, allowedTabs } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeNavKey, setActiveNavKey] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) {
@@ -71,35 +72,49 @@ export default function App() {
 
   const isCustomer = user?.role === "Customer";
   const resolvedTab = allowedTabs.includes(activeTab) ? activeTab : allowedTabs[0] ?? "dashboard";
+
+  // Derive movement mode from nav key for pre-filling locations
+  const movementMode: "checkout" | "checkin" | undefined =
+    activeNavKey === "checkout" ? "checkout" :
+    activeNavKey === "checkin"  ? "checkin"  : undefined;
+
+  // Render the right component — movements gets a mode prop
   const ActiveView = (resolvedTab === "dashboard" && isCustomer)
     ? CustomerPortal
     : (VIEWS[resolvedTab] ?? Dashboard);
 
+  const navLabels: Record<string, string> = {
+    checkout: "Check Out", checkin: "Check In",
+  };
+  const pageTitle = activeNavKey && navLabels[activeNavKey]
+    ? navLabels[activeNavKey]
+    : (ALL_TABS.find(t => t.id === resolvedTab)?.label ?? "Dashboard");
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <Sidebar
         activeTab={resolvedTab}
-        onTabChange={(tab) => { setActiveTab(tab); setSidebarOpen(false); }}
+        activeNavKey={activeNavKey}
+        onTabChange={(tab, navKey) => { setActiveTab(tab); setActiveNavKey(navKey ?? null); setSidebarOpen(false); }}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <TopBar
-          onNotificationsClick={() => setActiveTab("notifications")}
+          onNotificationsClick={() => { setActiveTab("notifications"); setActiveNavKey(null); }}
           onMenuClick={() => setSidebarOpen(true)}
-          pageTitle={ALL_TABS.find(t => t.id === resolvedTab)?.label ?? "Dashboard"}
+          pageTitle={pageTitle}
         />
         <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
-          <ActiveView />
+          {resolvedTab === "movements"
+            ? <AssetMovement mode={movementMode} />
+            : <ActiveView />
+          }
         </main>
       </div>
     </div>

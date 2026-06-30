@@ -4,8 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Bluetooth, Wifi, ScanLine, QrCode,
   CheckCircle, XCircle, Loader2, RefreshCw, Save,
-  Settings, Zap, AlertTriangle, ChevronDown, ChevronUp,
+  Settings, Zap, AlertTriangle, ChevronDown, ChevronUp, MapPin,
 } from "lucide-react";
+import { fetchAll } from "@/lib/storage";
+import { Location } from "@/lib/types";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -28,6 +30,7 @@ interface QRConfig {
   moduleSize: number; printDPI: number; connected: boolean;
 }
 interface HardwareConfigData {
+  defaultCheckoutLocation?: string;
   rfid: RFIDConfig; ble: BLEConfig; barcode: BarcodeConfig; qr: QRConfig;
 }
 
@@ -89,12 +92,17 @@ export default function HardwareConfig() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [open, setOpen] = useState<Record<string, boolean>>({ rfid: true, ble: false, barcode: false, qr: false });
+  const [locations, setLocations] = useState<Location[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/hardware-config");
+      const [res, locs] = await Promise.all([
+        fetch("/api/hardware-config"),
+        fetchAll<Location>("locations"),
+      ]);
       setConfig(await res.json());
+      setLocations(locs.filter((l) => l.status === "Active"));
     } finally { setLoading(false); }
   }, []);
 
@@ -165,7 +173,7 @@ export default function HardwareConfig() {
         }
       }
 
-      setConfig((prev) => prev ? { ...prev, [device]: { ...prev[device], connected: ok } } : prev);
+      setConfig((prev) => prev ? { ...prev, [device]: { ...(prev[device] as object), connected: ok } } : prev);
       if (ok) toast.success(message);
       else     toast.error(message);
     } catch (err: unknown) {
@@ -175,11 +183,8 @@ export default function HardwareConfig() {
     }
   }
 
-  function patch<K extends keyof HardwareConfigData>(
-    device: K,
-    field: string,
-    value: unknown
-  ) {
+  type DeviceKey = "rfid" | "ble" | "barcode" | "qr";
+  function patch(device: DeviceKey, field: string, value: unknown) {
     setConfig((prev) => prev ? { ...prev, [device]: { ...prev[device], [field]: value } } : prev);
   }
 
@@ -220,6 +225,35 @@ export default function HardwareConfig() {
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save All
         </button>
+      </div>
+
+      {/* ── Movement Defaults ── */}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
+            <MapPin className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <p className="font-semibold text-slate-900 text-sm">Movement Defaults</p>
+            <p className="text-xs text-slate-500">Pre-fill locations when users open Check Out from the sidebar</p>
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Default Check Out Location</label>
+          <select
+            value={config.defaultCheckoutLocation ?? ""}
+            onChange={(e) => setConfig((p) => p ? { ...p, defaultCheckoutLocation: e.target.value } : p)}
+            className={select}
+          >
+            <option value="">— None (user selects manually) —</option>
+            {locations.map((l) => (
+              <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " (Master WH)" : ""}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-[10px] text-slate-400">
+            When a user clicks "Check Out" in the sidebar, their "My Location" field will pre-fill with this value.
+          </p>
+        </div>
       </div>
 
       {/* Status overview */}

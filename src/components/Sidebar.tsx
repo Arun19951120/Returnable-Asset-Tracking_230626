@@ -97,10 +97,11 @@ const NAV_GROUPS: NavGroup[] = [
 interface DeviceStatus { rfid: boolean; ble: boolean }
 
 export default function Sidebar({
-  activeTab, onTabChange, isOpen, onClose,
+  activeTab, activeNavKey, onTabChange, isOpen, onClose,
 }: {
   activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeNavKey: string | null;
+  onTabChange: (tab: string, navKey?: string) => void;
   isOpen: boolean;
   onClose: () => void;
 }) {
@@ -194,12 +195,18 @@ export default function Sidebar({
                   {visibleItems.map((item) => {
                     const navKey = item.navKey ?? item.tabId;
                     const Icon = item.icon;
-                    const active = activeTab === item.tabId;
+                    // If the item has a navKey, highlight only when that navKey is active.
+                    // Otherwise fall back to matching the tabId.
+                    const active = item.navKey
+                      ? activeNavKey === item.navKey
+                      : activeNavKey === null
+                        ? activeTab === item.tabId
+                        : false;
 
                     return (
                       <button
                         key={navKey}
-                        onClick={() => { onTabChange(item.tabId); onClose(); }}
+                        onClick={() => { onTabChange(item.tabId, item.navKey); onClose(); }}
                         className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                           active
                             ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/25"
