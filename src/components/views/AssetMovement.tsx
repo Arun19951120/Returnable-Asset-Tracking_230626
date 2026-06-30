@@ -231,7 +231,8 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
   const [cycles,    setCycles]    = useState<AssetCycle[]>([]);
 
   const [activeTab, setActiveTab] = useState<"movement"|"dc">("movement");
-  const [defaultCheckoutLocation, setDefaultCheckoutLocation] = useState<string>("");
+  const [defaultCheckoutLocation,  setDefaultCheckoutLocation]  = useState<string>("");
+  const [locationCheckInDefaults,  setLocationCheckInDefaults]  = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     const [a, l, p, m, c, cy, cfg] = await Promise.all([
@@ -249,7 +250,9 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
     setMovements(m);
     setCancels(c);
     setCycles(cy);
-    setDefaultCheckoutLocation((cfg as { defaultCheckoutLocation?: string }).defaultCheckoutLocation ?? "");
+    const cfgTyped = cfg as { defaultCheckoutLocation?: string; locationCheckInDefaults?: Record<string, string> };
+    setDefaultCheckoutLocation(cfgTyped.defaultCheckoutLocation ?? "");
+    setLocationCheckInDefaults(cfgTyped.locationCheckInDefaults ?? {});
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -300,7 +303,10 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
           masterWH={masterWH} onDone={load}
           initialLoc={
             mode === "checkin"
-              ? (profile?.allowedLocations?.[0] ?? "")
+              ? (() => {
+                  const custLoc = profile?.allowedLocations?.[0] ?? "";
+                  return locationCheckInDefaults[custLoc] || custLoc;
+                })()
               : mode === "checkout"
               ? defaultCheckoutLocation
               : ""

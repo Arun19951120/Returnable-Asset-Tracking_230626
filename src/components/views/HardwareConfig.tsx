@@ -31,6 +31,7 @@ interface QRConfig {
 }
 interface HardwareConfigData {
   defaultCheckoutLocation?: string;
+  locationCheckInDefaults?: Record<string, string>;
   rfid: RFIDConfig; ble: BLEConfig; barcode: BarcodeConfig; qr: QRConfig;
 }
 
