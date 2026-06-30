@@ -430,6 +430,60 @@ export default function CustomerPortal() {
         />
       )}
 
+      {/* ── Summary stat cards ── */}
+      {(() => {
+        const checkedIn   = myAssets.filter((a) => a.status === "Available").length;
+        const dispatched  = myAssets.filter((a) => a.status === "Dispatched").length;
+        const inTransit   = myAssets.filter((a) => a.status === "In-Transit").length;
+        const total       = myAssets.length;
+        const stats = [
+          {
+            label: "Checked In",
+            value: checkedIn,
+            sub: "fully inward",
+            bg: "bg-emerald-50", border: "border-emerald-200",
+            icon: LogIn, iconBg: "bg-emerald-500", text: "text-emerald-700",
+          },
+          {
+            label: "Dispatched",
+            value: dispatched,
+            sub: "out with customer",
+            bg: "bg-amber-50", border: "border-amber-200",
+            icon: LogOut, iconBg: "bg-amber-500", text: "text-amber-700",
+          },
+          {
+            label: "In Transit",
+            value: inTransit,
+            sub: "en route",
+            bg: "bg-blue-50", border: "border-blue-200",
+            icon: Truck, iconBg: "bg-blue-500", text: "text-blue-700",
+          },
+          {
+            label: "Total Assets",
+            value: total,
+            sub: "at my location",
+            bg: "bg-slate-50", border: "border-slate-200",
+            icon: Package, iconBg: "bg-slate-500", text: "text-slate-700",
+          },
+        ];
+        return (
+          <div className="grid grid-cols-2 gap-3">
+            {stats.map(({ label, value, sub, bg, border, icon: Icon, iconBg, text }) => (
+              <div key={label} className={`rounded-2xl border ${border} ${bg} p-4 flex items-center gap-3`}>
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg} shadow-sm`}>
+                  <Icon className="h-5 w-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className={`text-2xl font-extrabold ${text}`}>{value}</p>
+                  <p className="text-xs font-semibold text-slate-700 leading-tight">{label}</p>
+                  <p className="text-[10px] text-slate-400">{sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Pie chart card */}
       <div className="card-bento p-6">
         <h2 className="text-sm font-semibold text-slate-700 mb-4">Assets by Status</h2>
