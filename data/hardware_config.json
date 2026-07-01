@@ -1,6 +1,11 @@
 {
   "defaultCheckoutLocation": "",
-  "locationCheckInDefaults": {},
+  "locationCheckInAllowed": {},
+  "locationCheckOutAllowed": {},
+  "locationCheckInDefaults": {
+    "Tier 1": "Tier 1",
+    "OEM": "OEM"
+  },
   "rfid": {
     "enabled": true,
     "readerType": "Fixed Gate",
