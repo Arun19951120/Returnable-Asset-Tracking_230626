@@ -777,41 +777,122 @@ function ProjectsTab() {
   );
 }
 
+// ─── Multi-select location picker ────────────────────────────────────────────
+function LocationMultiSelect({
+  allLocations, selected, onChange, placeholder,
+}: {
+  allLocations: Location[];
+  selected: string[];
+  onChange: (v: string[]) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  function toggle(name: string) {
+    onChange(selected.includes(name) ? selected.filter((s) => s !== name) : [...selected, name]);
+  }
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="min-w-[220px] flex flex-wrap items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-left text-sm outline-none focus:border-indigo-500 hover:border-slate-400 transition-colors"
+      >
+        {selected.length === 0 ? (
+          <span className="text-slate-400 text-xs">{placeholder ?? "Select locations…"}</span>
+        ) : (
+          selected.map((s) => (
+            <span key={s} className="inline-flex items-center gap-0.5 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+              {s}
+              <button type="button" onClick={(e) => { e.stopPropagation(); toggle(s); }} className="ml-0.5 text-indigo-400 hover:text-indigo-700">×</button>
+            </span>
+          ))
+        )}
+        <span className="ml-auto pl-1 text-slate-400">▾</span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-40 mt-1 w-64 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+            <div className="max-h-52 overflow-y-auto divide-y divide-slate-50">
+              {allLocations.map((l) => (
+                <label key={l.id} className="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-slate-50 transition-colors">
+                  <input type="checkbox" checked={selected.includes(l.name)} onChange={() => toggle(l.name)}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+                  <span className="text-sm text-slate-700">{l.name}</span>
+                  {l.isMasterWarehouse && <span className="ml-auto text-[10px] text-indigo-500 font-semibold">MWH</span>}
+                </label>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Movement Defaults ───────────────────────────────────────────────────────
 function MovementDefaultsTab() {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [defaults, setDefaults]   = useState<Record<string, string>>({});
-  const [loading, setLoading]     = useState(true);
-  const [saving,  setSaving]      = useState(false);
+  const [locations,  setLocations]  = useState<Location[]>([]);
+  const [projects,   setProjects]   = useState<Project[]>([]);
+  // Check-In: per customer-location → allowed check-in destination locations
+  const [checkInAllowed, setCheckInAllowed] = useState<Record<string, string[]>>({});
+  // Check-In: per customer-location → single default destination (pre-fill)
+  const [checkInDefaults, setCheckInDefaults] = useState<Record<string, string>>({});
+  const [loading,    setLoading]    = useState(true);
+  const [savingCI,   setSavingCI]   = useState(false);
+  const [savingCO,   setSavingCO]   = useState(false);
+  // per-project checkout location edits
+  const [projLocs, setProjLocs]     = useState<Record<string, string[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [locs, res] = await Promise.all([
+      const [locs, projs, res] = await Promise.all([
         fetchAll<Location>("locations"),
+        fetchAll<Project>("projects"),
         fetch("/api/hardware-config"),
       ]);
       const cfg = await res.json();
-      setLocations(locs.filter((l) => l.status === "Active"));
-      setDefaults(cfg.locationCheckInDefaults ?? {});
+      const activeLocs = locs.filter((l) => l.status === "Active");
+      const activeProjs = projs.filter((p) => p.status === "Active");
+      setLocations(activeLocs);
+      setProjects(activeProjs);
+      setCheckInAllowed(cfg.locationCheckInAllowed ?? {});
+      setCheckInDefaults(cfg.locationCheckInDefaults ?? {});
+      const pl: Record<string, string[]> = {};
+      activeProjs.forEach((p) => { pl[p.id] = p.allowedLocations ?? []; });
+      setProjLocs(pl);
     } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  async function save() {
-    setSaving(true);
+  async function saveCheckIn() {
+    setSavingCI(true);
     try {
-      const res  = await fetch("/api/hardware-config");
-      const cfg  = await res.json();
+      const res = await fetch("/api/hardware-config");
+      const cfg = await res.json();
       await fetch("/api/hardware-config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...cfg, locationCheckInDefaults: defaults }),
+        body: JSON.stringify({ ...cfg, locationCheckInAllowed: checkInAllowed, locationCheckInDefaults: checkInDefaults }),
       });
-      toast.success("Movement defaults saved");
+      toast.success("Check-In defaults saved");
     } catch { toast.error("Failed to save"); }
-    finally { setSaving(false); }
+    finally { setSavingCI(false); }
+  }
+
+  async function saveCheckOut() {
+    setSavingCO(true);
+    try {
+      await Promise.all(
+        projects.map((p) =>
+          updateDocument("projects", p.id, { allowedLocations: projLocs[p.id] ?? [] })
+        )
+      );
+      toast.success("Check-Out defaults saved");
+    } catch { toast.error("Failed to save"); }
+    finally { setSavingCO(false); }
   }
 
   if (loading) return (
@@ -821,21 +902,23 @@ function MovementDefaultsTab() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+
+      {/* ── Check-In Defaults ── */}
       <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-emerald-50">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600">
               <MapPin className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="font-semibold text-slate-900 text-sm">Default Check-In Location per Customer Location</p>
-              <p className="text-xs text-slate-500">When a customer at a given location performs a Check-In, their destination pre-fills with the value you set here.</p>
+              <p className="font-semibold text-slate-900 text-sm">Check-In Location Access</p>
+              <p className="text-xs text-slate-500">For each customer location, choose which destinations are available during Check-In and which pre-fills as the default.</p>
             </div>
           </div>
-          <button onClick={save} disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <button onClick={saveCheckIn} disabled={savingCI}
+            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors">
+            {savingCI ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save
           </button>
         </div>
@@ -847,32 +930,96 @@ function MovementDefaultsTab() {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                 <th className="px-5 py-3 text-left">Customer Location</th>
-                <th className="px-5 py-3 text-left">Default Check-In Destination</th>
+                <th className="px-5 py-3 text-left">Allowed Check-In Destinations</th>
+                <th className="px-5 py-3 text-left">Default Pre-fill</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {locations.map((loc) => (
-                <tr key={loc.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                      <span className="font-medium text-slate-800">{loc.name}</span>
-                      {loc.isMasterWarehouse && (
-                        <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">Master WH</span>
-                      )}
-                    </div>
+              {locations.map((loc) => {
+                const allowed = checkInAllowed[loc.name] ?? [];
+                const allowedLocs = locations.filter((l) => allowed.includes(l.name));
+                return (
+                  <tr key={loc.id} className="hover:bg-slate-50 transition-colors align-top">
+                    <td className="px-5 py-3 pt-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <span className="font-medium text-slate-800">{loc.name}</span>
+                        {loc.isMasterWarehouse && (
+                          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">MWH</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <LocationMultiSelect
+                        allLocations={locations}
+                        selected={allowed}
+                        onChange={(v) => setCheckInAllowed((p) => ({ ...p, [loc.name]: v }))}
+                        placeholder="All locations (unrestricted)"
+                      />
+                    </td>
+                    <td className="px-5 py-3">
+                      <select
+                        value={checkInDefaults[loc.name] ?? ""}
+                        onChange={(e) => setCheckInDefaults((p) => ({ ...p, [loc.name]: e.target.value }))}
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                      >
+                        <option value="">— Same as customer location —</option>
+                        {(allowedLocs.length > 0 ? allowedLocs : locations).map((l) => (
+                          <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " (MWH)" : ""}</option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* ── Check-Out by Project ── */}
+      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-orange-50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500">
+              <MapPin className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-slate-900 text-sm">Check-Out Locations by Project</p>
+              <p className="text-xs text-slate-500">Choose which locations are available for Check-Out under each project. Customers assigned to a project will only see these locations.</p>
+            </div>
+          </div>
+          <button onClick={saveCheckOut} disabled={savingCO}
+            className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60 transition-colors">
+            {savingCO ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save
+          </button>
+        </div>
+
+        {projects.length === 0 ? (
+          <div className="py-12 text-center text-sm text-slate-400">No active projects found</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <th className="px-5 py-3 text-left">Project</th>
+                <th className="px-5 py-3 text-left">Allowed Check-Out Locations</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {projects.map((proj) => (
+                <tr key={proj.id} className="hover:bg-slate-50 transition-colors align-top">
+                  <td className="px-5 py-3 pt-4">
+                    <p className="font-medium text-slate-800">{proj.name}</p>
+                    <p className="text-[11px] text-slate-400">{proj.client}</p>
                   </td>
                   <td className="px-5 py-3">
-                    <select
-                      value={defaults[loc.name] ?? ""}
-                      onChange={(e) => setDefaults((p) => ({ ...p, [loc.name]: e.target.value }))}
-                      className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                    >
-                      <option value="">— Same as customer location —</option>
-                      {locations.map((l) => (
-                        <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " (Master WH)" : ""}</option>
-                      ))}
-                    </select>
+                    <LocationMultiSelect
+                      allLocations={locations}
+                      selected={projLocs[proj.id] ?? []}
+                      onChange={(v) => setProjLocs((p) => ({ ...p, [proj.id]: v }))}
+                      placeholder="All locations (unrestricted)"
+                    />
                   </td>
                 </tr>
               ))}
@@ -880,6 +1027,7 @@ function MovementDefaultsTab() {
           </table>
         )}
       </div>
+
     </div>
   );
 }

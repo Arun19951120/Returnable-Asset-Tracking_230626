@@ -233,6 +233,7 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
   const [activeTab, setActiveTab] = useState<"movement"|"dc">("movement");
   const [defaultCheckoutLocation,  setDefaultCheckoutLocation]  = useState<string>("");
   const [locationCheckInDefaults,  setLocationCheckInDefaults]  = useState<Record<string, string>>({});
+  const [locationCheckInAllowed,   setLocationCheckInAllowed]   = useState<Record<string, string[]>>({});
 
   const load = useCallback(async () => {
     const [a, l, p, m, c, cy, cfg] = await Promise.all([
@@ -250,9 +251,10 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
     setMovements(m);
     setCancels(c);
     setCycles(cy);
-    const cfgTyped = cfg as { defaultCheckoutLocation?: string; locationCheckInDefaults?: Record<string, string> };
+    const cfgTyped = cfg as { defaultCheckoutLocation?: string; locationCheckInDefaults?: Record<string, string>; locationCheckInAllowed?: Record<string, string[]> };
     setDefaultCheckoutLocation(cfgTyped.defaultCheckoutLocation ?? "");
     setLocationCheckInDefaults(cfgTyped.locationCheckInDefaults ?? {});
+    setLocationCheckInAllowed(cfgTyped.locationCheckInAllowed ?? {});
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -310,6 +312,26 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
               : mode === "checkout"
               ? defaultCheckoutLocation
               : ""
+          }
+          checkInAllowedLocs={
+            mode === "checkin"
+              ? (() => {
+                  const custLoc = profile?.allowedLocations?.[0] ?? "";
+                  const allowed = locationCheckInAllowed[custLoc];
+                  return allowed?.length ? allowed : undefined;
+                })()
+              : undefined
+          }
+          checkOutAllowedLocs={
+            isRestricted
+              ? (() => {
+                  const custProjects = (profile?.projects ?? []);
+                  const locs = projects
+                    .filter((p) => custProjects.includes(p.id) && (p.allowedLocations?.length ?? 0) > 0)
+                    .flatMap((p) => p.allowedLocations ?? []);
+                  return locs.length ? [...new Set(locs)] : undefined;
+                })()
+              : undefined
           }
         />
       )}
@@ -760,12 +782,14 @@ function BulkScanner({ scannedIds, availableAssets, onAdd, onRemove, placeholder
 // ─────────────────────────────────────────────────────────────────────────────
 type QueuedAsset = { assetId: string; mode: "receive" | "dispatch" };
 
-function SmartMovementPanel({ assets, locations, projects, movements, cycles, profile, isRestricted, isManager, masterWH, onDone, initialLoc }: {
+function SmartMovementPanel({ assets, locations, projects, movements, cycles, profile, isRestricted, isManager, masterWH, onDone, initialLoc, checkInAllowedLocs, checkOutAllowedLocs }: {
   assets: Asset[]; locations: Location[]; projects: Project[];
   movements: AssetMovement[]; cycles: AssetCycle[];
   profile: ReturnType<typeof useAuth>["profile"];
   isRestricted: boolean; isManager: boolean; masterWH: Location | undefined; onDone: () => void;
   initialLoc?: string;
+  checkInAllowedLocs?: string[];   // allowed destinations for check-in
+  checkOutAllowedLocs?: string[];  // allowed destinations for check-out (from project)
 }) {
   const accessibleLocs = isRestricted && profile?.allowedLocations?.length
     ? locations.filter((l) => profile.allowedLocations!.includes(l.name))
@@ -1069,7 +1093,7 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
                 <select value={dispatchTo} onChange={(e) => setDispatchTo(e.target.value)}
                   className="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
                   <option value="">— select destination —</option>
-                  {locations.filter((l) => l.name !== myLoc).map((l) =>
+                  {locations.filter((l) => l.name !== myLoc && (!checkOutAllowedLocs?.length || checkOutAllowedLocs.includes(l.name))).map((l) =>
                     <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " ⭐" : ""}</option>
                   )}
                 </select>
