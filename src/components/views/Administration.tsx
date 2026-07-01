@@ -802,8 +802,8 @@ function LocationMultiSelect({
           : selected.map((s) => (
               <span key={s} className="inline-flex items-center gap-0.5 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
                 {s}
-                <button type="button" onClick={(e) => { e.stopPropagation(); toggle(s); }}
-                  className="ml-0.5 leading-none text-indigo-400 hover:text-indigo-700">×</button>
+                <span role="button" onClick={(e) => { e.stopPropagation(); toggle(s); }}
+                  className="ml-0.5 leading-none cursor-pointer text-indigo-400 hover:text-indigo-700">×</span>
               </span>
             ))}
         <span className="ml-auto pl-1 text-slate-400 shrink-0">▾</span>
@@ -824,6 +824,78 @@ function LocationMultiSelect({
             </div>
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+// ─── Location table (defined outside to prevent remount on parent re-render) ──
+function LocationTable({
+  title, subtitle, color, locations, allowed, setAllowed,
+}: {
+  title: string; subtitle: string; color: string;
+  locations: Location[];
+  allowed: Record<string, string[]>;
+  setAllowed: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
+}) {
+  return (
+    // No overflow-hidden — dropdown must escape the card boundary
+    <div className="rounded-xl border border-slate-200 bg-white">
+      <div className={`flex items-center gap-3 px-5 py-4 border-b border-slate-100 rounded-t-xl ${color}`}>
+        <MapPin className="h-4 w-4 text-slate-600" />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-900 text-sm">{title}</p>
+          <p className="text-xs text-slate-500">{subtitle}</p>
+        </div>
+      </div>
+      {locations.length === 0 ? (
+        <div className="py-10 text-center text-sm text-slate-400">No active locations</div>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <th className="px-5 py-3 text-left w-48">Customer Location</th>
+              <th className="px-5 py-3 text-left">Allowed Destination Locations</th>
+              <th className="px-5 py-3 text-left w-52">Auto-default when single</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {locations.map((loc) => {
+              const sel = allowed[loc.name] ?? [];
+              return (
+                <tr key={loc.id} className="hover:bg-slate-50 transition-colors align-top">
+                  <td className="px-5 py-3 pt-4">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                      <span className="font-medium text-slate-800 text-sm">{loc.name}</span>
+                      {loc.isMasterWarehouse && (
+                        <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-700">MWH</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3">
+                    <LocationMultiSelect
+                      allLocations={locations}
+                      selected={sel}
+                      onChange={(v) => setAllowed((p) => ({ ...p, [loc.name]: v }))}
+                    />
+                  </td>
+                  <td className="px-5 py-3 pt-4">
+                    {sel.length === 1 ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                        ✓ Auto → {sel[0]}
+                      </span>
+                    ) : sel.length === 0 ? (
+                      <span className="text-xs text-slate-400 italic">All shown</span>
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">User selects ({sel.length} options)</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       )}
     </div>
   );
@@ -874,75 +946,6 @@ function MovementDefaultsTab() {
     </div>
   );
 
-  function LocationTable({
-    title, subtitle, color, allowed, setAllowed,
-  }: {
-    title: string; subtitle: string; color: string;
-    allowed: Record<string, string[]>;
-    setAllowed: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
-  }) {
-    return (
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className={`flex items-center gap-3 px-5 py-4 border-b border-slate-100 ${color}`}>
-          <MapPin className="h-4 w-4 text-slate-600" />
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-slate-900 text-sm">{title}</p>
-            <p className="text-xs text-slate-500">{subtitle}</p>
-          </div>
-        </div>
-        {locations.length === 0 ? (
-          <div className="py-10 text-center text-sm text-slate-400">No active locations</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                <th className="px-5 py-3 text-left w-48">Customer Location</th>
-                <th className="px-5 py-3 text-left">Allowed Destination Locations</th>
-                <th className="px-5 py-3 text-left w-48">Auto-default when single</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {locations.map((loc) => {
-                const sel = allowed[loc.name] ?? [];
-                return (
-                  <tr key={loc.id} className="hover:bg-slate-50 transition-colors align-top">
-                    <td className="px-5 py-3 pt-4">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                        <span className="font-medium text-slate-800 text-sm">{loc.name}</span>
-                        {loc.isMasterWarehouse && (
-                          <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-700">MWH</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <LocationMultiSelect
-                        allLocations={locations}
-                        selected={sel}
-                        onChange={(v) => setAllowed((p) => ({ ...p, [loc.name]: v }))}
-                      />
-                    </td>
-                    <td className="px-5 py-3 pt-4">
-                      {sel.length === 1 ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                          ✓ Auto → {sel[0]}
-                        </span>
-                      ) : sel.length === 0 ? (
-                        <span className="text-xs text-slate-400 italic">All shown</span>
-                      ) : (
-                        <span className="text-xs text-slate-400 italic">User selects ({sel.length} options)</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
@@ -957,6 +960,7 @@ function MovementDefaultsTab() {
         title="Check-In — Allowed Destination Locations"
         subtitle="Select which locations a customer can check assets IN to, per their origin location. If exactly one is selected it pre-fills automatically."
         color="bg-emerald-50"
+        locations={locations}
         allowed={checkInAllowed}
         setAllowed={setCheckInAllowed}
       />
@@ -965,6 +969,7 @@ function MovementDefaultsTab() {
         title="Check-Out — Allowed Destination Locations"
         subtitle="Select which locations a customer can dispatch assets TO, per their origin location. If exactly one is selected it pre-fills automatically."
         color="bg-orange-50"
+        locations={locations}
         allowed={checkOutAllowed}
         setAllowed={setCheckOutAllowed}
       />

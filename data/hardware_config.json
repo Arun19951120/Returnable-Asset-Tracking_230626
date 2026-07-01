@@ -1,7 +1,21 @@
 {
   "defaultCheckoutLocation": "",
-  "locationCheckInAllowed": {},
-  "locationCheckOutAllowed": {},
+  "locationCheckInAllowed": {
+    "Tier 1": [
+      "Tier 1"
+    ],
+    "OEM": [
+      "OEM"
+    ]
+  },
+  "locationCheckOutAllowed": {
+    "Tier 1": [
+      "OEM"
+    ],
+    "OEM": [
+      "Master Warehouse"
+    ]
+  },
   "locationCheckInDefaults": {
     "Tier 1": "Tier 1",
     "OEM": "OEM"
