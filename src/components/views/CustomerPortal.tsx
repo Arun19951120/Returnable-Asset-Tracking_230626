@@ -191,7 +191,6 @@ export default function CustomerPortal() {
   const [movements, setMovements] = useState<AssetMovement[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [notifs,    setNotifs]    = useState<Notification[]>([]);
-  const [projects,  setProjects]  = useState<import("@/lib/types").Project[]>([]);
   const [selected,  setSelected]  = useState<string | null>(null);
   const [txAsset,   setTxAsset]   = useState<Asset | null>(null);
   const [txMode,    setTxMode]    = useState<"checkout" | "checkin">("checkout");
@@ -208,17 +207,15 @@ export default function CustomerPortal() {
   const myLocations: string[] = profile?.allowedLocations ?? [];
 
   const load = useCallback(async () => {
-    const [a, l, n, m, p] = await Promise.all([
+    const [a, l, n, m] = await Promise.all([
       fetchAll<Asset>("assets"),
       fetchAll<Location>("locations"),
       fetchAll<Notification>("notifications"),
       fetchAll<AssetMovement>("movements"),
-      fetchAll<import("@/lib/types").Project>("projects"),
     ]);
     setAssets(a);
     setLocations(l);
     setMovements(m);
-    setProjects(p.filter((x) => x.status === "Active"));
     setNotifs(
       n.filter((x) => (!x.forUser || x.forUser === profile?.uid) && !x.read)
        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -229,7 +226,7 @@ export default function CustomerPortal() {
 
   // Incoming shipments — In-Transit movements headed to my locations
   const incomingMovements = movements.filter(
-    (m) => m.status === "In-Transit" && effectiveMyLocations.includes(m.toLocation)
+    (m) => m.status === "In-Transit" && myLocations.includes(m.toLocation)
   );
 
   async function doReceive(mov: AssetMovement) {
@@ -264,7 +261,7 @@ export default function CustomerPortal() {
   }
 
   async function handleCheckInAll() {
-    const inTransitAssets = assets.filter((a) => effectiveMyLocations.includes(a.location) && a.status === "In-Transit");
+    const inTransitAssets = assets.filter((a) => myLocations.includes(a.location) && a.status === "In-Transit");
     if (!inTransitAssets.length) return;
     setCheckingInAll(true);
     try {
@@ -304,18 +301,8 @@ export default function CustomerPortal() {
     setShowCamera(false);
   }
 
-  // Derive locations from assigned projects (if projects have configured allowedLocations),
-  // falling back to profile.allowedLocations
-  const custProjectIds = profile?.projects ?? [];
-  const projBasedLocs = projects
-    .filter((p) => custProjectIds.includes(p.id) && (p.allowedLocations?.length ?? 0) > 0)
-    .flatMap((p) => p.allowedLocations ?? []);
-  const effectiveMyLocations: string[] = projBasedLocs.length > 0
-    ? [...new Set(projBasedLocs)]
-    : myLocations;
-
-  // Assets at customer's effective locations
-  const myAssets = assets.filter((a) => effectiveMyLocations.includes(a.location));
+  // Assets at customer's allowed locations
+  const myAssets = assets.filter((a) => myLocations.includes(a.location));
 
   const statusCounts = Object.keys(STATUS_CFG)
     .map((s) => ({ status: s, count: myAssets.filter((a) => a.status === s).length }))
@@ -332,7 +319,7 @@ export default function CustomerPortal() {
         <h1 className="text-2xl font-bold text-slate-900">My Inventory</h1>
         <div className="flex items-center gap-1.5 mt-1 text-sm text-slate-500">
           <MapPin className="h-3.5 w-3.5" />
-          {effectiveMyLocations.length ? effectiveMyLocations.join(", ") : "No location assigned"}
+          {myLocations.length ? myLocations.join(", ") : "No location assigned"}
         </div>
       </div>
 

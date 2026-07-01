@@ -1,7 +1,6 @@
 {
   "defaultCheckoutLocation": "",
   "locationCheckInDefaults": {},
-  "locationCheckInAllowed": {},
   "rfid": {
     "enabled": true,
     "readerType": "Fixed Gate",
