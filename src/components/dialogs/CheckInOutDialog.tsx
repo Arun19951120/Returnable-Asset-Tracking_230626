@@ -13,6 +13,8 @@ interface Props {
   locations: Location[];
   onClose: () => void;
   initialMode?: Mode;
+  checkInAllowedLocs?: string[];
+  checkOutAllowedLocs?: string[];
 }
 
 type Mode = "checkout" | "checkin" | "transfer";
@@ -23,7 +25,7 @@ const MODE_CONFIG: Record<Mode, { label: string; statusOptions: Asset["status"][
   transfer: { label: "Transfer",   statusOptions: ["In-Transit", "Available"],               color: "bg-purple-600", accentBorder: "border-purple-400" },
 };
 
-export default function CheckInOutDialog({ asset, locations, onClose, initialMode }: Props) {
+export default function CheckInOutDialog({ asset, locations, onClose, initialMode, checkInAllowedLocs, checkOutAllowedLocs }: Props) {
   const { profile } = useAuth();
   const [mode, setMode]           = useState<Mode>(initialMode ?? "checkout");
   const [allLocations, setAllLocs] = useState<Location[]>(locations);
@@ -31,18 +33,37 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
   const [newStatus, setStatus]    = useState<Asset["status"]>("In-Transit");
   const [notes, setNotes]         = useState("");
   const [loading, setLoading]     = useState(false);
-  const [done, setDone]           = useState(false);          // success state
-  const [errors, setErrors]       = useState<string[]>([]);   // validation errors
+  const [done, setDone]           = useState(false);
+  const [errors, setErrors]       = useState<string[]>([]);
   const [destError, setDestError] = useState(false);
 
   useEffect(() => {
-    fetchAll<Location>("locations").then((all) => setAllLocs(all.filter((l) => l.status === "Active")));
+    fetchAll<Location>("locations").then((all) => {
+      const active = all.filter((l) => l.status === "Active");
+      applyModeFilter(active, mode);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function applyModeFilter(active: Location[], m: Mode) {
+    if (m === "checkin" && checkInAllowedLocs?.length) {
+      setAllLocs(active.filter((l) => checkInAllowedLocs.includes(l.name)));
+    } else if (m === "checkout" && checkOutAllowedLocs?.length) {
+      setAllLocs(active.filter((l) => checkOutAllowedLocs.includes(l.name)));
+    } else {
+      setAllLocs(active);
+    }
+  }
 
   useEffect(() => {
     setStatus(MODE_CONFIG[mode].statusOptions[0]);
     setErrors([]);
     setDestError(false);
+    // re-filter when mode switches
+    fetchAll<Location>("locations").then((all) => {
+      applyModeFilter(all.filter((l) => l.status === "Active"), mode);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   // ── Validation ──────────────────────────────────────────────────────────────

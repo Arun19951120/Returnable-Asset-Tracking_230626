@@ -194,6 +194,8 @@ export default function CustomerPortal() {
   const [selected,  setSelected]  = useState<string | null>(null);
   const [txAsset,   setTxAsset]   = useState<Asset | null>(null);
   const [txMode,    setTxMode]    = useState<"checkout" | "checkin">("checkout");
+  const [checkInAllowedLocs,  setCheckInAllowedLocs]  = useState<string[]>([]);
+  const [checkOutAllowedLocs, setCheckOutAllowedLocs] = useState<string[]>([]);
 
   // Incoming shipment receive state
   const [receiving,    setReceiving]    = useState<string[]>([]);   // movement ids being received
@@ -207,11 +209,12 @@ export default function CustomerPortal() {
   const myLocations: string[] = profile?.allowedLocations ?? [];
 
   const load = useCallback(async () => {
-    const [a, l, n, m] = await Promise.all([
+    const [a, l, n, m, cfg] = await Promise.all([
       fetchAll<Asset>("assets"),
       fetchAll<Location>("locations"),
       fetchAll<Notification>("notifications"),
       fetchAll<AssetMovement>("movements"),
+      fetch("/api/hardware-config").then((r) => r.json()).catch(() => ({})),
     ]);
     setAssets(a);
     setLocations(l);
@@ -220,7 +223,12 @@ export default function CustomerPortal() {
       n.filter((x) => (!x.forUser || x.forUser === profile?.uid) && !x.read)
        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     );
-  }, [profile?.uid]);
+    const custLoc = (profile?.allowedLocations ?? [])[0] ?? "";
+    const ciAllowed: string[] = (cfg?.locationCheckInAllowed?.[custLoc] ?? []);
+    const coAllowed: string[] = (cfg?.locationCheckOutAllowed?.[custLoc] ?? []);
+    setCheckInAllowedLocs(ciAllowed);
+    setCheckOutAllowedLocs(coAllowed);
+  }, [profile?.uid, profile?.allowedLocations]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -556,6 +564,8 @@ export default function CustomerPortal() {
           asset={txAsset}
           locations={locations}
           initialMode={txMode}
+          checkInAllowedLocs={checkInAllowedLocs}
+          checkOutAllowedLocs={checkOutAllowedLocs}
           onClose={() => { setTxAsset(null); load(); }}
         />
       )}

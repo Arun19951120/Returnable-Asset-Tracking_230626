@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
 
 // ─── Role helpers ──────────────────────────────────────────────────────────────
-const RESTRICTED_ROLES = ["Customer"];
+const RESTRICTED_ROLES = ["Customer", "Employee", "Supplier", "Tier-1", "OEM"];
 const MANAGER_ROLES    = ["Admin", "Manager"];
 
 // ─── Notification helper ───────────────────────────────────────────────────────
@@ -323,6 +323,7 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
             }
             checkInAllowedLocs={ciAllowed.length > 0 ? ciAllowed : undefined}
             checkOutAllowedLocs={coAllowed.length > 0 ? coAllowed : undefined}
+            mode={mode}
           />
         );
       })()}
@@ -773,7 +774,7 @@ function BulkScanner({ scannedIds, availableAssets, onAdd, onRemove, placeholder
 // ─────────────────────────────────────────────────────────────────────────────
 type QueuedAsset = { assetId: string; mode: "receive" | "dispatch" };
 
-function SmartMovementPanel({ assets, locations, projects, movements, cycles, profile, isRestricted, isManager, masterWH, onDone, initialLoc, checkInAllowedLocs, checkOutAllowedLocs }: {
+function SmartMovementPanel({ assets, locations, projects, movements, cycles, profile, isRestricted, isManager, masterWH, onDone, initialLoc, checkInAllowedLocs, checkOutAllowedLocs, mode }: {
   assets: Asset[]; locations: Location[]; projects: Project[];
   movements: AssetMovement[]; cycles: AssetCycle[];
   profile: ReturnType<typeof useAuth>["profile"];
@@ -781,6 +782,7 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
   initialLoc?: string;
   checkInAllowedLocs?: string[];
   checkOutAllowedLocs?: string[];
+  mode?: string;
 }) {
   const accessibleLocs = isRestricted && profile?.allowedLocations?.length
     ? locations.filter((l) => profile.allowedLocations!.includes(l.name))
@@ -796,17 +798,23 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
   const sigRef = useRef<HTMLInputElement>(null);
   const [sigImg, setSigImg] = useState<string | undefined>();
 
-  // Auto-default location: prefer initialLoc (from mode), then first accessible
+  // Auto-default location: prefer initialLoc (from mode), then first accessible.
+  // Re-run when initialLoc changes (mode switch) so restricted users get the correct pre-fill.
   useEffect(() => {
-    if (!myLoc) {
-      if (initialLoc && accessibleLocs.some((l) => l.name === initialLoc)) {
-        setMyLoc(initialLoc);
-      } else if (accessibleLocs.length > 0) {
-        setMyLoc(accessibleLocs[0].name);
-      }
+    if (initialLoc && accessibleLocs.some((l) => l.name === initialLoc)) {
+      setMyLoc(initialLoc);
+    } else if (!myLoc && accessibleLocs.length > 0) {
+      setMyLoc(accessibleLocs[0].name);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessibleLocs]);
+  }, [accessibleLocs, initialLoc]);
+
+  // Auto-select dispatch destination when only one is allowed
+  useEffect(() => {
+    if (checkOutAllowedLocs?.length === 1) {
+      setDispatchTo(checkOutAllowedLocs[0]);
+    }
+  }, [checkOutAllowedLocs]);
 
   // In-transit arrivals to myLoc
   const incomingMovs = movements.filter((m) => m.status === "In-Transit" && m.toLocation === myLoc);
@@ -967,14 +975,21 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
           </p>
           {/* Customer / assigned-location users: fixed label, no dropdown */}
           {isRestricted ? (
-            <p className="text-sm font-bold text-slate-800">
-              {myLoc || <span className="text-slate-400 italic text-xs">Loading…</span>}
-              {myLoc && masterWH?.name === myLoc && (
-                <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
-                  <RotateCcw className="inline h-2.5 w-2.5 mr-0.5" />Master WH
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-bold text-slate-800">
+                {myLoc || <span className="text-slate-400 italic text-xs">Loading…</span>}
+                {myLoc && masterWH?.name === myLoc && (
+                  <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                    <RotateCcw className="inline h-2.5 w-2.5 mr-0.5" />Master WH
+                  </span>
+                )}
+              </p>
+              {mode === "checkout" && dispatchTo && (
+                <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-semibold text-orange-700">
+                  → {dispatchTo}
                 </span>
               )}
-            </p>
+            </div>
           ) : (
             /* Admin / Manager: dropdown to pick operating location */
             <select value={myLoc} onChange={(e) => { setMyLoc(e.target.value); clearQueue(); }}
