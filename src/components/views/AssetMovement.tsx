@@ -9,7 +9,7 @@ import {
   CheckCircle2, Clock, X, QrCode, ScanBarcode,
   AlertTriangle, CheckCheck, XCircle, Package, Download,
   RotateCcw, RefreshCw, Calendar, MapPin, Zap, TrendingUp,
-  Camera, FlipHorizontal,
+  Camera, FlipHorizontal, ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
@@ -797,14 +797,21 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
   const [showForce,     setShowForce]     = useState(false);
   const sigRef = useRef<HTMLInputElement>(null);
   const [sigImg, setSigImg] = useState<string | undefined>();
+  const prevInitialLoc = useRef<string | undefined>(undefined);
 
   // Auto-default location: prefer initialLoc (from mode), then first accessible.
-  // Re-run when initialLoc changes (mode switch) so restricted users get the correct pre-fill.
+  // - Non-restricted (Admin/Manager): only set when myLoc is empty so manual picks are never overridden.
+  // - Restricted users: also reset when initialLoc changes (mode switch Check In ↔ Check Out).
   useEffect(() => {
-    if (initialLoc && accessibleLocs.some((l) => l.name === initialLoc)) {
-      setMyLoc(initialLoc);
-    } else if (!myLoc && accessibleLocs.length > 0) {
-      setMyLoc(accessibleLocs[0].name);
+    const modeChanged = prevInitialLoc.current !== undefined && prevInitialLoc.current !== initialLoc;
+    prevInitialLoc.current = initialLoc;
+
+    if (!myLoc || (isRestricted && modeChanged)) {
+      if (initialLoc && accessibleLocs.some((l) => l.name === initialLoc)) {
+        setMyLoc(initialLoc);
+      } else if (accessibleLocs.length > 0) {
+        setMyLoc(accessibleLocs[0].name);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessibleLocs, initialLoc]);
@@ -967,15 +974,13 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
   return (
     <div className="space-y-5">
       {/* ── Location display ───────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
-            Your Location
-          </p>
-          {/* Customer / assigned-location users: fixed label, no dropdown */}
-          {isRestricted ? (
-            <div className="flex items-center gap-2 flex-wrap">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex items-center gap-3">
+          {/* FROM */}
+          <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">From</p>
+            {isRestricted ? (
               <p className="text-sm font-bold text-slate-800">
                 {myLoc || <span className="text-slate-400 italic text-xs">Loading…</span>}
                 {myLoc && masterWH?.name === myLoc && (
@@ -984,28 +989,47 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
                   </span>
                 )}
               </p>
-              {mode === "checkout" && dispatchTo && (
-                <span className="flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-semibold text-orange-700">
-                  → {dispatchTo}
-                </span>
-              )}
-            </div>
-          ) : (
-            /* Admin / Manager: dropdown to pick operating location */
-            <select value={myLoc} onChange={(e) => { setMyLoc(e.target.value); clearQueue(); }}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500">
-              <option value="">— select location —</option>
-              {accessibleLocs.map((l) => (
-                <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " ⭐" : ""}</option>
-              ))}
-            </select>
+            ) : (
+              <select value={myLoc} onChange={(e) => { setMyLoc(e.target.value); clearQueue(); }}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500">
+                <option value="">— select location —</option>
+                {accessibleLocs.map((l) => (
+                  <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " ⭐" : ""}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Arrow separator */}
+          <ArrowRight className="h-4 w-4 text-slate-300 shrink-0" />
+
+          {/* TO */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">To</p>
+            {isRestricted ? (
+              <p className="text-sm font-bold text-slate-800">
+                {dispatchTo
+                  ? <>{dispatchTo}{masterWH?.name === dispatchTo && <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700"><RotateCcw className="inline h-2.5 w-2.5 mr-0.5" />Master WH</span>}</>
+                  : <span className="text-slate-400 italic text-xs">All locations</span>
+                }
+              </p>
+            ) : (
+              <select value={dispatchTo} onChange={(e) => setDispatchTo(e.target.value)}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500">
+                <option value="">— select destination —</option>
+                {locations
+                  .filter((l) => l.name !== myLoc && (!checkOutAllowedLocs?.length || checkOutAllowedLocs.includes(l.name)))
+                  .map((l) => <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " ⭐" : ""}</option>)}
+              </select>
+            )}
+          </div>
+
+          {myLoc && (
+            <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+              Active
+            </span>
           )}
         </div>
-        {myLoc && (
-          <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
-            Active
-          </span>
-        )}
       </div>
 
       {myLoc && (
