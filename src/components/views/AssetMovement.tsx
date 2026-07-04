@@ -984,12 +984,17 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">From</p>
             {isRestricted ? (
               <p className="text-sm font-bold text-slate-800">
-                {myLoc || <span className="text-slate-400 italic text-xs">Loading…</span>}
-                {myLoc && masterWH?.name === myLoc && (
-                  <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
-                    <RotateCcw className="inline h-2.5 w-2.5 mr-0.5" />Master WH
-                  </span>
-                )}
+                {mode === "checkin"
+                  ? <span className="text-slate-400 italic text-xs font-normal">Sender location</span>
+                  : <>
+                      {myLoc || <span className="text-slate-400 italic text-xs">Loading…</span>}
+                      {myLoc && masterWH?.name === myLoc && (
+                        <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                          <RotateCcw className="inline h-2.5 w-2.5 mr-0.5" />Master WH
+                        </span>
+                      )}
+                    </>
+                }
               </p>
             ) : (
               <select value={myLoc} onChange={(e) => { setMyLoc(e.target.value); clearQueue(); }}
