@@ -319,7 +319,7 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
             masterWH={masterWH} onDone={load}
             initialLoc={
               mode === "checkin" ? ciDefault :
-              mode === "checkout" ? coDefault : ""
+              mode === "checkout" ? custLoc : ""
             }
             checkInAllowedLocs={ciAllowed.length > 0 ? ciAllowed : undefined}
             checkOutAllowedLocs={coAllowed.length > 0 ? coAllowed : undefined}
@@ -816,12 +816,14 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessibleLocs, initialLoc]);
 
-  // Auto-select dispatch destination when only one is allowed
+  // Auto-select dispatch destination when only one is allowed; reset when mode switches
   useEffect(() => {
-    if (checkOutAllowedLocs?.length === 1) {
+    if (mode === "checkout" && checkOutAllowedLocs?.length === 1) {
       setDispatchTo(checkOutAllowedLocs[0]);
+    } else if (mode === "checkin") {
+      setDispatchTo("");
     }
-  }, [checkOutAllowedLocs]);
+  }, [checkOutAllowedLocs, mode]);
 
   // In-transit arrivals to myLoc
   const incomingMovs = movements.filter((m) => m.status === "In-Transit" && m.toLocation === myLoc);
@@ -1008,10 +1010,12 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">To</p>
             {isRestricted ? (
               <p className="text-sm font-bold text-slate-800">
-                {dispatchTo
-                  ? <>{dispatchTo}{masterWH?.name === dispatchTo && <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700"><RotateCcw className="inline h-2.5 w-2.5 mr-0.5" />Master WH</span>}</>
-                  : <span className="text-slate-400 italic text-xs">All locations</span>
-                }
+                {(() => {
+                  const toVal = mode === "checkin" ? myLoc : dispatchTo;
+                  return toVal
+                    ? <>{toVal}{masterWH?.name === toVal && <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700"><RotateCcw className="inline h-2.5 w-2.5 mr-0.5" />Master WH</span>}</>
+                    : <span className="text-slate-400 italic text-xs">{mode === "checkin" ? "Loading…" : "All locations"}</span>;
+                })()}
               </p>
             ) : (
               <select value={dispatchTo} onChange={(e) => setDispatchTo(e.target.value)}
