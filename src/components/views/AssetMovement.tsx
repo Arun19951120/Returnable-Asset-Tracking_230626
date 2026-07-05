@@ -232,8 +232,6 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
 
   const [activeTab, setActiveTab] = useState<"movement"|"dc">("movement");
   const [defaultCheckoutLocation,  setDefaultCheckoutLocation]  = useState<string>("");
-  const [locationCheckInDefaults,  setLocationCheckInDefaults]  = useState<Record<string, string>>({});
-  const [locationCheckInAllowed,   setLocationCheckInAllowed]   = useState<Record<string, string[]>>({});
   const [locationCheckOutAllowed,  setLocationCheckOutAllowed]  = useState<Record<string, string[]>>({});
 
   const load = useCallback(async () => {
@@ -254,13 +252,9 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
     setCycles(cy);
     const cfgTyped = cfg as {
       defaultCheckoutLocation?: string;
-      locationCheckInDefaults?: Record<string, string>;
-      locationCheckInAllowed?: Record<string, string[]>;
       locationCheckOutAllowed?: Record<string, string[]>;
     };
     setDefaultCheckoutLocation(cfgTyped.defaultCheckoutLocation ?? "");
-    setLocationCheckInDefaults(cfgTyped.locationCheckInDefaults ?? {});
-    setLocationCheckInAllowed(cfgTyped.locationCheckInAllowed ?? {});
     setLocationCheckOutAllowed(cfgTyped.locationCheckOutAllowed ?? {});
   }, []);
 
@@ -306,22 +300,15 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
 
       {activeTab === "movement" && (() => {
         const custLoc = profile?.allowedLocations?.[0] ?? "";
-        const ciAllowed = locationCheckInAllowed[custLoc] ?? [];
         const coAllowed = locationCheckOutAllowed[custLoc] ?? [];
-        // Check-in defaults to the user's own location (Customer / Employee);
-        // admin-configured values are the fallback when no profile location exists.
-        const ciDefault = custLoc || (ciAllowed.length === 1 ? ciAllowed[0] : locationCheckInDefaults[custLoc] || defaultCheckoutLocation);
+        // Check-in is always the user's own login location — no configuration.
         return (
           <SmartMovementPanel
             assets={assets} locations={locations} projects={projects}
             movements={movements} cycles={cycles}
             profile={profile} isRestricted={isRestricted} isManager={isManager}
             masterWH={masterWH} onDone={load}
-            initialLoc={
-              mode === "checkin" ? ciDefault :
-              mode === "checkout" ? custLoc : ""
-            }
-            checkInAllowedLocs={ciAllowed.length > 0 ? ciAllowed : undefined}
+            initialLoc={mode === "checkin" || mode === "checkout" ? custLoc : ""}
             checkOutAllowedLocs={coAllowed.length > 0 ? coAllowed : undefined}
             mode={mode}
           />
@@ -774,13 +761,12 @@ function BulkScanner({ scannedIds, availableAssets, onAdd, onRemove, placeholder
 // ─────────────────────────────────────────────────────────────────────────────
 type QueuedAsset = { assetId: string; mode: "receive" | "dispatch" };
 
-function SmartMovementPanel({ assets, locations, projects, movements, cycles, profile, isRestricted, isManager, masterWH, onDone, initialLoc, checkInAllowedLocs, checkOutAllowedLocs, mode }: {
+function SmartMovementPanel({ assets, locations, projects, movements, cycles, profile, isRestricted, isManager, masterWH, onDone, initialLoc, checkOutAllowedLocs, mode }: {
   assets: Asset[]; locations: Location[]; projects: Project[];
   movements: AssetMovement[]; cycles: AssetCycle[];
   profile: ReturnType<typeof useAuth>["profile"];
   isRestricted: boolean; isManager: boolean; masterWH: Location | undefined; onDone: () => void;
   initialLoc?: string;
-  checkInAllowedLocs?: string[];
   checkOutAllowedLocs?: string[];
   mode?: string;
 }) {

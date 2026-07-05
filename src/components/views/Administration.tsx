@@ -904,7 +904,6 @@ function LocationTable({
 // ─── Movement Defaults Tab ────────────────────────────────────────────────────
 function MovementDefaultsTab() {
   const [locations,       setLocations]       = useState<Location[]>([]);
-  const [checkInAllowed,  setCheckInAllowed]  = useState<Record<string, string[]>>({});
   const [checkOutAllowed, setCheckOutAllowed] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
@@ -918,7 +917,6 @@ function MovementDefaultsTab() {
       ]);
       const cfg = await res.json();
       setLocations(locs.filter((l) => l.status === "Active"));
-      setCheckInAllowed(cfg.locationCheckInAllowed ?? {});
       setCheckOutAllowed(cfg.locationCheckOutAllowed ?? {});
     } finally { setLoading(false); }
   }, []);
@@ -933,7 +931,7 @@ function MovementDefaultsTab() {
       await fetch("/api/hardware-config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...cfg, locationCheckInAllowed: checkInAllowed, locationCheckOutAllowed: checkOutAllowed }),
+        body: JSON.stringify({ ...cfg, locationCheckOutAllowed: checkOutAllowed }),
       });
       toast.success("Movement defaults saved");
     } catch { toast.error("Failed to save"); }
@@ -956,14 +954,13 @@ function MovementDefaultsTab() {
         </button>
       </div>
 
-      <LocationTable
-        title="Check-In — Allowed Destination Locations"
-        subtitle="Select which locations a customer can check assets IN to, per their origin location. If exactly one is selected it pre-fills automatically."
-        color="bg-emerald-50"
-        locations={locations}
-        allowed={checkInAllowed}
-        setAllowed={setCheckInAllowed}
-      />
+      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+        <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-emerald-800">Check-In — always the user&apos;s login location</p>
+          <p className="text-xs text-emerald-600">Assets are checked in to the logged-in user&apos;s own location automatically. No configuration needed.</p>
+        </div>
+      </div>
 
       <LocationTable
         title="Check-Out — Allowed Destination Locations"

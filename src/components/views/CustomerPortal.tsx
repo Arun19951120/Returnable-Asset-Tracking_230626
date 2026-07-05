@@ -224,10 +224,9 @@ export default function CustomerPortal() {
        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     );
     const custLoc = (profile?.allowedLocations ?? [])[0] ?? "";
-    const ciAllowed: string[] = (cfg?.locationCheckInAllowed?.[custLoc] ?? []);
-    const coAllowed: string[] = (cfg?.locationCheckOutAllowed?.[custLoc] ?? []);
-    setCheckInAllowedLocs(ciAllowed);
-    setCheckOutAllowedLocs(coAllowed);
+    // Check-in is always the user's own login location(s) — no configuration.
+    setCheckInAllowedLocs(profile?.allowedLocations ?? []);
+    setCheckOutAllowedLocs(cfg?.locationCheckOutAllowed?.[custLoc] ?? []);
   }, [profile?.uid, profile?.allowedLocations]);
 
   useEffect(() => { load(); }, [load]);
