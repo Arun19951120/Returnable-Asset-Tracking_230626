@@ -719,7 +719,6 @@ function BulkScanner({ scannedIds, availableAssets, onAdd, onRemove, placeholder
                   {a && (
                     <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
                       a.status === "Available" ? "bg-emerald-100 text-emerald-700" :
-                      a.status === "Dispatched" ? "bg-blue-100 text-blue-700" :
                       a.status === "In-Transit" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
                       {a.status}
                     </span>

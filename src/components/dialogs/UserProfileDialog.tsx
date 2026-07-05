@@ -22,7 +22,6 @@ const ROLE_COLORS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, { fill: string; light: string; text: string; label: string }> = {
   Available:   { fill: "#10b981", light: "bg-emerald-100", text: "text-emerald-700", label: "Available" },
-  Dispatched:  { fill: "#f59e0b", light: "bg-amber-100",   text: "text-amber-700",   label: "Dispatched" },
   "In-Transit":{ fill: "#3b82f6", light: "bg-blue-100",    text: "text-blue-700",    label: "In-Transit" },
   Maintenance: { fill: "#ef4444", light: "bg-red-100",     text: "text-red-700",     label: "Maintenance" },
 };
@@ -368,7 +367,7 @@ export default function UserProfileDialog({ onClose }: Props) {
                                 <LogOut className="h-3 w-3" /> Out
                               </button>
                             )}
-                            {(a.status === "Dispatched" || a.status === "In-Transit") && (
+                            {a.status === "In-Transit" && (
                               <button
                                 onClick={() => { setTxAsset(a); setTxMode("checkin"); }}
                                 title="Check In"

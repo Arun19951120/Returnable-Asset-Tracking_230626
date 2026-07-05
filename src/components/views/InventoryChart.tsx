@@ -11,11 +11,10 @@ import { X, Download, Users, MapPin, BarChart3, PieChart as PieIcon, RefreshCw }
 
 const STATUS_COLORS: Record<string, string> = {
   Available:    "#10b981",
-  Dispatched:   "#3b82f6",
   "In-Transit": "#f59e0b",
   Maintenance:  "#ef4444",
 };
-const STATUSES = ["Available", "Dispatched", "In-Transit", "Maintenance"] as const;
+const STATUSES = ["Available", "In-Transit", "Maintenance"] as const;
 
 function exportCSV(rows: Record<string, unknown>[], filename: string) {
   if (!rows.length) return;

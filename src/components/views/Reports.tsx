@@ -64,7 +64,7 @@ function KPITab({
   const dispatches     = fTransfers.filter((t) => t.type === "Outbound Dispatch").length;
   const pendingOrders  = fOrders.filter((o) => o.status === "Pending").length;
 
-  const statusDist = ["Available", "Dispatched", "In-Transit", "Maintenance"].map((s) => ({
+  const statusDist = ["Available", "In-Transit", "Maintenance"].map((s) => ({
     name: s, value: fAssets.filter((a) => a.status === s).length,
   }));
 

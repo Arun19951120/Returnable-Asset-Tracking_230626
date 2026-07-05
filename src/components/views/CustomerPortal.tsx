@@ -14,7 +14,6 @@ import CheckInOutDialog from "@/components/dialogs/CheckInOutDialog";
 const STATUS_CFG: Record<string, { fill: string; light: string; text: string }> = {
   Available:    { fill: "#10b981", light: "bg-emerald-100", text: "text-emerald-700" },
   "In-Transit": { fill: "#3b82f6", light: "bg-blue-100",    text: "text-blue-700" },
-  Dispatched:   { fill: "#f59e0b", light: "bg-amber-100",   text: "text-amber-700" },
   Maintenance:  { fill: "#ef4444", light: "bg-red-100",     text: "text-red-700" },
 };
 
@@ -440,7 +439,6 @@ export default function CustomerPortal() {
       {/* ── Summary stat cards ── */}
       {(() => {
         const checkedIn   = myAssets.filter((a) => a.status === "Available").length;
-        const dispatched  = myAssets.filter((a) => a.status === "Dispatched").length;
         const inTransit   = myAssets.filter((a) => a.status === "In-Transit").length;
         const total       = myAssets.length;
         const stats = [
@@ -450,13 +448,6 @@ export default function CustomerPortal() {
             sub: "fully inward",
             bg: "bg-emerald-50", border: "border-emerald-200",
             icon: LogIn, iconBg: "bg-emerald-500", text: "text-emerald-700",
-          },
-          {
-            label: "Dispatched",
-            value: dispatched,
-            sub: "out with customer",
-            bg: "bg-amber-50", border: "border-amber-200",
-            icon: LogOut, iconBg: "bg-amber-500", text: "text-amber-700",
           },
           {
             label: "In Transit",
@@ -545,7 +536,7 @@ export default function CustomerPortal() {
                       <LogOut className="h-3 w-3" /> Check Out
                     </button>
                   )}
-                  {(a.status === "Dispatched" || a.status === "In-Transit") && (
+                  {a.status === "In-Transit" && (
                     <button onClick={() => { setTxAsset(a); setTxMode("checkin"); }}
                       className="shrink-0 flex items-center gap-1 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">
                       <LogIn className="h-3 w-3" /> Check In
