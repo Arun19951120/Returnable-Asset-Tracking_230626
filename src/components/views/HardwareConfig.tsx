@@ -205,27 +205,57 @@ export default function HardwareConfig() {
     setOpen((p) => ({ ...p, [key]: !p[key] }));
   }
 
+  async function testAll() {
+    for (const dev of ["rfid", "ble", "barcode", "qr"] as const) {
+      if (config?.[dev]?.enabled) await testConnection(dev);
+    }
+  }
+
   if (loading) return (
-    <div className="flex items-center justify-center py-24">
-      <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+    <div className="space-y-5 max-w-3xl">
+      <div className="skeleton h-14 w-72" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton h-24" />)}
+      </div>
+      {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton h-16" />)}
     </div>
   );
 
   if (!config) return null;
 
+  const connectedCount = (["rfid", "ble", "barcode", "qr"] as const).filter((k) => config[k].connected).length;
+  const enabledCount   = (["rfid", "ble", "barcode", "qr"] as const).filter((k) => config[k].enabled).length;
+
   return (
     <div className="space-y-5 max-w-3xl">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Hardware Configuration</h1>
           <p className="text-sm text-slate-500">Configure RFID, BLE, Barcode & QR Code reader/writer devices</p>
+          <div className="mt-2 flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+              connectedCount === enabledCount && enabledCount > 0
+                ? "bg-emerald-100 text-emerald-700"
+                : connectedCount > 0 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"
+            }`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${connectedCount > 0 ? "bg-emerald-500 animate-pulse-glow" : "bg-slate-300"}`} />
+              {connectedCount}/{enabledCount} devices online
+            </span>
+          </div>
         </div>
-        <button onClick={save} disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save All
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={testAll} disabled={testing !== null}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60 transition-colors">
+            {testing !== null ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 text-amber-500" />}
+            Test All
+          </button>
+          <button onClick={save} disabled={saving}
+            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60 shadow-sm hover:shadow transition-all">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save All
+          </button>
+        </div>
       </div>
 
       {/* ── Movement Defaults ── */}
@@ -268,14 +298,18 @@ export default function HardwareConfig() {
           const dev = config[key];
           return (
             <button key={key} onClick={() => setOpen((p) => ({ ...p, [key]: true }))}
-              className="rounded-xl border border-slate-200 bg-white p-3 text-left hover:shadow-sm transition-shadow">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color} mb-2`}>
-                <Icon className="h-4 w-4 text-white" />
+              className={`stagger-item rounded-xl border bg-white p-3 text-left transition-all hover:shadow-md hover:-translate-y-0.5 ${
+                dev.connected ? "border-emerald-200" : "border-slate-200"
+              }`}>
+              <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color} mb-2 ${testing === key ? "animate-pulse" : ""}`}>
+                {testing === key
+                  ? <Loader2 className="h-4 w-4 text-white animate-spin" />
+                  : <Icon className="h-4 w-4 text-white" />}
               </div>
               <p className="text-xs font-semibold text-slate-800">{label}</p>
               <div className="flex items-center gap-1.5 mt-1">
                 {dev.connected
-                  ? <><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /><span className="text-[10px] text-emerald-600 font-medium">Connected</span></>
+                  ? <><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse-glow" /><span className="text-[10px] text-emerald-600 font-medium">Connected</span></>
                   : <><span className="h-1.5 w-1.5 rounded-full bg-slate-300" /><span className="text-[10px] text-slate-400">{dev.enabled ? "Offline" : "Disabled"}</span></>}
               </div>
             </button>
@@ -291,7 +325,7 @@ export default function HardwareConfig() {
           open={open.rfid} onOpenToggle={() => toggleOpen("rfid")} />
 
         {open.rfid && (
-          <div className="rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 px-5 py-5 space-y-5">
+          <div className="animate-fade-up rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 px-5 py-5 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Reader Type">
                 <select className={select} value={config.rfid.readerType} onChange={(e) => patch("rfid", "readerType", e.target.value)}>
@@ -356,7 +390,7 @@ export default function HardwareConfig() {
           open={open.ble} onOpenToggle={() => toggleOpen("ble")} />
 
         {open.ble && (
-          <div className="rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 px-5 py-5 space-y-5">
+          <div className="animate-fade-up rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 px-5 py-5 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Scan Interval (ms)">
                 <input type="number" className={input} value={config.ble.scanInterval}
@@ -406,7 +440,7 @@ export default function HardwareConfig() {
           open={open.barcode} onOpenToggle={() => toggleOpen("barcode")} />
 
         {open.barcode && (
-          <div className="rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 px-5 py-5 space-y-5">
+          <div className="animate-fade-up rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 px-5 py-5 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Scanner Type / Interface">
                 <select className={select} value={config.barcode.scannerType} onChange={(e) => patch("barcode", "scannerType", e.target.value)}>
@@ -466,7 +500,7 @@ export default function HardwareConfig() {
           open={open.qr} onOpenToggle={() => toggleOpen("qr")} />
 
         {open.qr && (
-          <div className="rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 px-5 py-5 space-y-5">
+          <div className="animate-fade-up rounded-b-xl border border-t-0 border-slate-200 bg-slate-50 px-5 py-5 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Camera Index">
                 <select className={select} value={config.qr.cameraIndex} onChange={(e) => patch("qr", "cameraIndex", +e.target.value)}>

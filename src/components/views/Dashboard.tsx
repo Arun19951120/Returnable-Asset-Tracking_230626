@@ -43,17 +43,38 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// Animated count-up for KPI numbers — eases from 0 to target on mount/change
+function CountUp({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    const duration = 650;
+    let raf: number;
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      setDisplay(Math.round(value * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{display.toLocaleString()}</>;
+}
+
 function StatCard({ label, value, icon: Icon, sub, color, trend }: {
   label: string; value: string | number;
   icon: React.ComponentType<{ className?: string }>;
   sub?: string; color: string; trend?: string;
 }) {
   return (
-    <div className="card-bento relative overflow-hidden p-5">
+    <div className="stagger-item card-bento relative overflow-hidden p-5">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 tabular-nums">
+            {typeof value === "number" ? <CountUp value={value} /> : value}
+          </p>
           {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
           {trend && <p className="mt-1 text-xs font-medium text-emerald-600">{trend}</p>}
         </div>
@@ -798,14 +819,16 @@ export default function Dashboard() {
               { label: "Maintenance",   value: maintenance, sub: maintenance > 0 ? "⚠ Needs attention" : "All clear", icon: AlertTriangle, color: maintenance > 0 ? "bg-red-500" : "bg-slate-500", bar: { pct: filteredAssets.length ? maintenance/filteredAssets.length*100 : 0, cls: "bg-red-500" } },
               { label: "Fleet Health",  value: `${avgHealth}%`, sub: "Avg health score", icon: Activity, color: avgHealth >= 75 ? "bg-emerald-600" : "bg-red-500", bar: { pct: avgHealth, cls: avgHealth >= 75 ? "bg-emerald-400" : "bg-red-400" } },
             ].map(({ label, value, sub, icon: Icon, color, bar }) => (
-              <div key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div key={label} className="stagger-item rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
                   <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${color}`}>
                     <Icon className="h-3.5 w-3.5 text-white" />
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-slate-900">{value}</p>
+                <p className="text-2xl font-bold text-slate-900 tabular-nums">
+                  {typeof value === "number" ? <CountUp value={value} /> : value}
+                </p>
                 {bar && (
                   <div className="mt-2 h-1 w-full rounded-full bg-slate-100">
                     <div className={`h-1 rounded-full ${bar.cls} transition-all`} style={{ width: `${Math.min(bar.pct, 100)}%` }} />

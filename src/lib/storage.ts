@@ -1,9 +1,27 @@
 // Client-side helpers that call the local JSON API routes
 
+// Short-TTL cache + in-flight de-duplication: concurrent mounts share one
+// request, repeat reads within TTL skip the network. Writes invalidate.
+const CACHE_TTL_MS = 3000;
+const cache = new Map<string, { at: number; promise: Promise<unknown[]> }>();
+
+function invalidate(collection: string) {
+  cache.delete(collection);
+}
+
 export async function fetchAll<T>(collection: string): Promise<T[]> {
-  const res = await fetch(`/api/data/${collection}`);
-  if (!res.ok) return [];
-  return res.json();
+  const hit = cache.get(collection);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    return hit.promise as Promise<T[]>;
+  }
+  const promise = fetch(`/api/data/${collection}`)
+    .then((res) => (res.ok ? res.json() : []))
+    .catch(() => {
+      invalidate(collection);
+      return [];
+    });
+  cache.set(collection, { at: Date.now(), promise });
+  return promise as Promise<T[]>;
 }
 
 export async function fetchOne<T>(collection: string, id: string): Promise<T | null> {
@@ -21,6 +39,7 @@ export async function addDocument(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
+  invalidate(collection);
   return res.json();
 }
 
@@ -34,6 +53,7 @@ export async function updateDocument(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
+  invalidate(collection);
 }
 
 export async function deleteDocument(
@@ -41,6 +61,7 @@ export async function deleteDocument(
   id: string
 ): Promise<void> {
   await fetch(`/api/data/${collection}/${id}`, { method: "DELETE" });
+  invalidate(collection);
 }
 
 export async function logAudit(

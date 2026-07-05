@@ -111,10 +111,12 @@ export default function App() {
           pageTitle={pageTitle}
         />
         <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
-          {resolvedTab === "movements"
-            ? <AssetMovement mode={movementMode} />
-            : <ActiveView />
-          }
+          <div key={`${resolvedTab}-${activeNavKey ?? ""}`} className="animate-view-enter">
+            {resolvedTab === "movements"
+              ? <AssetMovement mode={movementMode} />
+              : <ActiveView />
+            }
+          </div>
         </main>
       </div>
     </div>

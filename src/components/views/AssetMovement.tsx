@@ -1058,7 +1058,7 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
 
           {/* ── Incoming shipments ─────────────────────────────────────────── */}
           {incomingMovs.length > 0 && (
-            <div className="rounded-xl border border-emerald-200 bg-white overflow-hidden">
+            <div className="animate-fade-up rounded-xl border border-emerald-200 bg-white overflow-hidden">
               <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-4 py-3">
                 <div className="flex items-center gap-2">
                   <LogIn className="h-4 w-4 text-emerald-600" />
@@ -1079,7 +1079,7 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
                   const asset = assets.find((a) => a.id === mov.assetId);
                   const inQueue = !!queue.find((q) => q.assetId === mov.assetId);
                   return (
-                    <div key={mov.id} className={`flex items-center gap-3 px-4 py-3 transition-colors ${inQueue ? "bg-emerald-50" : "hover:bg-slate-50"}`}>
+                    <div key={mov.id} className={`stagger-item flex items-center gap-3 px-4 py-3 transition-colors ${inQueue ? "bg-emerald-50" : "hover:bg-slate-50"}`}>
                       {inQueue
                         ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                         : <Clock className="h-4 w-4 shrink-0 text-amber-400" />}
@@ -1115,7 +1115,7 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
 
           {/* ── Dispatch queue (outgoing assets) — hidden when incoming pending ── */}
           {incomingMovs.length === 0 && dispatchQueued.length > 0 && (
-            <div className="rounded-xl border border-orange-200 bg-white overflow-hidden">
+            <div className="animate-fade-up rounded-xl border border-orange-200 bg-white overflow-hidden">
               <div className="flex items-center justify-between border-b border-orange-100 bg-orange-50 px-4 py-3">
                 <div className="flex items-center gap-2">
                   <LogOut className="h-4 w-4 text-orange-600" />
@@ -1142,7 +1142,7 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
                 {dispatchQueued.map((item) => {
                   const asset = assets.find((a) => a.id === item.assetId);
                   return (
-                    <div key={item.assetId} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+                    <div key={item.assetId} className="animate-slide-in flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
                       <LogOut className="h-4 w-4 shrink-0 text-orange-400" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-800 truncate">{asset?.name ?? item.assetId}</p>
@@ -1186,7 +1186,7 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
 
           {/* ── Approve / process queue ────────────────────────────────────── */}
           {queue.length > 0 && (
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 space-y-3">
+            <div className="animate-fade-up rounded-xl border border-slate-800 bg-slate-900 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-bold text-white">

@@ -28,7 +28,7 @@ const MODE_CONFIG: Record<Mode, { label: string; statusOptions: Asset["status"][
 export default function CheckInOutDialog({ asset, locations, onClose, initialMode, checkInAllowedLocs, checkOutAllowedLocs }: Props) {
   const { profile } = useAuth();
   const [mode, setMode]           = useState<Mode>(initialMode ?? "checkout");
-  const [allLocations, setAllLocs] = useState<Location[]>(locations);
+  const [activeLocs, setActiveLocs] = useState<Location[]>(locations);
   const [destination, setDest]    = useState("");
   const [newStatus, setStatus]    = useState<Asset["status"]>("In-Transit");
   const [notes, setNotes]         = useState("");
@@ -37,34 +37,26 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
   const [errors, setErrors]       = useState<string[]>([]);
   const [destError, setDestError] = useState(false);
 
+  // Fetch active locations once; mode filtering happens in memory below.
   useEffect(() => {
-    fetchAll<Location>("locations").then((all) => {
-      const active = all.filter((l) => l.status === "Active");
-      applyModeFilter(active, mode);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchAll<Location>("locations").then((all) =>
+      setActiveLocs(all.filter((l) => l.status === "Active"))
+    );
   }, []);
-
-  function applyModeFilter(active: Location[], m: Mode) {
-    if (m === "checkin" && checkInAllowedLocs?.length) {
-      setAllLocs(active.filter((l) => checkInAllowedLocs.includes(l.name)));
-    } else if (m === "checkout" && checkOutAllowedLocs?.length) {
-      setAllLocs(active.filter((l) => checkOutAllowedLocs.includes(l.name)));
-    } else {
-      setAllLocs(active);
-    }
-  }
 
   useEffect(() => {
     setStatus(MODE_CONFIG[mode].statusOptions[0]);
     setErrors([]);
     setDestError(false);
-    // re-filter when mode switches
-    fetchAll<Location>("locations").then((all) => {
-      applyModeFilter(all.filter((l) => l.status === "Active"), mode);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
+
+  // Mode-specific allowed destinations, derived without refetching
+  const allLocations =
+    mode === "checkin" && checkInAllowedLocs?.length
+      ? activeLocs.filter((l) => checkInAllowedLocs.includes(l.name))
+      : mode === "checkout" && checkOutAllowedLocs?.length
+        ? activeLocs.filter((l) => checkOutAllowedLocs.includes(l.name))
+        : activeLocs;
 
   // ── Validation ──────────────────────────────────────────────────────────────
   function validate(): string[] {
