@@ -574,7 +574,7 @@ export default function AssetLedger() {
         locationFilter={locationFilter} locations={uniqueLocations} onLocationChange={setLocationFilter}
         projectFilter={projectFilter} projects={projects.map((p) => ({ id: p.id, name: p.name }))} onProjectChange={setProjectFilter}
         statusFilter={statusFilter === "All" ? "" : statusFilter}
-        statusOptions={["Available", "In-Transit", "Maintenance", "Retired"]}
+        statusOptions={["Available", "In-Transit", "Maintenance", "Under Repair", "Damaged", "Lost", "Retired"]}
         onStatusChange={(v) => setStatusFilter(v || "All")}
         extraFilters={
           <>
@@ -1023,7 +1023,7 @@ export default function AssetLedger() {
                     <label className="mb-1 block text-xs font-medium text-slate-600">Initial Status</label>
                     <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as Asset["status"] }))}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
-                      {["Available", "In-Transit", "Maintenance"].map((s) => <option key={s}>{s}</option>)}
+                      {["Available", "In-Transit", "Maintenance", "Under Repair", "Damaged", "Lost"].map((s) => <option key={s}>{s}</option>)}
                     </select>
                   </div>
                   <div>
@@ -1239,7 +1239,7 @@ export default function AssetLedger() {
                               <td className="px-1 py-1">
                                 <select value={row.status} onChange={(e) => updateRow(i, "status", e.target.value as Asset["status"])}
                                   className="rounded px-1 py-1 text-xs outline-none bg-transparent">
-                                  {["Available","In-Transit","Maintenance"].map((s) => <option key={s}>{s}</option>)}
+                                  {["Available","In-Transit","Maintenance","Under Repair","Damaged","Lost"].map((s) => <option key={s}>{s}</option>)}
                                 </select>
                               </td>
                               <td className="px-1 py-1">
@@ -1353,7 +1353,7 @@ export default function AssetLedger() {
                           <label className="mb-1 block text-xs font-medium text-slate-600">Status</label>
                           <select value={serialSeed.status} onChange={(e) => { setSerialSeed((p) => ({ ...p, status: e.target.value as Asset["status"] })); setSerialPreview([]); }}
                             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
-                            {["Available", "In-Transit", "Maintenance"].map((s) => <option key={s}>{s}</option>)}
+                            {["Available", "In-Transit", "Maintenance", "Under Repair", "Damaged", "Lost"].map((s) => <option key={s}>{s}</option>)}
                           </select>
                         </div>
                         <div>

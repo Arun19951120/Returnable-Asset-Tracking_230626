@@ -483,8 +483,8 @@ function CustomerDashboard() {
                     </div>
                     <span className="text-sm font-bold text-slate-700">{locAssets.length} total</span>
                   </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(["Available","In-Transit","Maintenance"] as const).map((st) => {
+                  <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+                    {(["Available","In-Transit","Maintenance","Under Repair","Damaged","Lost"] as const).map((st) => {
                       const cnt = locAssets.filter((a) => a.status === st).length;
                       return (
                         <div key={st} className={`rounded-xl p-3 text-center ${cnt > 0 ? "bg-slate-50 border border-slate-200" : "bg-slate-50/40 border border-dashed border-slate-200 opacity-50"}`}>
@@ -717,15 +717,21 @@ export default function Dashboard() {
   const available   = filteredAssets.filter((a) => a.status === "Available").length;
   const inTransit   = filteredAssets.filter((a) => a.status === "In-Transit").length;
   const maintenance = filteredAssets.filter((a) => a.status === "Maintenance").length;
+  const underRepair = filteredAssets.filter((a) => a.status === "Under Repair").length;
+  const damaged     = filteredAssets.filter((a) => a.status === "Damaged").length;
+  const lost        = filteredAssets.filter((a) => a.status === "Lost").length;
   const avgHealth   = filteredAssets.length
     ? Math.round(filteredAssets.reduce((s, a) => s + a.healthScore, 0) / filteredAssets.length) : 0;
   const recentOrders = filteredOrders.slice(0, 6);
   const projectMap   = Object.fromEntries(projects.map((p) => [p.id, p.name]));
 
   const STATUS_CONFIG = [
-    { status: "Available",   color: "bg-emerald-500", light: "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-700" },
-    { status: "In-Transit",  color: "bg-amber-500",   light: "bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-700" },
-    { status: "Maintenance", color: "bg-red-500",      light: "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-700" },
+    { status: "Available",    color: "bg-emerald-500", light: "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-700" },
+    { status: "In-Transit",   color: "bg-amber-500",   light: "bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-700" },
+    { status: "Maintenance",  color: "bg-red-500",      light: "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-700" },
+    { status: "Under Repair", color: "bg-orange-500",  light: "bg-orange-50 border-orange-200 dark:bg-orange-900/30 dark:border-orange-700" },
+    { status: "Damaged",      color: "bg-rose-600",     light: "bg-rose-50 border-rose-200 dark:bg-rose-900/30 dark:border-rose-700" },
+    { status: "Lost",         color: "bg-slate-500",    light: "bg-slate-50 border-slate-300 dark:bg-slate-800/50 dark:border-slate-600" },
   ] as const;
 
   // Global in-transit count
@@ -809,12 +815,15 @@ export default function Dashboard() {
 
       case "kpi-strip":
         return (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {[
               { label: "Total Assets",  value: filteredAssets.length, sub: "All fleet", icon: Package, color: "bg-slate-700", bar: null },
               { label: "Available",     value: available, sub: `${filteredAssets.length ? Math.round(available/filteredAssets.length*100) : 0}% of fleet`, icon: Activity, color: "bg-emerald-600", bar: { pct: filteredAssets.length ? available/filteredAssets.length*100 : 0, cls: "bg-emerald-500" } },
               { label: "In-Transit",    value: inTransit, sub: "Active shipments", icon: Truck, color: "bg-blue-600", bar: { pct: filteredAssets.length ? inTransit/filteredAssets.length*100 : 0, cls: "bg-blue-500" } },
               { label: "Maintenance",   value: maintenance, sub: maintenance > 0 ? "⚠ Needs attention" : "All clear", icon: AlertTriangle, color: maintenance > 0 ? "bg-red-500" : "bg-slate-500", bar: { pct: filteredAssets.length ? maintenance/filteredAssets.length*100 : 0, cls: "bg-red-500" } },
+              { label: "Under Repair",  value: underRepair, sub: underRepair > 0 ? "🔧 In workshop" : "None in repair", icon: AlertTriangle, color: underRepair > 0 ? "bg-orange-500" : "bg-slate-500", bar: { pct: filteredAssets.length ? underRepair/filteredAssets.length*100 : 0, cls: "bg-orange-500" } },
+              { label: "Damaged",       value: damaged, sub: damaged > 0 ? "⚠ Needs review" : "None damaged", icon: AlertTriangle, color: damaged > 0 ? "bg-rose-600" : "bg-slate-500", bar: { pct: filteredAssets.length ? damaged/filteredAssets.length*100 : 0, cls: "bg-rose-500" } },
+              { label: "Lost",          value: lost, sub: lost > 0 ? "⚠ Unaccounted" : "None lost", icon: AlertTriangle, color: lost > 0 ? "bg-slate-700" : "bg-slate-500", bar: { pct: filteredAssets.length ? lost/filteredAssets.length*100 : 0, cls: "bg-slate-500" } },
               { label: "Fleet Health",  value: `${avgHealth}%`, sub: "Avg health score", icon: Activity, color: avgHealth >= 75 ? "bg-emerald-600" : "bg-red-500", bar: { pct: avgHealth, cls: avgHealth >= 75 ? "bg-emerald-400" : "bg-red-400" } },
             ].map(({ label, value, sub, icon: Icon, color, bar }) => (
               <div key={label} className="stagger-item rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
@@ -927,6 +936,9 @@ export default function Dashboard() {
                     <th className="px-4 py-3 text-center">Available</th>
                     <th className="px-4 py-3 text-center">In-Transit</th>
                     <th className="px-4 py-3 text-center">Maintenance</th>
+                    <th className="px-4 py-3 text-center">Under Repair</th>
+                    <th className="px-4 py-3 text-center">Damaged</th>
+                    <th className="px-4 py-3 text-center">Lost</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -943,7 +955,7 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-center font-bold text-slate-800">{la.length}</td>
-                        {(["Available","In-Transit","Maintenance"] as const).map((st) => (
+                        {(["Available","In-Transit","Maintenance","Under Repair","Damaged","Lost"] as const).map((st) => (
                           <td key={st} className="px-4 py-3 text-center">
                             <span className={la.filter((a) => a.status === st).length > 0 ? "font-semibold text-slate-800" : "text-slate-300"}>
                               {la.filter((a) => a.status === st).length}
