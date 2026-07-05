@@ -308,9 +308,9 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
         const custLoc = profile?.allowedLocations?.[0] ?? "";
         const ciAllowed = locationCheckInAllowed[custLoc] ?? [];
         const coAllowed = locationCheckOutAllowed[custLoc] ?? [];
-        // Auto-default: if exactly one allowed location, pre-fill it
-        const ciDefault = ciAllowed.length === 1 ? ciAllowed[0] : (locationCheckInDefaults[custLoc] || custLoc);
-        const coDefault = coAllowed.length === 1 ? coAllowed[0] : defaultCheckoutLocation;
+        // Check-in defaults to the user's own location (Customer / Employee);
+        // admin-configured values are the fallback when no profile location exists.
+        const ciDefault = custLoc || (ciAllowed.length === 1 ? ciAllowed[0] : locationCheckInDefaults[custLoc] || defaultCheckoutLocation);
         return (
           <SmartMovementPanel
             assets={assets} locations={locations} projects={projects}
@@ -1250,8 +1250,8 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
             </div>
           )}
 
-          {/* ── Force Inward (managers only) ───────────────────────────────── */}
-          {!isRestricted && allInTransit.length > 0 && (
+          {/* ── Force Inward (managers + employees) — check in assets located elsewhere ── */}
+          {(!isRestricted || profile?.role === "Employee") && allInTransit.length > 0 && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
               <button onClick={() => setShowForce((v) => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-amber-100 transition-colors">
