@@ -70,13 +70,16 @@
     "password": "Tier123",
     "displayName": "Vignesh",
     "role": "Customer",
-    "organization": "",
-    "projects": [],
+    "organization": "Tier 1",
+    "projects": [
+      "Project Alpha"
+    ],
     "allowedLocations": [
-      "Tier 1"
+      "Tier 1",
+      "OEM"
     ],
     "passwordHash": "dGllcjEyMw==",
-    "updatedAt": "2026-06-12T06:26:56.000Z"
+    "updatedAt": "2026-07-02T08:26:10.790Z"
   },
   {
     "uid": "user-22c5b492",
@@ -90,5 +93,15 @@
       "OEM"
     ],
     "updatedAt": "2026-06-13T17:17:00.651Z"
+  },
+  {
+    "uid": "admin-arun",
+    "email": "arunpethaperumal@gmail.com",
+    "password": "Arun@123",
+    "displayName": "Arun Pethaperumal",
+    "role": "Admin",
+    "organization": "RSPL",
+    "projects": [],
+    "allowedLocations": []
   }
 ]

@@ -116,17 +116,34 @@ export default function LoginPage() {
   const loginAction = useLoginAction();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [showEnquiry, setShowEnquiry] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setInfo("");
     setLoading(true);
     try {
+      if (mode === "forgot") {
+        const res = await fetch("/api/auth/forgot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? "Request failed");
+          return;
+        }
+        setInfo(data.message ?? "The administrator has been notified.");
+        return;
+      }
+
       const endpoint =
         mode === "login" ? "/api/auth/login" : "/api/auth/register";
       const body =
@@ -226,32 +243,14 @@ export default function LoginPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
             <div className="mb-6">
               <h2 className="text-xl font-bold text-slate-900">
-                {mode === "login" ? "Welcome back" : "Create account"}
+                {mode === "login" ? "Welcome back" : mode === "register" ? "Create account" : "Reset password"}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                {mode === "login" ? "Sign in to your workspace" : "Get started today"}
+                {mode === "login" ? "Sign in to your workspace"
+                  : mode === "register" ? "Get started today"
+                  : "Enter your email — the administrator will be notified to reset your password"}
               </p>
             </div>
-
-            {/* Demo credentials */}
-            {mode === "login" && (
-              <div className="mb-5 rounded-xl bg-slate-50 border border-slate-100 px-3 py-3 text-xs space-y-1.5">
-                <p className="font-semibold text-slate-600 mb-2">Demo accounts</p>
-                {[
-                  { role: "Admin",    email: "admin@circulartrack.com",   pass: "admin123",    color: "text-red-600" },
-                  { role: "Manager",  email: "manager@circulartrack.com", pass: "manager123",  color: "text-purple-600" },
-                  { role: "Employee", email: "ops@circulartrack.com",     pass: "employee123", color: "text-blue-600" },
-                  { role: "Customer", email: "customer@acme.com",         pass: "customer123", color: "text-emerald-600" },
-                ].map(({ role, email, pass, color }) => (
-                  <button key={role} type="button"
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white transition-colors text-left"
-                    onClick={() => { setEmail(email); setPassword(pass); }}>
-                    <span className={`w-16 font-semibold shrink-0 ${color}`}>{role}</span>
-                    <span className="text-slate-500 truncate">{email} / {pass}</span>
-                  </button>
-                ))}
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "register" && (
@@ -268,29 +267,44 @@ export default function LoginPage() {
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-all focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                   placeholder="you@company.com" />
               </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-700">Password</label>
-                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-all focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                  placeholder="••••••••" />
-              </div>
+              {mode !== "forgot" && (
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-slate-700">Password</label>
+                    {mode === "login" && (
+                      <button type="button" onClick={() => { setMode("forgot"); setError(""); setInfo(""); }}
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-all focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                    placeholder="••••••••" />
+                </div>
+              )}
 
               {error && (
                 <div className="rounded-xl bg-red-50 border border-red-100 px-3 py-2.5 text-xs text-red-600">
                   {error}
                 </div>
               )}
+              {info && (
+                <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2.5 text-xs text-emerald-700">
+                  {info}
+                </div>
+              )}
 
               <button type="submit" disabled={loading}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:shadow-indigo-300 hover:shadow-xl hover:scale-[1.01] disabled:opacity-60 disabled:scale-100 disabled:shadow-none">
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {mode === "login" ? "Sign In" : "Create Account"}
+                {mode === "login" ? "Sign In" : mode === "register" ? "Create Account" : "Request Password Reset"}
               </button>
             </form>
 
             <p className="mt-5 text-center text-xs text-slate-500">
-              {mode === "login" ? "No account yet?" : "Already have an account?"}{" "}
-              <button onClick={() => setMode(mode === "login" ? "register" : "login")}
+              {mode === "login" ? "No account yet?" : mode === "register" ? "Already have an account?" : "Remembered your password?"}{" "}
+              <button onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); setInfo(""); }}
                 className="font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
                 {mode === "login" ? "Register" : "Sign in"}
               </button>
