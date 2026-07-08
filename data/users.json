@@ -102,6 +102,8 @@
     "role": "Admin",
     "organization": "RSPL",
     "projects": [],
-    "allowedLocations": []
+    "allowedLocations": [],
+    "passwordHash": "UlNQTEAyMDI2",
+    "updatedAt": "2026-07-07T14:07:14.311Z"
   }
 ]

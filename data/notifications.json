@@ -1,5 +1,21 @@
 [
   {
+    "id": "notif-mrapzxhup2xiz",
+    "title": "🔑 Password Reset Request",
+    "message": "Arun Pethaperumal (arunpethaperumal@gmail.com) requested a password reset. Go to Administration → Password Reset to set a new password.",
+    "type": "warning",
+    "read": false,
+    "createdAt": "2026-07-07T14:04:21.714Z"
+  },
+  {
+    "id": "notif-mrapybs0s9mu9",
+    "title": "🔑 Password Reset Request",
+    "message": "Arun Pethaperumal (arunpethaperumal@gmail.com) requested a password reset. Go to Administration → Password Reset to set a new password.",
+    "type": "warning",
+    "read": false,
+    "createdAt": "2026-07-07T14:03:06.912Z"
+  },
+  {
     "id": "not-bf6d9904",
     "title": "📦 Incoming Shipment — Tier 1",
     "message": "3 items dispatched from OEM:\n• PLSKIT 1200X1000X1000mm × 3",
@@ -31,31 +47,35 @@
     "title": "📦 Incoming Shipment — Tier 1",
     "message": "4 items dispatched from Master Warehouse:\n• PLSKIT 1200X1000X1000mm × 4",
     "type": "warning",
-    "read": false,
-    "createdAt": "2026-06-15T13:22:27.316Z"
+    "read": true,
+    "createdAt": "2026-06-15T13:22:27.316Z",
+    "updatedAt": "2026-06-30T12:04:25.348Z"
   },
   {
     "id": "not-cdbd3f01",
     "title": "📦 Incoming Shipment — OEM",
     "message": "2 items dispatched from Tier 1:\n• PLSKIT 1200X1000X1000mm × 2",
     "type": "warning",
-    "read": false,
-    "createdAt": "2026-06-19T07:38:22.827Z"
+    "read": true,
+    "createdAt": "2026-06-19T07:38:22.827Z",
+    "updatedAt": "2026-06-30T12:04:25.349Z"
   },
   {
     "id": "not-f9db4440",
     "title": "📦 Incoming Shipment — Tier 1",
     "message": "3 items dispatched from Master Warehouse:\n• PLSKIT 1200X1000X1000mm × 3",
     "type": "warning",
-    "read": false,
-    "createdAt": "2026-06-19T07:39:51.464Z"
+    "read": true,
+    "createdAt": "2026-06-19T07:39:51.464Z",
+    "updatedAt": "2026-06-30T12:04:25.347Z"
   },
   {
     "id": "not-58129694",
     "title": "📦 Incoming Shipment — Tier 1",
     "message": "3 items dispatched from Master Warehouse:\n• PLSKIT 1200X1000X1000mm × 3",
     "type": "warning",
-    "read": false,
-    "createdAt": "2026-06-22T06:48:24.095Z"
+    "read": true,
+    "createdAt": "2026-06-22T06:48:24.095Z",
+    "updatedAt": "2026-06-30T12:04:25.350Z"
   }
 ]

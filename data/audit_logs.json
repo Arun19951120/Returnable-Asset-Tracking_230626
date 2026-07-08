@@ -1038,5 +1038,75 @@
     "details": "Asset IDs: ass-4679f583, ass-af97ee5e, ass-f09f60e6",
     "timestamp": "2026-06-22T06:48:24.133Z",
     "createdAt": "2026-06-22T06:48:24.172Z"
+  },
+  {
+    "id": "aud-44169578",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Updated profile: customer01@tier1.com",
+    "category": "User",
+    "details": "{\"uid\":\"user-2b2e87c2\",\"email\":\"customer01@tier1.com\",\"password\":\"Tier123\",\"displayName\":\"Vignesh\",\"role\":\"Customer\",\"organization\":\"\",\"projects\":[\"Project Alpha\"],\"allowedLocations\":[\"Tier 1\"],\"passwordHash\":\"dGllcjEyMw==\",\"updatedAt\":\"2026-06-12T06:26:56.000Z\"}",
+    "timestamp": "2026-06-30T12:51:40.842Z",
+    "createdAt": "2026-06-30T12:51:40.874Z"
+  },
+  {
+    "id": "aud-5c65c9f6",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Updated profile: customer01@tier1.com",
+    "category": "User",
+    "details": "{\"uid\":\"user-2b2e87c2\",\"email\":\"customer01@tier1.com\",\"password\":\"Tier123\",\"displayName\":\"Vignesh\",\"role\":\"Customer\",\"organization\":\"\",\"projects\":[\"Project Alpha\"],\"allowedLocations\":[\"Tier 1\"],\"passwordHash\":\"dGllcjEyMw==\",\"updatedAt\":\"2026-06-30T12:51:40.836Z\"}",
+    "timestamp": "2026-06-30T12:52:29.921Z",
+    "createdAt": "2026-06-30T12:52:29.949Z"
+  },
+  {
+    "id": "aud-341e2793",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Updated profile: customer01@tier1.com",
+    "category": "User",
+    "details": "{\"uid\":\"user-2b2e87c2\",\"email\":\"customer01@tier1.com\",\"password\":\"Tier123\",\"displayName\":\"Vignesh\",\"role\":\"Customer\",\"organization\":\"Tier 1\",\"projects\":[\"Project Alpha\"],\"allowedLocations\":[\"Tier 1\"],\"passwordHash\":\"dGllcjEyMw==\",\"updatedAt\":\"2026-06-30T12:52:29.916Z\"}",
+    "timestamp": "2026-06-30T12:53:47.605Z",
+    "createdAt": "2026-06-30T12:53:47.637Z"
+  },
+  {
+    "id": "aud-ba730e37",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Updated profile: customer01@tier1.com",
+    "category": "User",
+    "details": "{\"uid\":\"user-2b2e87c2\",\"email\":\"customer01@tier1.com\",\"password\":\"Tier123\",\"displayName\":\"Vignesh\",\"role\":\"Customer\",\"organization\":\"Tier 1\",\"projects\":[\"Project Alpha\"],\"allowedLocations\":[\"Tier 1\",\"OEM\"],\"passwordHash\":\"dGllcjEyMw==\",\"updatedAt\":\"2026-06-30T12:53:47.601Z\"}",
+    "timestamp": "2026-06-30T12:59:30.440Z",
+    "createdAt": "2026-06-30T12:59:30.472Z"
+  },
+  {
+    "id": "aud-1fea4925",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Updated profile: customer01@tier1.com",
+    "category": "User",
+    "details": "{\"uid\":\"user-2b2e87c2\",\"email\":\"customer01@tier1.com\",\"password\":\"Tier123\",\"displayName\":\"Vignesh\",\"role\":\"Customer\",\"organization\":\"Tier 1\",\"projects\":[\"Project Alpha\"],\"allowedLocations\":[\"Tier 1\",\"OEM\"],\"passwordHash\":\"dGllcjEyMw==\",\"updatedAt\":\"2026-06-30T12:59:30.426Z\"}",
+    "timestamp": "2026-07-01T10:31:33.911Z",
+    "createdAt": "2026-07-01T10:31:33.981Z"
+  },
+  {
+    "id": "aud-78037436",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Updated profile: customer01@tier1.com",
+    "category": "User",
+    "details": "{\"uid\":\"user-2b2e87c2\",\"email\":\"customer01@tier1.com\",\"password\":\"Tier123\",\"displayName\":\"Vignesh\",\"role\":\"Customer\",\"organization\":\"Tier 1\",\"projects\":[\"Project Alpha\"],\"allowedLocations\":[\"Tier 1\",\"OEM\"],\"passwordHash\":\"dGllcjEyMw==\",\"updatedAt\":\"2026-07-01T10:31:33.903Z\"}",
+    "timestamp": "2026-07-02T08:26:10.796Z",
+    "createdAt": "2026-07-02T08:26:10.829Z"
+  },
+  {
+    "id": "aud-d7684659",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Password reset for arunpethaperumal@gmail.com",
+    "category": "User",
+    "details": "admin-arun",
+    "timestamp": "2026-07-07T14:07:14.324Z",
+    "createdAt": "2026-07-07T14:07:14.342Z"
   }
 ]
