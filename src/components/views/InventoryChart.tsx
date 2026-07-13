@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { fetchAll } from "@/lib/storage";
-import type { Asset, Location, Project, Customer } from "@/lib/types";
+import type { Asset, Location, Project } from "@/lib/types";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -29,7 +29,6 @@ export default function InventoryChart() {
   const [assets,    setAssets]    = useState<Asset[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [projects,  setProjects]  = useState<Project[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
 
   const [projectFilter,  setProjectFilter]  = useState("");
   const [locationFilter, setLocationFilter] = useState("");
@@ -37,16 +36,14 @@ export default function InventoryChart() {
   const [viewMode,       setViewMode]       = useState<"location" | "customer">("location");
 
   const load = useCallback(async () => {
-    const [a, l, p, c] = await Promise.all([
+    const [a, l, p] = await Promise.all([
       fetchAll<Asset>("assets"),
       fetchAll<Location>("locations"),
       fetchAll<Project>("projects"),
-      fetchAll<Customer>("customers"),
     ]);
     setAssets(a);
     setLocations(l.filter((x) => x.status === "Active"));
     setProjects(p.filter((x) => x.status === "Active"));
-    setCustomers(c.filter((x) => x.status === "Active"));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -70,17 +67,11 @@ export default function InventoryChart() {
     .filter((d) => (d.total as number) > 0)
     .sort((a, b) => (b.total as number) - (a.total as number));
 
-  // Build per-customer chart rows (customer = user with Customer role + allowedLocations)
-  // We need to load users to map customer users → their locations
-  // For now we derive "customer" rows by type = Customer_Site
-  const customerSites = locations.filter((l) => l.type === "Customer_Site");
-  const custChartData = (customerFilter ? customerSites.filter((l) => {
-    // crude match — customerFilter is a customer name
-    const cust = customers.find((c) => c.id === customerFilter);
-    if (!cust) return false;
-    return l.name.toLowerCase().includes(cust.name.toLowerCase()) ||
-      filteredAssets.some((a) => a.location === l.name && a.customerId === customerFilter);
-  }) : customerSites)
+  // Customers and locations are merged: a customer IS a non-master location.
+  const customerSites = locations.filter((l) => !l.isMasterWarehouse);
+  const custChartData = (customerFilter
+    ? customerSites.filter((l) => l.name === customerFilter)
+    : customerSites)
     .map((loc) => {
       const la = filteredAssets.filter((a) => a.location === loc.name);
       const entry: Record<string, string | number> = { location: loc.name };
@@ -124,7 +115,7 @@ export default function InventoryChart() {
   function handleExport() {
     const rows = activeChartData.map((row) => ({
       location: row.location, total: row.total,
-      available: row.Available, dispatched: row.Dispatched,
+      available: row.Available,
       in_transit: row["In-Transit"], maintenance: row.Maintenance,
     }));
     exportCSV(rows as Record<string, unknown>[], `inventory-${viewMode}-${Date.now()}.csv`);
@@ -170,7 +161,7 @@ export default function InventoryChart() {
             <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)}
               className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-slate-500">
               <option value="">All Customers</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {customerSites.map((l) => <option key={l.id} value={l.name}>{l.name}</option>)}
             </select>
           )}
           {(projectFilter || locationFilter || customerFilter) && (
@@ -231,15 +222,11 @@ export default function InventoryChart() {
                 )}
                 {custChartData.map((row) => {
                   const locObj = locations.find((l) => l.name === row.location);
-                  const assetList = filteredAssets.filter((a) => a.location === row.location);
-                  // Try to find customer from assets at this location
-                  const custId = assetList.find((a) => a.customerId)?.customerId;
-                  const custObj = customers.find((c) => c.id === custId);
                   return (
                     <tr key={row.location as string} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3">
                         <p className="font-medium text-slate-800">{row.location as string}</p>
-                        {custObj && <p className="text-[10px] text-slate-400 mt-0.5">Customer: {custObj.name}</p>}
+                        {locObj?.contactName && <p className="text-[10px] text-slate-400 mt-0.5">Contact: {locObj.contactName}</p>}
                         <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] text-blue-700 font-medium">
                           {locObj?.type?.replace(/_/g, " ") ?? "Site"}
                         </span>

@@ -15,7 +15,10 @@
     "status": "Active",
     "address": "NO, 14 MM Nagar, CH",
     "isMasterWarehouse": false,
-    "createdAt": "2026-06-09T17:29:34.169Z"
+    "createdAt": "2026-06-09T17:29:34.169Z",
+    "contactName": "Customer 01",
+    "contactEmail": "customer01@tier1.com",
+    "contactPhone": ""
   },
   {
     "id": "loc-2ffc4ba8",
@@ -24,6 +27,9 @@
     "status": "Active",
     "address": "232, Bengaluru",
     "isMasterWarehouse": false,
-    "createdAt": "2026-06-09T17:30:04.112Z"
+    "createdAt": "2026-06-09T17:30:04.112Z",
+    "contactName": "Customer02",
+    "contactEmail": "customer02@oem.com",
+    "contactPhone": ""
   }
 ]

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { fetchAll, addDocument, updateDocument, deleteDocument, logAudit } from "@/lib/storage";
-import { Project, Asset, Transfer, Location, Notification, AssetMovement, Customer } from "@/lib/types";
+import { Project, Asset, Transfer, Location, Notification, AssetMovement } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import {
   Plus, X, Loader2, AlertTriangle, RefreshCw,
@@ -994,7 +994,6 @@ export default function Projects() {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [movements, setMovements]   = useState<AssetMovement[]>([]);
-  const [customers, setCustomers]   = useState<Customer[]>([]);
   const [activeTab, setActiveTab] = useState<"projects" | "po" | "sustainability">("projects");
   const [showForm,  setShowForm]  = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1010,20 +1009,18 @@ export default function Projects() {
   const isAdmin = profile?.role === "Admin";
 
   const load = useCallback(async () => {
-    const [p, a, t, l, m, cu] = await Promise.all([
+    const [p, a, t, l, m] = await Promise.all([
       fetchAll<Project>("projects"),
       fetchAll<Asset>("assets"),
       fetchAll<Transfer>("transfers"),
       fetchAll<Location>("locations"),
       fetchAll<AssetMovement>("movements"),
-      fetchAll<Customer>("customers"),
     ]);
     setProjects(p);
     setAssets(a);
     setTransfers(t);
     setLocations(l);
     setMovements(m);
-    setCustomers(cu);
 
     const activeAlerts: ProjectAlert[] = [];
     p.filter((proj) => proj.status === "Active").forEach((proj) => {
@@ -1452,16 +1449,16 @@ export default function Projects() {
                     onChange={(e) => setForm((p) => ({ ...p, client: e.target.value }))}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 bg-white">
                     <option value="">— select customer —</option>
-                    {customers.filter((c) => c.status === "Active").map((c) => (
-                      <option key={c.id} value={c.name}>{c.name}</option>
+                    {locations.filter((l) => l.status === "Active" && !l.isMasterWarehouse).map((l) => (
+                      <option key={l.id} value={l.name}>{l.name}</option>
                     ))}
-                    {/* Allow keeping existing value if customer was deleted */}
-                    {form.client && !customers.find((c) => c.name === form.client) && (
+                    {/* Allow keeping existing value if the location was removed */}
+                    {form.client && !locations.find((l) => l.name === form.client) && (
                       <option value={form.client}>{form.client} (legacy)</option>
                     )}
                   </select>
-                  {customers.filter((c) => c.status === "Active").length === 0 && (
-                    <p className="mt-1 text-[10px] text-amber-600 font-medium">⚠ No active customers found — add customers first</p>
+                  {locations.filter((l) => l.status === "Active" && !l.isMasterWarehouse).length === 0 && (
+                    <p className="mt-1 text-[10px] text-amber-600 font-medium">⚠ No customer locations found — add them in Customers &amp; Locations first</p>
                   )}
                 </div>
                 <div>

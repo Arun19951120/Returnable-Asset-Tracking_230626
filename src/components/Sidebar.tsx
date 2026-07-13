@@ -6,7 +6,7 @@ import { Notification } from "@/lib/types";
 import { fetchAll } from "@/lib/storage";
 import {
   LayoutDashboard, Package, Camera, ArrowRightLeft, ClipboardList,
-  Truck, Building2, MapPin, Brain, BarChart2, Bell, FileText,
+  Truck, MapPin, Brain, BarChart2, Bell, FileText,
   ShieldCheck, LogOut, Bluetooth, Wifi, Settings2,
   LogIn, RotateCcw, Settings, X, Images, TrendingUp, Leaf,
   FolderKanban, DollarSign, ChevronDown, LogOut as CheckOut,
@@ -64,10 +64,9 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: "projects",
-    label: "PROJECTS & CUSTOMERS",
+    label: "PROJECTS",
     items: [
       { label: "Projects",   icon: FolderKanban, tabId: "projects" },
-      { label: "Customers",  icon: Building2,    tabId: "customers" },
     ],
   },
   {
@@ -85,7 +84,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: "admin",
     label: "ADMIN",
     items: [
-      { label: "Locations",       icon: MapPin,      tabId: "locations" },
+      { label: "Customers & Locations", icon: MapPin, tabId: "locations" },
       { label: "Hardware Config", icon: Settings2,   tabId: "hardware" },
       { label: "Notifications",   icon: Bell,        tabId: "notifications" },
       { label: "Audit Logs",      icon: FileText,    tabId: "audit" },

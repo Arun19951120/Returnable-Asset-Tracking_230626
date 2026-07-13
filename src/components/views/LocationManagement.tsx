@@ -17,6 +17,7 @@ const empty = {
   name: "", type: "Warehouse" as Location["type"],
   status: "Active" as Location["status"],
   address: "", isMasterWarehouse: false,
+  contactName: "", contactEmail: "", contactPhone: "",
 };
 
 export default function LocationManagement() {
@@ -35,7 +36,11 @@ export default function LocationManagement() {
   function openCreate() { setEditing(null); setForm({ ...empty }); setShowForm(true); }
   function openEdit(l: Location) {
     setEditing(l);
-    setForm({ name: l.name, type: l.type, status: l.status, address: l.address ?? "", isMasterWarehouse: l.isMasterWarehouse ?? false });
+    setForm({
+      name: l.name, type: l.type, status: l.status, address: l.address ?? "",
+      isMasterWarehouse: l.isMasterWarehouse ?? false,
+      contactName: l.contactName ?? "", contactEmail: l.contactEmail ?? "", contactPhone: l.contactPhone ?? "",
+    });
     setShowForm(true);
   }
 
@@ -88,12 +93,12 @@ export default function LocationManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Locations</h1>
-          <p className="text-sm text-slate-500">{active} active · {locations.length} total sites</p>
+          <h1 className="text-2xl font-bold text-slate-900">Customers &amp; Locations</h1>
+          <p className="text-sm text-slate-500">Each customer is a location — {active} active · {locations.length} total</p>
         </div>
         <button onClick={openCreate}
           className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-          <Plus className="h-4 w-4" /> Add Location
+          <Plus className="h-4 w-4" /> Add Customer / Location
         </button>
       </div>
 
@@ -102,14 +107,14 @@ export default function LocationManagement() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
-              {["Name", "Type", "Master WH", "Address", "Status", "Actions"].map((h) => (
+              {["Name", "Type", "Master WH", "Contact", "Address", "Status", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {locations.length === 0 && (
-              <tr><td colSpan={6} className="py-10 text-center text-slate-400">No locations yet</td></tr>
+              <tr><td colSpan={7} className="py-10 text-center text-slate-400">No customers / locations yet</td></tr>
             )}
             {locations.map((loc) => (
               <tr key={loc.id} className={`hover:bg-slate-50 ${loc.status === "Inactive" ? "opacity-60" : ""}`}>
@@ -132,6 +137,14 @@ export default function LocationManagement() {
                   {loc.isMasterWarehouse
                     ? <span className="flex items-center gap-1 text-xs font-semibold text-amber-600"><Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Master</span>
                     : <span className="text-xs text-slate-300">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  {loc.contactName || loc.contactEmail ? (
+                    <div>
+                      <p className="text-xs font-medium text-slate-700">{loc.contactName || "—"}</p>
+                      <p className="text-[10px] text-slate-400">{loc.contactEmail}{loc.contactPhone ? ` · ${loc.contactPhone}` : ""}</p>
+                    </div>
+                  ) : <span className="text-xs text-slate-300">—</span>}
                 </td>
                 <td className="px-4 py-3 text-slate-500 text-xs max-w-xs truncate">{loc.address || "—"}</td>
                 <td className="px-4 py-3">
@@ -156,7 +169,7 @@ export default function LocationManagement() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <h3 className="font-semibold text-slate-900">{editing ? "Edit Location" : "Add Location"}</h3>
+              <h3 className="font-semibold text-slate-900">{editing ? "Edit Customer / Location" : "Add Customer / Location"}</h3>
               <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-slate-400" /></button>
             </div>
             <form onSubmit={handleSave} className="p-5 space-y-4">
@@ -192,6 +205,31 @@ export default function LocationManagement() {
                 <input value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                   placeholder="Block, Street, City…" />
+              </div>
+
+              {/* Customer contact details */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <p className="text-xs font-semibold text-slate-600">Customer Contact</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Contact Name</label>
+                    <input value={form.contactName} onChange={(e) => setForm((p) => ({ ...p, contactName: e.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      placeholder="Jane Smith" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Phone</label>
+                    <input value={form.contactPhone} onChange={(e) => setForm((p) => ({ ...p, contactPhone: e.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      placeholder="+91 98765 43210" />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Email</label>
+                  <input type="email" value={form.contactEmail} onChange={(e) => setForm((p) => ({ ...p, contactEmail: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    placeholder="contact@customer.com" />
+                </div>
               </div>
 
               {/* Master Warehouse toggle — only relevant for Warehouse type */}

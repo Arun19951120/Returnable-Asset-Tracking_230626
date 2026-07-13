@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { fetchAll, addDocument, updateDocument, deleteDocument, logAudit } from "@/lib/storage";
-import type { Asset, AssetMovement, Order, Transfer, ScheduledReport, AuditLog, Location, Project, Customer } from "@/lib/types";
+import type { Asset, AssetMovement, Order, Transfer, ScheduledReport, AuditLog, Location, Project } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, ComposedChart,
@@ -1184,11 +1184,9 @@ function ScheduledTab({ projects }: { projects: Project[] }) {
 // ─── Customer Movement History Tab ───────────────────────────────────────────
 function CustomerHistoryTab({ locations }: { locations: Location[] }) {
   const [movements,  setMovements]  = useState<AssetMovement[]>([]);
-  const [customers,  setCustomers]  = useState<Customer[]>([]);
   const [assets,     setAssets]     = useState<Asset[]>([]);
 
   const [custFilter, setCustFilter] = useState("");
-  const [locFilter,  setLocFilter]  = useState("");
   const [dirFilter,  setDirFilter]  = useState<"all"|"received"|"sent">("all");
   const [search,     setSearch]     = useState("");
   const [dateFrom,   setDateFrom]   = useState("");
@@ -1197,29 +1195,23 @@ function CustomerHistoryTab({ locations }: { locations: Location[] }) {
   useEffect(() => {
     Promise.all([
       fetchAll<AssetMovement>("movements"),
-      fetchAll<Customer>("customers"),
       fetchAll<Asset>("assets"),
-    ]).then(([m, c, a]) => { setMovements(m); setCustomers(c); setAssets(a); });
+    ]).then(([m, a]) => { setMovements(m); setAssets(a); });
   }, []);
 
-  const customerSiteLocs = locations.filter((l) => l.type === "Customer_Site").map((l) => l.name);
+  // Customers and locations are merged: a customer IS a non-master location.
+  const customerSiteLocs = locations.filter((l) => !l.isMasterWarehouse).map((l) => l.name);
 
   const filtered = movements
     .filter((m) => {
       const involvesCustomerSite = customerSiteLocs.includes(m.fromLocation) || customerSiteLocs.includes(m.toLocation);
       if (!involvesCustomerSite) return false;
-      if (locFilter && m.fromLocation !== locFilter && m.toLocation !== locFilter) return false;
+      if (custFilter && m.fromLocation !== custFilter && m.toLocation !== custFilter) return false;
       if (dirFilter === "received" && !customerSiteLocs.includes(m.toLocation)) return false;
       if (dirFilter === "sent"     && !customerSiteLocs.includes(m.fromLocation)) return false;
       if (search && !m.assetName.toLowerCase().includes(search.toLowerCase())) return false;
       if (dateFrom && m.createdAt < dateFrom) return false;
       if (dateTo   && m.createdAt > dateTo + "T23:59:59") return false;
-      if (custFilter) {
-        const cust = customers.find((c) => c.id === custFilter);
-        if (!cust) return false;
-        const custLocNames = locations.filter((l) => l.type === "Customer_Site" && l.name.toLowerCase().includes(cust.name.toLowerCase())).map((l) => l.name);
-        if (!custLocNames.includes(m.fromLocation) && !custLocNames.includes(m.toLocation)) return false;
-      }
       return true;
     })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -1287,13 +1279,8 @@ function CustomerHistoryTab({ locations }: { locations: Location[] }) {
           </div>
           <select value={custFilter} onChange={(e) => setCustFilter(e.target.value)}
             className="rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-slate-400 bg-slate-50">
-            <option value="">All Customers</option>
-            {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select value={locFilter} onChange={(e) => setLocFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-slate-400 bg-slate-50">
-            <option value="">All Sites</option>
-            {locations.filter((l) => l.type === "Customer_Site").map((l) => <option key={l.id} value={l.name}>{l.name}</option>)}
+            <option value="">All Customers / Sites</option>
+            {locations.filter((l) => !l.isMasterWarehouse).map((l) => <option key={l.id} value={l.name}>{l.name}</option>)}
           </select>
           <select value={dirFilter} onChange={(e) => setDirFilter(e.target.value as typeof dirFilter)}
             className="rounded-xl border border-slate-200 px-3 py-2 text-xs outline-none focus:border-slate-400 bg-slate-50">
@@ -1309,7 +1296,7 @@ function CustomerHistoryTab({ locations }: { locations: Location[] }) {
         <div className="mt-3 flex items-center justify-between">
           <p className="text-xs text-slate-400">{filtered.length} record{filtered.length !== 1 ? "s" : ""} · {completed} completed</p>
           <div className="flex gap-2">
-            <button onClick={() => { setCustFilter(""); setLocFilter(""); setDirFilter("all"); setSearch(""); setDateFrom(""); setDateTo(""); }}
+            <button onClick={() => { setCustFilter(""); setDirFilter("all"); setSearch(""); setDateFrom(""); setDateTo(""); }}
               className="flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-50">
               <X className="h-3 w-3" /> Clear
             </button>

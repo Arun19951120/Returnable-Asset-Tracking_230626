@@ -57,6 +57,8 @@ export interface AssetCycle {
   status: "Active" | "Completed";
 }
 
+// Customers and locations are merged: each customer IS a location.
+// Non-warehouse locations carry the customer's contact details.
 export interface Location {
   id: string;
   name: string;
@@ -64,17 +66,9 @@ export interface Location {
   status: "Active" | "Inactive";
   address?: string;
   isMasterWarehouse?: boolean;   // Assets can only be initially registered here
-}
-
-export interface Customer {
-  id: string;
-  name: string;
-  contactEmail: string;
+  contactName?: string;
+  contactEmail?: string;
   contactPhone?: string;
-  address?: string;
-  slaTarget?: number; // days
-  status: "Active" | "Inactive";
-  createdAt: string;
 }
 
 export interface Project {
@@ -278,7 +272,6 @@ export const ALL_TABS = [
   { id: "cycles",        label: "Cycle Report" },
   { id: "orders",        label: "Orders" },
   { id: "pickups",       label: "Pickup Requests" },
-  { id: "customers",     label: "Customers" },
   { id: "projects",      label: "Projects" },
   { id: "gallery",       label: "Product Gallery" },
   { id: "sustainability", label: "Sustainability" },

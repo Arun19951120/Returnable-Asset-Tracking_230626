@@ -12,7 +12,6 @@ import CycleReport from "@/components/views/CycleReport";
 import AssetMovement from "@/components/views/AssetMovement";
 import Orders from "@/components/views/Orders";
 import PickupRequests from "@/components/views/PickupRequests";
-import Customers from "@/components/views/Customers";
 import Projects from "@/components/views/Projects";
 import LocationManagement from "@/components/views/LocationManagement";
 import HardwareConfig from "@/components/views/HardwareConfig";
@@ -39,7 +38,6 @@ const VIEWS: Record<string, React.ComponentType> = {
   cycles: CycleReport,
   orders: Orders,
   pickups: PickupRequests,
-  customers: Customers,
   projects:  Projects,
   locations: LocationManagement,
   hardware:  HardwareConfig,
