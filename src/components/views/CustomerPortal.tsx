@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { fetchAll, updateDocument, logAudit } from "@/lib/storage";
-import { Asset, AssetMovement, Location, Notification } from "@/lib/types";
+import { Asset, AssetMovement, Location, Notification, Project } from "@/lib/types";
+import { findUserProject, nextInFlow } from "@/lib/flow";
 import { useAuth } from "@/lib/auth-context";
 import {
   Package, Bell, LogOut, LogIn, MapPin,
@@ -208,12 +209,12 @@ export default function CustomerPortal() {
   const myLocations: string[] = profile?.allowedLocations ?? [];
 
   const load = useCallback(async () => {
-    const [a, l, n, m, cfg] = await Promise.all([
+    const [a, l, n, m, p] = await Promise.all([
       fetchAll<Asset>("assets"),
       fetchAll<Location>("locations"),
       fetchAll<Notification>("notifications"),
       fetchAll<AssetMovement>("movements"),
-      fetch("/api/hardware-config").then((r) => r.json()).catch(() => ({})),
+      fetchAll<Project>("projects"),
     ]);
     setAssets(a);
     setLocations(l);
@@ -225,8 +226,9 @@ export default function CustomerPortal() {
     const custLoc = (profile?.allowedLocations ?? [])[0] ?? "";
     // Check-in is always the user's own login location(s) — no configuration.
     setCheckInAllowedLocs(profile?.allowedLocations ?? []);
-    setCheckOutAllowedLocs(cfg?.locationCheckOutAllowed?.[custLoc] ?? []);
-  }, [profile?.uid, profile?.allowedLocations]);
+    // Checkout destination = next stop in the user's project flow.
+    setCheckOutAllowedLocs(nextInFlow(findUserProject(profile, p.filter((x) => x.status === "Active")), custLoc));
+  }, [profile]);
 
   useEffect(() => { load(); }, [load]);
 

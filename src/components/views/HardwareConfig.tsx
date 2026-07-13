@@ -258,33 +258,12 @@ export default function HardwareConfig() {
         </div>
       </div>
 
-      {/* ── Movement Defaults ── */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-            <MapPin className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900 text-sm">Movement Defaults</p>
-            <p className="text-xs text-slate-500">Pre-fill locations when users open Check Out from the sidebar</p>
-          </div>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Default Check Out Location</label>
-          <select
-            value={config.defaultCheckoutLocation ?? ""}
-            onChange={(e) => setConfig((p) => p ? { ...p, defaultCheckoutLocation: e.target.value } : p)}
-            className={select}
-          >
-            <option value="">— None (user selects manually) —</option>
-            {locations.map((l) => (
-              <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " (Master WH)" : ""}</option>
-            ))}
-          </select>
-          <p className="mt-1 text-[10px] text-slate-400">
-            When a user clicks "Check Out" in the sidebar, their "My Location" field will pre-fill with this value.
-          </p>
-        </div>
+      {/* Movement flow is configured per project (Projects → Movement Flow & SLA) */}
+      <div className="flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-3">
+        <MapPin className="h-4 w-4 text-indigo-500 shrink-0" />
+        <p className="text-xs text-indigo-700">
+          Movement defaults are now configured per project — set the flow (Primary → Receiving locations) and SLA in <strong>Projects → Movement Flow &amp; SLA</strong>.
+        </p>
       </div>
 
       {/* Status overview */}

@@ -6,7 +6,7 @@ import { UserProfile, CustomRole, Location, Project, BUILT_IN_ROLES, ALL_TABS } 
 import { useAuth } from "@/lib/auth-context";
 import {
   Users, ShieldCheck, FolderKanban, Plus, Trash2, Edit2, X, Loader2, Check,
-  KeyRound, Eye, EyeOff, Lock, Search, RefreshCw, AlertTriangle, UserPlus, MapPin, Save,
+  KeyRound, Eye, EyeOff, Lock, Search, RefreshCw, AlertTriangle, UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -777,213 +777,16 @@ function ProjectsTab() {
   );
 }
 
-// ─── Movement Defaults ───────────────────────────────────────────────────────
-// ─── Inline multi-select pill picker ─────────────────────────────────────────
-function LocationMultiSelect({
-  allLocations, selected, onChange,
-}: {
-  allLocations: Location[];
-  selected: string[];
-  onChange: (v: string[]) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  function toggle(name: string) {
-    onChange(selected.includes(name) ? selected.filter((s) => s !== name) : [...selected, name]);
-  }
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex min-w-[200px] flex-wrap items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-left text-sm outline-none hover:border-slate-400 transition-colors"
-      >
-        {selected.length === 0
-          ? <span className="text-xs text-slate-400">All locations (unrestricted)</span>
-          : selected.map((s) => (
-              <span key={s} className="inline-flex items-center gap-0.5 rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
-                {s}
-                <span role="button" onClick={(e) => { e.stopPropagation(); toggle(s); }}
-                  className="ml-0.5 leading-none cursor-pointer text-indigo-400 hover:text-indigo-700">×</span>
-              </span>
-            ))}
-        <span className="ml-auto pl-1 text-slate-400 shrink-0">▾</span>
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-40 mt-1 w-60 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
-            <div className="max-h-52 overflow-y-auto divide-y divide-slate-50">
-              {allLocations.map((l) => (
-                <label key={l.id} className="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-slate-50">
-                  <input type="checkbox" checked={selected.includes(l.name)} onChange={() => toggle(l.name)}
-                    className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
-                  <span className="text-sm text-slate-700 flex-1">{l.name}</span>
-                  {l.isMasterWarehouse && <span className="text-[10px] text-indigo-500 font-semibold">MWH</span>}
-                </label>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ─── Location table (defined outside to prevent remount on parent re-render) ──
-function LocationTable({
-  title, subtitle, color, locations, allowed, setAllowed,
-}: {
-  title: string; subtitle: string; color: string;
-  locations: Location[];
-  allowed: Record<string, string[]>;
-  setAllowed: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
-}) {
-  return (
-    // No overflow-hidden — dropdown must escape the card boundary
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className={`flex items-center gap-3 px-5 py-4 border-b border-slate-100 rounded-t-xl ${color}`}>
-        <MapPin className="h-4 w-4 text-slate-600" />
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-900 text-sm">{title}</p>
-          <p className="text-xs text-slate-500">{subtitle}</p>
-        </div>
-      </div>
-      {locations.length === 0 ? (
-        <div className="py-10 text-center text-sm text-slate-400">No active locations</div>
-      ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              <th className="px-5 py-3 text-left w-48">Customer Location</th>
-              <th className="px-5 py-3 text-left">Allowed Destination Locations</th>
-              <th className="px-5 py-3 text-left w-52">Auto-default when single</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {locations.map((loc) => {
-              const sel = allowed[loc.name] ?? [];
-              return (
-                <tr key={loc.id} className="hover:bg-slate-50 transition-colors align-top">
-                  <td className="px-5 py-3 pt-4">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                      <span className="font-medium text-slate-800 text-sm">{loc.name}</span>
-                      {loc.isMasterWarehouse && (
-                        <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-700">MWH</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <LocationMultiSelect
-                      allLocations={locations}
-                      selected={sel}
-                      onChange={(v) => setAllowed((p) => ({ ...p, [loc.name]: v }))}
-                    />
-                  </td>
-                  <td className="px-5 py-3 pt-4">
-                    {sel.length === 1 ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                        ✓ Auto → {sel[0]}
-                      </span>
-                    ) : sel.length === 0 ? (
-                      <span className="text-xs text-slate-400 italic">All shown</span>
-                    ) : (
-                      <span className="text-xs text-slate-400 italic">User selects ({sel.length} options)</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-// ─── Movement Defaults Tab ────────────────────────────────────────────────────
-function MovementDefaultsTab() {
-  const [locations,       setLocations]       = useState<Location[]>([]);
-  const [checkOutAllowed, setCheckOutAllowed] = useState<Record<string, string[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [saving,  setSaving]  = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [locs, res] = await Promise.all([
-        fetchAll<Location>("locations"),
-        fetch("/api/hardware-config"),
-      ]);
-      const cfg = await res.json();
-      setLocations(locs.filter((l) => l.status === "Active"));
-      setCheckOutAllowed(cfg.locationCheckOutAllowed ?? {});
-    } finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  async function save() {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/hardware-config");
-      const cfg = await res.json();
-      await fetch("/api/hardware-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...cfg, locationCheckOutAllowed: checkOutAllowed }),
-      });
-      toast.success("Movement defaults saved");
-    } catch { toast.error("Failed to save"); }
-    finally { setSaving(false); }
-  }
-
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
-    </div>
-  );
-
-  return (
-    <div className="space-y-5">
-      <div className="flex justify-end">
-        <button onClick={save} disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save All
-        </button>
-      </div>
-
-      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4">
-        <MapPin className="h-4 w-4 text-emerald-600 shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-emerald-800">Check-In — always the user&apos;s login location</p>
-          <p className="text-xs text-emerald-600">Assets are checked in to the logged-in user&apos;s own location automatically. No configuration needed.</p>
-        </div>
-      </div>
-
-      <LocationTable
-        title="Check-Out — Allowed Destination Locations"
-        subtitle="Select which locations a customer can dispatch assets TO, per their origin location. If exactly one is selected it pre-fills automatically."
-        color="bg-orange-50"
-        locations={locations}
-        allowed={checkOutAllowed}
-        setAllowed={setCheckOutAllowed}
-      />
-    </div>
-  );
-}
 
 // ─── Main Administration Shell ────────────────────────────────────────────────
 export default function Administration() {
-  const [activeTab, setActiveTab] = useState<"users" | "roles" | "projects" | "passwords" | "movements">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "roles" | "projects" | "passwords">("users");
 
   const TABS = [
     { id: "users"     as const, label: "User Profiles",       icon: Users,        color: "text-blue-600"   },
     { id: "passwords" as const, label: "Password Reset",      icon: KeyRound,     color: "text-orange-600" },
     { id: "roles"     as const, label: "Access Roles (RBAC)", icon: ShieldCheck,  color: "text-purple-600" },
     { id: "projects"  as const, label: "Projects",            icon: FolderKanban, color: "text-emerald-600" },
-    { id: "movements" as const, label: "Movement Defaults",   icon: MapPin,       color: "text-indigo-600" },
   ];
 
   return (
@@ -1006,7 +809,6 @@ export default function Administration() {
       {activeTab === "passwords" && <PasswordResetTab />}
       {activeTab === "roles"     && <RBACTab />}
       {activeTab === "projects"  && <ProjectsTab />}
-      {activeTab === "movements" && <MovementDefaultsTab />}
     </div>
   );
 }

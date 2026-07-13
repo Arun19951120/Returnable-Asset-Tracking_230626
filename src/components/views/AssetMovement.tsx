@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { fetchAll, addDocument, updateDocument, logAudit } from "@/lib/storage";
 import type { Asset, Location, Project, AssetMovement, DCCancellation, AssetCycle, DCLog } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
+import { findUserProject, nextInFlow } from "@/lib/flow";
 import {
   LogOut, LogIn, FileText, Wifi, Loader2, Search,
   CheckCircle2, Clock, X, QrCode, ScanBarcode,
@@ -231,18 +232,15 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
   const [cycles,    setCycles]    = useState<AssetCycle[]>([]);
 
   const [activeTab, setActiveTab] = useState<"movement"|"dc">("movement");
-  const [defaultCheckoutLocation,  setDefaultCheckoutLocation]  = useState<string>("");
-  const [locationCheckOutAllowed,  setLocationCheckOutAllowed]  = useState<Record<string, string[]>>({});
 
   const load = useCallback(async () => {
-    const [a, l, p, m, c, cy, cfg] = await Promise.all([
+    const [a, l, p, m, c, cy] = await Promise.all([
       fetchAll<Asset>("assets"),
       fetchAll<Location>("locations"),
       fetchAll<Project>("projects"),
       fetchAll<AssetMovement>("movements"),
       fetchAll<DCCancellation>("dc_cancellations"),
       fetchAll<AssetCycle>("asset_cycles"),
-      fetch("/api/hardware-config").then((r) => r.ok ? r.json() : {}),
     ]);
     setAssets(a);
     setLocations(l.filter((x) => x.status === "Active"));
@@ -250,12 +248,6 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
     setMovements(m);
     setCancels(c);
     setCycles(cy);
-    const cfgTyped = cfg as {
-      defaultCheckoutLocation?: string;
-      locationCheckOutAllowed?: Record<string, string[]>;
-    };
-    setDefaultCheckoutLocation(cfgTyped.defaultCheckoutLocation ?? "");
-    setLocationCheckOutAllowed(cfgTyped.locationCheckOutAllowed ?? {});
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -300,7 +292,9 @@ export default function AssetMovement({ mode }: { mode?: "checkout" | "checkin" 
 
       {activeTab === "movement" && (() => {
         const custLoc = profile?.allowedLocations?.[0] ?? "";
-        const coAllowed = locationCheckOutAllowed[custLoc] ?? [];
+        // Checkout destinations come from the user's project flow:
+        // the next stop in the loop after their own location.
+        const coAllowed = nextInFlow(findUserProject(profile, projects), custLoc);
         // Check-in is always the user's own login location — no configuration.
         return (
           <SmartMovementPanel
