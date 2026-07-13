@@ -6,15 +6,8 @@ import { Location } from "@/lib/types";
 import { MapPin, Plus, X, Edit2, Loader2, Star, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
-const TYPE_STYLES: Record<Location["type"], string> = {
-  Warehouse:     "bg-blue-100 text-blue-700",
-  Tier1_Site:    "bg-purple-100 text-purple-700",
-  OEM_Site:      "bg-orange-100 text-orange-700",
-  Customer_Site: "bg-emerald-100 text-emerald-700",
-};
-
 const empty = {
-  name: "", type: "Warehouse" as Location["type"],
+  name: "",
   status: "Active" as Location["status"],
   address: "", isMasterWarehouse: false,
   contactName: "", contactEmail: "", contactPhone: "",
@@ -37,7 +30,7 @@ export default function LocationManagement() {
   function openEdit(l: Location) {
     setEditing(l);
     setForm({
-      name: l.name, type: l.type, status: l.status, address: l.address ?? "",
+      name: l.name, status: l.status, address: l.address ?? "",
       isMasterWarehouse: l.isMasterWarehouse ?? false,
       contactName: l.contactName ?? "", contactEmail: l.contactEmail ?? "", contactPhone: l.contactPhone ?? "",
     });
@@ -107,14 +100,14 @@ export default function LocationManagement() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
-              {["Name", "Type", "Master WH", "Contact", "Address", "Status", "Actions"].map((h) => (
+              {["Name", "Master WH", "Contact", "Address", "Status", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {locations.length === 0 && (
-              <tr><td colSpan={7} className="py-10 text-center text-slate-400">No customers / locations yet</td></tr>
+              <tr><td colSpan={6} className="py-10 text-center text-slate-400">No customers / locations yet</td></tr>
             )}
             {locations.map((loc) => (
               <tr key={loc.id} className={`hover:bg-slate-50 ${loc.status === "Inactive" ? "opacity-60" : ""}`}>
@@ -127,11 +120,6 @@ export default function LocationManagement() {
                       {loc.name}
                     </span>
                   </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_STYLES[loc.type]}`}>
-                    {loc.type.replace("_", " ")}
-                  </span>
                 </td>
                 <td className="px-4 py-3">
                   {loc.isMasterWarehouse
@@ -180,24 +168,12 @@ export default function LocationManagement() {
                   placeholder="e.g. Central Warehouse" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">Type</label>
-                  <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as Location["type"] }))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
-                    <option value="Warehouse">Warehouse</option>
-                    <option value="Tier1_Site">Tier-1 Site</option>
-                    <option value="OEM_Site">OEM Site</option>
-                    <option value="Customer_Site">Customer Site</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">Status</label>
-                  <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as Location["status"] }))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
-                    <option>Active</option><option>Inactive</option>
-                  </select>
-                </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">Status</label>
+                <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as Location["status"] }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
+                  <option>Active</option><option>Inactive</option>
+                </select>
               </div>
 
               <div>
@@ -233,7 +209,7 @@ export default function LocationManagement() {
               </div>
 
               {/* Master Warehouse toggle — only relevant for Warehouse type */}
-              {form.type === "Warehouse" && (
+              {(
                 <div className={`rounded-xl border-2 p-4 transition-colors cursor-pointer ${form.isMasterWarehouse ? "border-amber-400 bg-amber-50" : "border-slate-200 hover:border-slate-300"}`}
                   onClick={() => setForm((p) => ({ ...p, isMasterWarehouse: !p.isMasterWarehouse }))}>
                   <div className="flex items-center gap-3">

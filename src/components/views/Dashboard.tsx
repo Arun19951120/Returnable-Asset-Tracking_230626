@@ -479,7 +479,7 @@ function CustomerDashboard() {
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-slate-400" />
                       <span className="font-semibold text-slate-800">{loc}</span>
-                      {locObj?.type && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">{locObj.type}</span>}
+                      {locObj?.isMasterWarehouse && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700">⭐ Master</span>}
                     </div>
                     <span className="text-sm font-bold text-slate-700">{locAssets.length} total</span>
                   </div>

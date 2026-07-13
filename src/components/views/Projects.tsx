@@ -48,6 +48,9 @@ const EMPTY_FORM = {
   name: "", client: "", status: "Active" as Project["status"],
   startDate: "", endDate: "",
   allowedLocations: [] as string[],
+  primaryLocation: "",
+  receivingLocations: [] as string[],
+  slaDays: "" as string | number,
 };
 
 const EMPTY_PO = {
@@ -1070,6 +1073,9 @@ export default function Projects() {
       name: proj.name, client: proj.client, status: proj.status,
       startDate: proj.startDate ?? "", endDate: proj.endDate ?? "",
       allowedLocations: proj.allowedLocations ?? [],
+      primaryLocation: proj.primaryLocation ?? "",
+      receivingLocations: proj.receivingLocations ?? [],
+      slaDays: proj.slaDays ?? "",
     });
     setShowForm(true);
   }
@@ -1084,6 +1090,9 @@ export default function Projects() {
         startDate: form.startDate || undefined,
         endDate: form.endDate || undefined,
         allowedLocations: form.allowedLocations.length > 0 ? form.allowedLocations : undefined,
+        primaryLocation: form.primaryLocation || undefined,
+        receivingLocations: form.receivingLocations.length > 0 ? form.receivingLocations : undefined,
+        slaDays: form.slaDays !== "" ? Number(form.slaDays) : undefined,
       };
       if (editingId) {
         await updateDocument("projects", editingId, data);
@@ -1344,7 +1353,7 @@ export default function Projects() {
                                 <td className="px-3 py-2 text-center font-mono font-bold text-slate-700">{cnt}</td>
                                 <td className="px-3 py-2 text-center">
                                   <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
-                                    {locObj?.type?.replace("_"," ") ?? "—"}
+                                    {locObj?.isMasterWarehouse ? "Master WH" : "Customer Site"}
                                   </span>
                                 </td>
                                 <td className="px-3 py-2 text-right font-mono text-slate-500">{pct}%</td>
@@ -1509,7 +1518,6 @@ export default function Projects() {
                           className="rounded" />
                         <span className="text-slate-700">{loc.name}</span>
                         {loc.isMasterWarehouse && <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] text-amber-700">Master WH</span>}
-                        <span className="ml-auto rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] text-slate-500">{loc.type?.replace("_"," ")}</span>
                       </label>
                     ))}
                     {locations.filter((l) => l.status === "Active").length === 0 && (
@@ -1519,6 +1527,62 @@ export default function Projects() {
                   {form.allowedLocations.length > 0 && (
                     <p className="mt-1 text-[10px] text-emerald-600 font-medium">
                       ✓ {form.allowedLocations.length} location{form.allowedLocations.length > 1 ? "s" : ""} selected
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Movement flow configuration ── */}
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-3">
+                <p className="text-xs font-semibold text-indigo-800">Movement Flow &amp; SLA</p>
+                <p className="text-[10px] text-indigo-500">
+                  The loop: Primary → Receiving 1 → Receiving 2 → … → back to Primary
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Primary Location</label>
+                    <select value={form.primaryLocation}
+                      onChange={(e) => setForm((p) => ({ ...p, primaryLocation: e.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500">
+                      <option value="">— select —</option>
+                      {locations.filter((l) => l.status === "Active").map((l) => (
+                        <option key={l.id} value={l.name}>{l.name}{l.isMasterWarehouse ? " ⭐" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">SLA Days</label>
+                    <input type="number" min={1} value={form.slaDays}
+                      onChange={(e) => setForm((p) => ({ ...p, slaDays: e.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      placeholder="e.g. 7" />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Receiving Locations (in flow order)</label>
+                  {form.receivingLocations.map((name, i) => (
+                    <div key={i} className="mb-1.5 flex items-center gap-2">
+                      <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">{i + 1}</span>
+                      <span className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700">{name}</span>
+                      <button type="button"
+                        onClick={() => setForm((p) => ({ ...p, receivingLocations: p.receivingLocations.filter((_, x) => x !== i) }))}
+                        className="text-slate-300 hover:text-red-500"><X className="h-4 w-4" /></button>
+                    </div>
+                  ))}
+                  <select value=""
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v) setForm((p) => ({ ...p, receivingLocations: [...p.receivingLocations, v] }));
+                    }}
+                    className="w-full rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-500 outline-none focus:border-slate-500">
+                    <option value="">+ Add receiving location…</option>
+                    {locations
+                      .filter((l) => l.status === "Active" && l.name !== form.primaryLocation && !form.receivingLocations.includes(l.name))
+                      .map((l) => <option key={l.id} value={l.name}>{l.name}</option>)}
+                  </select>
+                  {form.primaryLocation && form.receivingLocations.length > 0 && (
+                    <p className="mt-2 text-[10px] font-medium text-indigo-600">
+                      Flow: {form.primaryLocation} → {form.receivingLocations.join(" → ")} → {form.primaryLocation}
                     </p>
                   )}
                 </div>

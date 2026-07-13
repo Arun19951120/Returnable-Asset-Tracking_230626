@@ -227,9 +227,6 @@ export default function InventoryChart() {
                       <td className="px-5 py-3">
                         <p className="font-medium text-slate-800">{row.location as string}</p>
                         {locObj?.contactName && <p className="text-[10px] text-slate-400 mt-0.5">Contact: {locObj.contactName}</p>}
-                        <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] text-blue-700 font-medium">
-                          {locObj?.type?.replace(/_/g, " ") ?? "Site"}
-                        </span>
                       </td>
                       <td className="px-4 py-3 text-center font-bold font-mono text-slate-800">{row.total as number}</td>
                       {STATUSES.map((s) => (
@@ -345,7 +342,6 @@ export default function InventoryChart() {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase tracking-wider text-slate-500">
                 <th className="px-5 py-3 text-left">Location</th>
-                <th className="px-4 py-3 text-left">Type</th>
                 <th className="px-4 py-3 text-center">Total</th>
                 {STATUSES.map((s) => <th key={s} className="px-4 py-3 text-center" style={{ color: STATUS_COLORS[s] }}>{s}</th>)}
                 <th className="px-4 py-3 text-right">% Fleet</th>
@@ -353,7 +349,7 @@ export default function InventoryChart() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {locChartData.length === 0 && (
-                <tr><td colSpan={8} className="py-10 text-center text-slate-400 text-xs">No inventory data</td></tr>
+                <tr><td colSpan={7} className="py-10 text-center text-slate-400 text-xs">No inventory data</td></tr>
               )}
               {locChartData.map((row) => {
                 const locObj = locations.find((l) => l.name === row.location);
@@ -365,11 +361,6 @@ export default function InventoryChart() {
                         {row.location as string}
                         {locObj?.isMasterWarehouse && <span className="rounded-full bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700">MASTER</span>}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
-                        {locObj?.type?.replace(/_/g, " ") ?? "—"}
-                      </span>
                     </td>
                     <td className="px-4 py-3 text-center font-bold font-mono text-slate-700">{row.total as number}</td>
                     {STATUSES.map((s) => (

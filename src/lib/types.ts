@@ -62,7 +62,6 @@ export interface AssetCycle {
 export interface Location {
   id: string;
   name: string;
-  type: "Warehouse" | "Tier1_Site" | "OEM_Site" | "Customer_Site";
   status: "Active" | "Inactive";
   address?: string;
   isMasterWarehouse?: boolean;   // Assets can only be initially registered here
@@ -78,6 +77,11 @@ export interface Project {
   status: "Active" | "Closed";
   startDate?: string;
   endDate?: string;
+  // Flow configuration — the movement loop for this project:
+  // primaryLocation → receivingLocations[0] → [1] → … → back to primary
+  primaryLocation?: string;
+  receivingLocations?: string[];
+  slaDays?: number;              // SLA (days) for this project's customer
   // Contract type
   contractType?: "po" | "agreement";   // default = "po" for backward compat
   // PO-based fields

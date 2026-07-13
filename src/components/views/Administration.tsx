@@ -290,7 +290,7 @@ function UserProfilesTab() {
                       <label key={loc.id} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-all ${checked ? "border-slate-900 bg-slate-50" : "border-slate-200 hover:bg-slate-50"}`}>
                         <input type="checkbox" checked={checked} onChange={() => toggle("allowedLocations", loc.name)} className="rounded" />
                         <span className="font-medium text-slate-700 truncate">{loc.name}</span>
-                        <span className="ml-auto text-slate-400 text-[10px] shrink-0">{loc.isMasterWarehouse ? "⭐" : loc.type}</span>
+                        <span className="ml-auto text-slate-400 text-[10px] shrink-0">{loc.isMasterWarehouse ? "⭐ Master" : ""}</span>
                       </label>
                     );
                   })}
