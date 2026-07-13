@@ -59,11 +59,14 @@ export interface AssetCycle {
 
 // Customers and locations are merged: each customer IS a location.
 // Non-warehouse locations carry the customer's contact details.
+// name = organization name; name/address/gst are printed on Delivery Challans.
 export interface Location {
   id: string;
-  name: string;
+  name: string;                  // Location / Organization name (shown on DC)
+  type?: "Rustoppers Warehouse" | "Customer Site";
   status: "Active" | "Inactive";
-  address?: string;
+  address?: string;              // Full address (shown on DC)
+  gst?: string;                  // GST number (shown on DC)
   isMasterWarehouse?: boolean;   // Assets can only be initially registered here
   contactName?: string;
   contactEmail?: string;

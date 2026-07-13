@@ -109,17 +109,27 @@ export async function generateAssetsDC(
 
     // ── From / To ──────────────────────────────────────────────────────────────
     const half = (W - mg * 2) / 2 - 2;
+    const boxH = 30;
     doc.setFillColor(241, 245, 249);
-    doc.rect(mg, 32, half, 22, "F");
-    doc.rect(mg + half + 4, 32, half, 22, "F");
+    doc.rect(mg, 32, half, boxH, "F");
+    doc.rect(mg + half + 4, 32, half, boxH, "F");
     doc.setTextColor(30, 41, 59); doc.setFontSize(7); doc.setFont("helvetica", "bold");
     doc.text("CONSIGNOR (FROM)", mg + 2, 37);
     doc.text("CONSIGNEE (TO)", mg + half + 6, 37);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
-    doc.text(fromLocation, mg + 2, 43);
-    if (fromL?.address) doc.text(fromL.address.slice(0, 45), mg + 2, 48);
-    doc.text(toLocation, mg + half + 6, 43);
-    if (toL?.address) doc.text(toL.address.slice(0, 45), mg + half + 6, 48);
+
+    // Party block: organization name, address (wrapped), GST
+    const renderParty = (name: string, loc: Location | undefined, x: number) => {
+      let py = 42;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+      doc.splitTextToSize(name, half - 4).slice(0, 2).forEach((line: string) => { doc.text(line, x, py); py += 4; });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7);
+      if (loc?.address) {
+        doc.splitTextToSize(loc.address, half - 4).slice(0, 2).forEach((line: string) => { doc.text(line, x, py); py += 3.5; });
+      }
+      if (loc?.gst) { doc.setFont("helvetica", "bold"); doc.text(`GSTIN: ${loc.gst}`, x, py); }
+    };
+    renderParty(fromLocation, fromL, mg + 2);
+    renderParty(toLocation, toL, mg + half + 6);
 
     // ── OPTION 01 — Individual line items ─────────────────────────────────────
     if (lineMode === "individual") {
@@ -143,7 +153,7 @@ export async function generateAssetsDC(
       foot.push("", assets.length, fmt(grandTotal));
 
       autoTable(doc, {
-        startY: 58, head: [head], body, foot: [foot], theme: "grid",
+        startY: 66, head: [head], body, foot: [foot], theme: "grid",
         styles: { fontSize: 8, cellPadding: 2, textColor: [30,41,59] },
         headStyles: { fillColor: [30,41,59], textColor: 255, fontStyle: "bold", fontSize: 8 },
         footStyles: { fillColor: [30,41,59], textColor: 255, fontStyle: "bold", fontSize: 8 },
@@ -164,7 +174,7 @@ export async function generateAssetsDC(
       const foot02 = ["", `TOTAL: ${assets.length} asset(s)`, "", "", assets.length, fmt(grandTotal)];
 
       autoTable(doc, {
-        startY: 58,
+        startY: 66,
         head: [["#", "Asset Name", "HSN", "Unit Price", "Qty", "Total Value"]],
         body: body02, foot: [foot02], theme: "grid",
         styles: { fontSize: 8, cellPadding: 2, textColor: [30,41,59] },

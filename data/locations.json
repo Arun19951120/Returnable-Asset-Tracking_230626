@@ -5,7 +5,9 @@
     "status": "Active",
     "address": "No. 13, Master Hub, Ch",
     "isMasterWarehouse": true,
-    "createdAt": "2026-06-09T17:28:32.585Z"
+    "createdAt": "2026-06-09T17:28:32.585Z",
+    "type": "Rustoppers Warehouse",
+    "gst": "33AABCR1234M1Z5"
   },
   {
     "id": "loc-cd04bf34",
@@ -16,7 +18,9 @@
     "createdAt": "2026-06-09T17:29:34.169Z",
     "contactName": "Customer 01",
     "contactEmail": "customer01@tier1.com",
-    "contactPhone": ""
+    "contactPhone": "",
+    "type": "Customer Site",
+    "gst": "33AABCT5678N1Z2"
   },
   {
     "id": "loc-2ffc4ba8",
@@ -27,6 +31,8 @@
     "createdAt": "2026-06-09T17:30:04.112Z",
     "contactName": "Customer02",
     "contactEmail": "customer02@oem.com",
-    "contactPhone": ""
+    "contactPhone": "",
+    "type": "Customer Site",
+    "gst": "29AABCO9012P1Z8"
   }
 ]

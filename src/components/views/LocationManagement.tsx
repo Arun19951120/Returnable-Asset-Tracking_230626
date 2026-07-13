@@ -8,8 +8,9 @@ import { toast } from "sonner";
 
 const empty = {
   name: "",
+  type: "Customer Site" as NonNullable<Location["type"]>,
   status: "Active" as Location["status"],
-  address: "", isMasterWarehouse: false,
+  address: "", gst: "", isMasterWarehouse: false,
   contactName: "", contactEmail: "", contactPhone: "",
 };
 
@@ -30,7 +31,9 @@ export default function LocationManagement() {
   function openEdit(l: Location) {
     setEditing(l);
     setForm({
-      name: l.name, status: l.status, address: l.address ?? "",
+      name: l.name,
+      type: l.type ?? (l.isMasterWarehouse ? "Rustoppers Warehouse" : "Customer Site"),
+      status: l.status, address: l.address ?? "", gst: l.gst ?? "",
       isMasterWarehouse: l.isMasterWarehouse ?? false,
       contactName: l.contactName ?? "", contactEmail: l.contactEmail ?? "", contactPhone: l.contactPhone ?? "",
     });
@@ -50,11 +53,13 @@ export default function LocationManagement() {
         }
       }
 
+      // Customer Sites can never be a Master Warehouse
+      const payload = { ...form, isMasterWarehouse: form.type === "Rustoppers Warehouse" ? form.isMasterWarehouse : false };
       if (editing) {
-        await updateDocument("locations", editing.id, { ...form });
+        await updateDocument("locations", editing.id, payload);
         toast.success("Location updated");
       } else {
-        await addDocument("locations", { ...form });
+        await addDocument("locations", payload);
         toast.success("Location added");
       }
       setShowForm(false); load();
@@ -100,14 +105,14 @@ export default function LocationManagement() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
-              {["Name", "Master WH", "Contact", "Address", "Status", "Actions"].map((h) => (
+              {["Name", "Type", "Master WH", "Contact", "Address / GST", "Status", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {locations.length === 0 && (
-              <tr><td colSpan={6} className="py-10 text-center text-slate-400">No customers / locations yet</td></tr>
+              <tr><td colSpan={7} className="py-10 text-center text-slate-400">No customers / locations yet</td></tr>
             )}
             {locations.map((loc) => (
               <tr key={loc.id} className={`hover:bg-slate-50 ${loc.status === "Inactive" ? "opacity-60" : ""}`}>
@@ -122,6 +127,12 @@ export default function LocationManagement() {
                   </div>
                 </td>
                 <td className="px-4 py-3">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    loc.type === "Rustoppers Warehouse" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"}`}>
+                    {loc.type ?? "Customer Site"}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
                   {loc.isMasterWarehouse
                     ? <span className="flex items-center gap-1 text-xs font-semibold text-amber-600"><Star className="h-3 w-3 fill-amber-400 text-amber-400" /> Master</span>
                     : <span className="text-xs text-slate-300">—</span>}
@@ -134,7 +145,10 @@ export default function LocationManagement() {
                     </div>
                   ) : <span className="text-xs text-slate-300">—</span>}
                 </td>
-                <td className="px-4 py-3 text-slate-500 text-xs max-w-xs truncate">{loc.address || "—"}</td>
+                <td className="px-4 py-3 max-w-xs">
+                  <p className="text-slate-500 text-xs truncate">{loc.address || "—"}</p>
+                  {loc.gst && <p className="text-[10px] font-mono text-indigo-500 mt-0.5">GST: {loc.gst}</p>}
+                </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${loc.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                     {loc.status}
@@ -162,18 +176,29 @@ export default function LocationManagement() {
             </div>
             <form onSubmit={handleSave} className="p-5 space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">Location Name *</label>
+                <label className="mb-1 block text-xs font-medium text-slate-600">Location Name (Organization Name) *</label>
                 <input required value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-                  placeholder="e.g. Central Warehouse" />
+                  placeholder="e.g. ACME Industries Pvt Ltd" />
+                <p className="mt-1 text-[10px] text-slate-400">Printed on the Delivery Challan as consignor / consignee name.</p>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600">Status</label>
-                <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as Location["status"] }))}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
-                  <option>Active</option><option>Inactive</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Location Type</label>
+                  <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as NonNullable<Location["type"]> }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 bg-white">
+                    <option>Rustoppers Warehouse</option>
+                    <option>Customer Site</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Status</label>
+                  <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as Location["status"] }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
+                    <option>Active</option><option>Inactive</option>
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -181,6 +206,15 @@ export default function LocationManagement() {
                 <input value={form.address} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                   placeholder="Block, Street, City…" />
+                <p className="mt-1 text-[10px] text-slate-400">Printed on the Delivery Challan.</p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">GST Details</label>
+                <input value={form.gst} onChange={(e) => setForm((p) => ({ ...p, gst: e.target.value.toUpperCase() }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 font-mono"
+                  placeholder="e.g. 33AABCU9603R1ZM" />
+                <p className="mt-1 text-[10px] text-slate-400">GSTIN printed on the Delivery Challan.</p>
               </div>
 
               {/* Customer contact details */}
@@ -208,8 +242,8 @@ export default function LocationManagement() {
                 </div>
               </div>
 
-              {/* Master Warehouse toggle — only relevant for Warehouse type */}
-              {(
+              {/* Master Warehouse toggle — only relevant for Rustoppers Warehouse */}
+              {form.type === "Rustoppers Warehouse" && (
                 <div className={`rounded-xl border-2 p-4 transition-colors cursor-pointer ${form.isMasterWarehouse ? "border-amber-400 bg-amber-50" : "border-slate-200 hover:border-slate-300"}`}
                   onClick={() => setForm((p) => ({ ...p, isMasterWarehouse: !p.isMasterWarehouse }))}>
                   <div className="flex items-center gap-3">
