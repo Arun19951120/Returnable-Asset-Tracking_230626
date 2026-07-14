@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { fetchAll, addDocument, updateDocument, logAudit } from "@/lib/storage";
-import { Asset, AssetMovement, Location, Notification, Project } from "@/lib/types";
+import { Asset, AssetMovement, Location, Project } from "@/lib/types";
 import { findUserProject, nextInFlow } from "@/lib/flow";
 import { useAuth } from "@/lib/auth-context";
 import {
-  Package, Bell, LogOut, LogIn, MapPin,
+  Package, LogOut, LogIn, MapPin,
   Truck, CheckCheck, Loader2, CheckCircle2, Clock,
   QrCode, ScanBarcode, Wifi, Camera, X, FlipHorizontal,
 } from "lucide-react";
@@ -190,7 +190,6 @@ export default function CustomerPortal() {
   const [assets,    setAssets]    = useState<Asset[]>([]);
   const [movements, setMovements] = useState<AssetMovement[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
-  const [notifs,    setNotifs]    = useState<Notification[]>([]);
   const [selected,  setSelected]  = useState<string | null>(null);
   const [txAsset,   setTxAsset]   = useState<Asset | null>(null);
   const [txMode,    setTxMode]    = useState<"checkout" | "checkin">("checkout");
@@ -211,20 +210,15 @@ export default function CustomerPortal() {
   const myLocations: string[] = profile?.allowedLocations ?? [];
 
   const load = useCallback(async () => {
-    const [a, l, n, m, p] = await Promise.all([
+    const [a, l, m, p] = await Promise.all([
       fetchAll<Asset>("assets"),
       fetchAll<Location>("locations"),
-      fetchAll<Notification>("notifications"),
       fetchAll<AssetMovement>("movements"),
       fetchAll<Project>("projects"),
     ]);
     setAssets(a);
     setLocations(l);
     setMovements(m);
-    setNotifs(
-      n.filter((x) => (!x.forUser || x.forUser === profile?.uid) && !x.read)
-       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    );
     const custLoc = (profile?.allowedLocations ?? [])[0] ?? "";
     // Check-in is always the user's own login location(s) — no configuration.
     setCheckInAllowedLocs(profile?.allowedLocations ?? []);
@@ -364,24 +358,7 @@ export default function CustomerPortal() {
         </div>
       </div>
 
-      {/* Unread dispatch notifications */}
-      {notifs.length > 0 && (
-        <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-4 space-y-2 shadow-sm">
-          <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
-            <Bell className="h-4 w-4 text-amber-600" />
-            <span>📦 {notifs.length} new shipment notification{notifs.length > 1 ? "s" : ""}</span>
-          </div>
-          {notifs.map((n) => (
-            <div key={n.id} className="flex items-start gap-2 rounded-lg bg-white border border-amber-200 px-3 py-2.5">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-amber-800">{n.title}</p>
-                <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-line">{n.message}</p>
-                <p className="text-[10px] text-slate-400 mt-1">{new Date(n.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Notifications now live in the bell dropdown (TopBar), not on the dashboard */}
 
       {/* ── Incoming Shipments ──────────────────────────────────────────────── */}
       {incomingMovements.length > 0 && (
