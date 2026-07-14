@@ -653,5 +653,27 @@
         "description": ""
       }
     ]
+  },
+  {
+    "id": "dc_-fbb9d1c5",
+    "dcNo": "MOV-551580",
+    "createdAt": "2026-07-14T00:39:11.580Z",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Checkout",
+    "description": "PLSKIT 1200X1000X1000mm",
+    "qty": 1,
+    "lineMode": "individual",
+    "showRFID": false,
+    "showBLE": false,
+    "createdBy": "user-2b2e87c2",
+    "assetSnapshots": [
+      {
+        "id": "ass-c4945b1a",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-01",
+        "cost": 0
+      }
+    ]
   }
 ]

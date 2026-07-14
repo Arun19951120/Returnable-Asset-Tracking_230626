@@ -552,5 +552,38 @@
     "completedBy": "user-2b2e87c2",
     "completedAt": "2026-07-14T00:13:52.362Z",
     "updatedAt": "2026-07-14T00:13:53.287Z"
+  },
+  {
+    "id": "mov-153b020b",
+    "assetId": "ass-c4945b1a",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Checkout",
+    "status": "In-Transit",
+    "createdBy": "user-2b2e87c2",
+    "createdAt": "2026-07-14T00:38:38.948Z"
+  },
+  {
+    "id": "mov-bc82795a",
+    "assetId": "ass-0c6222ce",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Checkout",
+    "status": "In-Transit",
+    "createdBy": "user-2b2e87c2",
+    "createdAt": "2026-07-14T00:40:15.278Z"
+  },
+  {
+    "id": "mov-c1688999",
+    "assetId": "ass-71c027a8",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "fromLocation": "Tier 1",
+    "toLocation": "OEM",
+    "movementType": "Checkout",
+    "status": "In-Transit",
+    "createdBy": "user-2b2e87c2",
+    "createdAt": "2026-07-14T00:40:15.452Z"
   }
 ]

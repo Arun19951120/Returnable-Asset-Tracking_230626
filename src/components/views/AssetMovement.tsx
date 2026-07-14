@@ -1025,7 +1025,10 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
           {/* ── Scan / search bar ──────────────────────────────────────────── */}
           <BulkScanner
             scannedIds={queue.map((q) => q.assetId)}
-            availableAssets={[...incomingMovs.map((m) => assets.find((a) => a.id === m.assetId)!).filter(Boolean), ...availableAtMyLoc]}
+            availableAssets={[
+              ...(mode !== "checkout" ? incomingMovs.map((m) => assets.find((a) => a.id === m.assetId)!).filter(Boolean) : []),
+              ...(mode !== "checkin" ? availableAtMyLoc : []),
+            ]}
             allAssets={assets}
             onAdd={(id) => {
               const asset = assets.find((a) => a.id === id);
@@ -1137,7 +1140,8 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
           )}
 
           {/* ── Browse available at my location (manual add to dispatch) ────── */}
-          {availableAtMyLoc.length > 0 && incomingMovs.length === 0 && (
+          {/* Only in Check-Out mode — checked-in (Available) assets belong to dispatch, not check-in */}
+          {mode !== "checkin" && availableAtMyLoc.length > 0 && incomingMovs.length === 0 && (
             <details className="rounded-xl border border-slate-200 overflow-hidden">
               <summary className="cursor-pointer bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100">
                 <Search className="inline h-3.5 w-3.5 mr-1" />
@@ -1219,10 +1223,10 @@ function SmartMovementPanel({ assets, locations, projects, movements, cycles, pr
                   {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
                   Approve & Process
                 </button>
-                {dispatchQueued.length > 0 && dispatchQueued.length > 1 && (
+                {dispatchQueued.length > 0 && (
                   <button onClick={() => setShowBulkDC(true)} disabled={!dispatchTo}
                     className="flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-indigo-700 disabled:opacity-50">
-                    <FileText className="h-4 w-4" /> + DC
+                    <FileText className="h-4 w-4" /> Prepare DC
                   </button>
                 )}
               </div>

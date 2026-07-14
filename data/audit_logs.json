@@ -1168,5 +1168,35 @@
     "details": "ass-4a3f1170",
     "timestamp": "2026-07-14T00:14:13.608Z",
     "createdAt": "2026-07-14T00:14:13.668Z"
+  },
+  {
+    "id": "aud-162a19f7",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · Tier 1 → OEM",
+    "category": "Transfer",
+    "details": "ass-c4945b1a",
+    "timestamp": "2026-07-14T00:38:40.279Z",
+    "createdAt": "2026-07-14T00:38:40.337Z"
+  },
+  {
+    "id": "aud-0efc8f78",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · Tier 1 → OEM",
+    "category": "Transfer",
+    "details": "ass-0c6222ce",
+    "timestamp": "2026-07-14T00:40:15.413Z",
+    "createdAt": "2026-07-14T00:40:15.442Z"
+  },
+  {
+    "id": "aud-413051c9",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · Tier 1 → OEM",
+    "category": "Transfer",
+    "details": "ass-71c027a8",
+    "timestamp": "2026-07-14T00:40:15.536Z",
+    "createdAt": "2026-07-14T00:40:15.567Z"
   }
 ]

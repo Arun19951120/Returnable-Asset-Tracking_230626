@@ -71,6 +71,12 @@ export async function generateAssetsDC(
   const now   = new Date();
   const fromL = allLocations.find((l) => l.name === fromLocation);
   const toL   = allLocations.find((l) => l.name === toLocation);
+  // Assets are registered at (and dispatched from) the Master Warehouse —
+  // its organization name & address head the challan.
+  const masterWH   = allLocations.find((l) => l.isMasterWarehouse);
+  const headOrg     = masterWH?.name || companyName;
+  const headAddress = masterWH?.address || "";
+  const headGst     = masterWH?.gst || "";
 
   // ── Group by description (for Option 02) ────────────────────────────────────
   type Group = { name: string; uuids: string[]; rfids: string[]; bles: string[]; unitCost: number };
@@ -95,31 +101,41 @@ export async function generateAssetsDC(
     const clr = HDR[lbl];
 
     // ── Header band ────────────────────────────────────────────────────────────
+    const bandH = headAddress ? 34 : 28;
     doc.setFillColor(...clr);
-    doc.rect(0, 0, W, 28, "F");
+    doc.rect(0, 0, W, bandH, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13); doc.setFont("helvetica", "bold");
-    doc.text(companyName, W / 2, 9, { align: "center" });
+    doc.text(headOrg, W / 2, 9, { align: "center" });
+    // Master Warehouse address + GST (origin of dispatch)
+    if (headAddress) {
+      doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+      const addrLine = headGst ? `${headAddress}  ·  GSTIN: ${headGst}` : headAddress;
+      doc.text(addrLine, W / 2, 14, { align: "center" });
+    }
+    const subY = headAddress ? 20 : 15;
     doc.setFontSize(9); doc.setFont("helvetica", "normal");
-    doc.text(`Asset Movement Delivery Challan — ${movementType}`, W / 2, 15, { align: "center" });
+    doc.text(`Asset Movement Delivery Challan — ${movementType}`, W / 2, subY, { align: "center" });
     doc.setFontSize(8);
-    doc.text(`DC No: ${dcNo}`, mg, 22);
-    doc.text(`Date: ${now.toLocaleDateString("en-IN")}`, W / 2, 22, { align: "center" });
-    doc.text(`[ ${lbl} COPY ]`, W - mg, 22, { align: "right" });
+    const metaY = headAddress ? 28 : 22;
+    doc.text(`DC No: ${dcNo}`, mg, metaY);
+    doc.text(`Date: ${now.toLocaleDateString("en-IN")}`, W / 2, metaY, { align: "center" });
+    doc.text(`[ ${lbl} COPY ]`, W - mg, metaY, { align: "right" });
 
     // ── From / To ──────────────────────────────────────────────────────────────
     const half = (W - mg * 2) / 2 - 2;
     const boxH = 30;
+    const boxY = bandH + 4;
     doc.setFillColor(241, 245, 249);
-    doc.rect(mg, 32, half, boxH, "F");
-    doc.rect(mg + half + 4, 32, half, boxH, "F");
+    doc.rect(mg, boxY, half, boxH, "F");
+    doc.rect(mg + half + 4, boxY, half, boxH, "F");
     doc.setTextColor(30, 41, 59); doc.setFontSize(7); doc.setFont("helvetica", "bold");
-    doc.text("CONSIGNOR (FROM)", mg + 2, 37);
-    doc.text("CONSIGNEE (TO)", mg + half + 6, 37);
+    doc.text("CONSIGNOR (FROM)", mg + 2, boxY + 5);
+    doc.text("CONSIGNEE (TO)", mg + half + 6, boxY + 5);
 
     // Party block: organization name, address (wrapped), GST
     const renderParty = (name: string, loc: Location | undefined, x: number) => {
-      let py = 42;
+      let py = boxY + 10;
       doc.setFont("helvetica", "bold"); doc.setFontSize(8);
       doc.splitTextToSize(name, half - 4).slice(0, 2).forEach((line: string) => { doc.text(line, x, py); py += 4; });
       doc.setFont("helvetica", "normal"); doc.setFontSize(7);
@@ -153,7 +169,7 @@ export async function generateAssetsDC(
       foot.push("", assets.length, fmt(grandTotal));
 
       autoTable(doc, {
-        startY: 66, head: [head], body, foot: [foot], theme: "grid",
+        startY: boxY + boxH + 4, head: [head], body, foot: [foot], theme: "grid",
         styles: { fontSize: 8, cellPadding: 2, textColor: [30,41,59] },
         headStyles: { fillColor: [30,41,59], textColor: 255, fontStyle: "bold", fontSize: 8 },
         footStyles: { fillColor: [30,41,59], textColor: 255, fontStyle: "bold", fontSize: 8 },
@@ -174,7 +190,7 @@ export async function generateAssetsDC(
       const foot02 = ["", `TOTAL: ${assets.length} asset(s)`, "", "", assets.length, fmt(grandTotal)];
 
       autoTable(doc, {
-        startY: 66,
+        startY: boxY + boxH + 4,
         head: [["#", "Asset Name", "HSN", "Unit Price", "Qty", "Total Value"]],
         body: body02, foot: [foot02], theme: "grid",
         styles: { fontSize: 8, cellPadding: 2, textColor: [30,41,59] },
