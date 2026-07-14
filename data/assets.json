@@ -64,15 +64,15 @@
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-06",
     "description": "",
-    "location": "Tier 1",
-    "status": "Available",
+    "location": "OEM",
+    "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-15T13:22:26.294Z",
     "createdAt": "2026-06-09T17:44:59.511Z",
-    "updatedAt": "2026-06-15T13:23:00.618Z",
+    "updatedAt": "2026-07-14T00:52:21.848Z",
     "cycleCount": 1
   },
   {
@@ -80,15 +80,15 @@
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-05",
     "description": "",
-    "location": "Tier 1",
-    "status": "Available",
+    "location": "OEM",
+    "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-14T10:54:48.067Z",
     "createdAt": "2026-06-09T17:44:59.525Z",
-    "updatedAt": "2026-06-14T10:56:20.499Z"
+    "updatedAt": "2026-07-14T00:52:22.011Z"
   },
   {
     "id": "ass-f0944467",
@@ -185,15 +185,15 @@
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-13",
     "description": "",
-    "location": "Master Warehouse",
+    "location": "Tier 1",
     "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
-    "lastUpdated": "2026-06-14T09:46:06.522Z",
+    "lastUpdated": "2026-07-14T00:57:20.877Z",
     "createdAt": "2026-06-09T17:44:59.774Z",
-    "updatedAt": "2026-06-14T11:05:11.416Z",
+    "updatedAt": "2026-07-14T01:01:21.624Z",
     "cycleCount": 1
   },
   {
@@ -441,14 +441,15 @@
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-30",
     "description": "",
-    "location": "Master Warehouse",
+    "location": "Tier 1",
     "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
-    "lastUpdated": "2026-06-09T17:44:59.382Z",
-    "createdAt": "2026-06-09T17:45:00.174Z"
+    "lastUpdated": "2026-07-14T00:57:20.877Z",
+    "createdAt": "2026-06-09T17:45:00.174Z",
+    "updatedAt": "2026-07-14T01:03:03.185Z"
   },
   {
     "id": "ass-fe1588a7",
@@ -456,13 +457,14 @@
     "uuid": "U546-31",
     "description": "",
     "location": "Master Warehouse",
-    "status": "Available",
+    "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-09T17:44:59.382Z",
-    "createdAt": "2026-06-09T17:45:00.224Z"
+    "createdAt": "2026-06-09T17:45:00.224Z",
+    "updatedAt": "2026-07-14T01:03:58.136Z"
   },
   {
     "id": "ass-4a3f1170",
@@ -515,27 +517,29 @@
     "uuid": "U546-35",
     "description": "",
     "location": "Master Warehouse",
-    "status": "Available",
+    "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-09T17:44:59.383Z",
-    "createdAt": "2026-06-09T17:45:00.289Z"
+    "createdAt": "2026-06-09T17:45:00.289Z",
+    "updatedAt": "2026-07-14T01:03:58.269Z"
   },
   {
     "id": "ass-f81f02c6",
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-36",
     "description": "",
-    "location": "Master Warehouse",
+    "location": "Tier 1",
     "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
-    "lastUpdated": "2026-06-09T17:44:59.383Z",
-    "createdAt": "2026-06-09T17:45:00.329Z"
+    "lastUpdated": "2026-07-14T00:57:20.878Z",
+    "createdAt": "2026-06-09T17:45:00.329Z",
+    "updatedAt": "2026-07-14T01:03:03.343Z"
   },
   {
     "id": "ass-e8dbdd89",

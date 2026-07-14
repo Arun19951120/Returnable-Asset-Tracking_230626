@@ -77,5 +77,21 @@
     "read": true,
     "createdAt": "2026-06-22T06:48:24.095Z",
     "updatedAt": "2026-06-30T12:04:25.350Z"
+  },
+  {
+    "id": "not-342a20cc",
+    "title": "📦 Incoming Shipment — Tier 1",
+    "message": "3 items dispatched from Master Warehouse:\n• PLSKIT 1200X1000X1000mm × 3",
+    "type": "warning",
+    "read": false,
+    "createdAt": "2026-07-14T00:57:21.186Z"
+  },
+  {
+    "id": "not-f55c438c",
+    "title": "📦 Incoming Shipment — Tier 1",
+    "message": "2 items dispatched from Master Warehouse:\n• PLSKIT 1200X1000X1000mm × 2",
+    "type": "warning",
+    "read": false,
+    "createdAt": "2026-07-14T01:03:58.320Z"
   }
 ]

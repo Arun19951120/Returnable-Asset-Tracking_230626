@@ -138,5 +138,29 @@
     ],
     "status": "Active",
     "createdAt": "2026-06-19T07:39:51.409Z"
+  },
+  {
+    "id": "ass-10b54949",
+    "assetId": "ass-fe1588a7",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-07-14T01:03:57.905Z",
+    "locationsVisited": [
+      "Master Warehouse"
+    ],
+    "status": "Active",
+    "createdAt": "2026-07-14T01:03:57.948Z"
+  },
+  {
+    "id": "ass-cada7353",
+    "assetId": "ass-4f8f8e4d",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "cycleNumber": 1,
+    "startedAt": "2026-07-14T01:03:58.143Z",
+    "locationsVisited": [
+      "Master Warehouse"
+    ],
+    "status": "Active",
+    "createdAt": "2026-07-14T01:03:58.177Z"
   }
 ]

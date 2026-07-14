@@ -1198,5 +1198,75 @@
     "details": "ass-71c027a8",
     "timestamp": "2026-07-14T00:40:15.536Z",
     "createdAt": "2026-07-14T00:40:15.567Z"
+  },
+  {
+    "id": "aud-aa5add28",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · Tier 1 → OEM",
+    "category": "Transfer",
+    "details": "ass-59379a3c",
+    "timestamp": "2026-07-14T00:52:21.855Z",
+    "createdAt": "2026-07-14T00:52:21.882Z"
+  },
+  {
+    "id": "aud-afb97f07",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · Tier 1 → OEM",
+    "category": "Transfer",
+    "details": "ass-975cd15e",
+    "timestamp": "2026-07-14T00:52:22.017Z",
+    "createdAt": "2026-07-14T00:52:22.049Z"
+  },
+  {
+    "id": "aud-27c27e81",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Bulk Check-Out: 3 assets → Tier 1 [In-Transit]",
+    "category": "Asset",
+    "details": "Asset IDs: ass-a07f6b09, ass-c0df8b09, ass-f81f02c6",
+    "timestamp": "2026-07-14T00:57:21.230Z",
+    "createdAt": "2026-07-14T00:57:21.259Z"
+  },
+  {
+    "id": "aud-d5b91adc",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-a07f6b09",
+    "timestamp": "2026-07-14T01:01:21.631Z",
+    "createdAt": "2026-07-14T01:01:21.694Z"
+  },
+  {
+    "id": "aud-4addaec4",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-c0df8b09",
+    "timestamp": "2026-07-14T01:03:03.191Z",
+    "createdAt": "2026-07-14T01:03:03.254Z"
+  },
+  {
+    "id": "aud-5384a23d",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-f81f02c6",
+    "timestamp": "2026-07-14T01:03:03.354Z",
+    "createdAt": "2026-07-14T01:03:03.398Z"
+  },
+  {
+    "id": "aud-7170dec8",
+    "userId": "admin-001",
+    "userEmail": "admin@circulartrack.com",
+    "action": "Dispatched 2 asset(s): Master Warehouse → Tier 1",
+    "category": "Transfer",
+    "details": "ass-fe1588a7, ass-4f8f8e4d",
+    "timestamp": "2026-07-14T01:03:58.274Z",
+    "createdAt": "2026-07-14T01:03:58.312Z"
   }
 ]

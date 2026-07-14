@@ -675,5 +675,41 @@
         "cost": 0
       }
     ]
+  },
+  {
+    "id": "dc_-c4497b87",
+    "dcNo": "DC-0641351",
+    "createdAt": "2026-07-14T00:57:21.351Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "cumulative",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-a07f6b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-13",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-c0df8b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-30",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-f81f02c6",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-36",
+        "cost": 0,
+        "description": ""
+      }
+    ]
   }
 ]
