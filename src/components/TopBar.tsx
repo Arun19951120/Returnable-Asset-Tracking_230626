@@ -62,7 +62,7 @@ export default function TopBar({
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-white/95 backdrop-blur-sm px-4 md:px-6">
+    <header className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-white/95 backdrop-blur-sm px-4 md:px-6">
       {/* Hamburger — mobile only */}
       <button
         onClick={onMenuClick}
