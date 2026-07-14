@@ -1108,5 +1108,65 @@
     "details": "admin-arun",
     "timestamp": "2026-07-07T14:07:14.324Z",
     "createdAt": "2026-07-07T14:07:14.342Z"
+  },
+  {
+    "id": "aud-6b7311b7",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-f09f60e6",
+    "timestamp": "2026-07-14T00:13:53.352Z",
+    "createdAt": "2026-07-14T00:13:53.412Z"
+  },
+  {
+    "id": "aud-30fb9463",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-af97ee5e",
+    "timestamp": "2026-07-14T00:14:04.725Z",
+    "createdAt": "2026-07-14T00:14:04.775Z"
+  },
+  {
+    "id": "aud-e642f553",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-4679f583",
+    "timestamp": "2026-07-14T00:14:06.876Z",
+    "createdAt": "2026-07-14T00:14:06.927Z"
+  },
+  {
+    "id": "aud-5f7501a8",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-1f491ea9",
+    "timestamp": "2026-07-14T00:14:09.417Z",
+    "createdAt": "2026-07-14T00:14:09.476Z"
+  },
+  {
+    "id": "aud-75400096",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-6dbe7038",
+    "timestamp": "2026-07-14T00:14:12.148Z",
+    "createdAt": "2026-07-14T00:14:12.208Z"
+  },
+  {
+    "id": "aud-0351864c",
+    "userId": "user-2b2e87c2",
+    "userEmail": "customer01@tier1.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at Tier 1",
+    "category": "Transfer",
+    "details": "ass-4a3f1170",
+    "timestamp": "2026-07-14T00:14:13.608Z",
+    "createdAt": "2026-07-14T00:14:13.668Z"
   }
 ]

@@ -469,45 +469,45 @@
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-32",
     "description": "",
-    "location": "Master Warehouse",
-    "status": "In-Transit",
+    "location": "Tier 1",
+    "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-09T17:44:59.382Z",
     "createdAt": "2026-06-09T17:45:00.240Z",
-    "updatedAt": "2026-06-19T07:39:51.340Z"
+    "updatedAt": "2026-07-14T00:14:13.600Z"
   },
   {
     "id": "ass-6dbe7038",
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-33",
     "description": "",
-    "location": "Master Warehouse",
-    "status": "In-Transit",
+    "location": "Tier 1",
+    "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-09T17:44:59.383Z",
     "createdAt": "2026-06-09T17:45:00.254Z",
-    "updatedAt": "2026-06-19T07:39:51.392Z"
+    "updatedAt": "2026-07-14T00:14:12.141Z"
   },
   {
     "id": "ass-1f491ea9",
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-34",
     "description": "",
-    "location": "Master Warehouse",
-    "status": "In-Transit",
+    "location": "Tier 1",
+    "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-09T17:44:59.383Z",
     "createdAt": "2026-06-09T17:45:00.272Z",
-    "updatedAt": "2026-06-19T07:39:51.445Z"
+    "updatedAt": "2026-07-14T00:14:09.409Z"
   },
   {
     "id": "ass-4f8f8e4d",
@@ -1096,14 +1096,14 @@
     "uuid": "U546-76",
     "description": "",
     "location": "Tier 1",
-    "status": "In-Transit",
+    "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-22T06:48:22.431Z",
     "createdAt": "2026-06-09T17:45:01.440Z",
-    "updatedAt": "2026-06-22T06:48:23.822Z"
+    "updatedAt": "2026-07-14T00:14:06.870Z"
   },
   {
     "id": "ass-af97ee5e",
@@ -1111,14 +1111,14 @@
     "uuid": "U546-77",
     "description": "",
     "location": "Tier 1",
-    "status": "In-Transit",
+    "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-22T06:48:22.432Z",
     "createdAt": "2026-06-09T17:45:01.476Z",
-    "updatedAt": "2026-06-22T06:48:23.832Z"
+    "updatedAt": "2026-07-14T00:14:04.717Z"
   },
   {
     "id": "ass-ddd3ea2d",
@@ -1154,14 +1154,14 @@
     "uuid": "U546-80",
     "description": "",
     "location": "Tier 1",
-    "status": "In-Transit",
+    "status": "Available",
     "healthScore": 100,
     "cost": 0,
     "projectId": "pro-0e666bc8",
     "autoIncrementName": false,
     "lastUpdated": "2026-06-22T06:48:22.433Z",
     "createdAt": "2026-06-09T17:45:01.575Z",
-    "updatedAt": "2026-06-22T06:48:23.842Z"
+    "updatedAt": "2026-07-14T00:13:53.345Z"
   },
   {
     "id": "ass-98c890e5",

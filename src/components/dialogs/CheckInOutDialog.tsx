@@ -27,6 +27,10 @@ const MODE_CONFIG: Record<Mode, { label: string; statusOptions: Asset["status"][
 
 export default function CheckInOutDialog({ asset, locations, onClose, initialMode, checkInAllowedLocs, checkOutAllowedLocs }: Props) {
   const { profile } = useAuth();
+  const isCustomer = profile?.role === "Customer";
+  // Customers can only Check-Out / Check-In — no Transfer.
+  const modes: Mode[] = isCustomer ? ["checkout", "checkin"] : ["checkout", "checkin", "transfer"];
+
   const [mode, setMode]           = useState<Mode>(initialMode ?? "checkout");
   const [activeLocs, setActiveLocs] = useState<Location[]>(locations);
   const [destination, setDest]    = useState("");
@@ -44,12 +48,6 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
     );
   }, []);
 
-  useEffect(() => {
-    setStatus(MODE_CONFIG[mode].statusOptions[0]);
-    setErrors([]);
-    setDestError(false);
-  }, [mode]);
-
   // Mode-specific allowed destinations, derived without refetching
   const allLocations =
     mode === "checkin" && checkInAllowedLocs?.length
@@ -57,6 +55,22 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
       : mode === "checkout" && checkOutAllowedLocs?.length
         ? activeLocs.filter((l) => checkOutAllowedLocs.includes(l.name))
         : activeLocs;
+
+  useEffect(() => {
+    setStatus(MODE_CONFIG[mode].statusOptions[0]);
+    setErrors([]);
+    setDestError(false);
+    // Pre-fill the destination from the configured flow:
+    // check-out → next stop in project flow; check-in → the asset's own location.
+    if (mode === "checkout") {
+      setDest(checkOutAllowedLocs?.length ? checkOutAllowedLocs[0] : "");
+    } else if (mode === "checkin") {
+      setDest(checkInAllowedLocs?.length === 1 ? checkInAllowedLocs[0] : asset.location);
+    } else {
+      setDest("");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   // ── Validation ──────────────────────────────────────────────────────────────
   function validate(): string[] {
@@ -159,15 +173,18 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
         ) : (
           <>
             {/* Mode selector */}
-            <div className="grid grid-cols-3 gap-1 border-b border-slate-100 bg-slate-50 px-4 py-3">
-              {(Object.entries(MODE_CONFIG) as [Mode, typeof MODE_CONFIG[Mode]][]).map(([m, cfg]) => (
+            <div className={`grid gap-1 border-b border-slate-100 bg-slate-50 px-4 py-3 ${modes.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+              {modes.map((m) => {
+                const cfg = MODE_CONFIG[m];
+                return (
                 <button key={m} onClick={() => setMode(m)}
                   className={`rounded-lg py-2 text-xs font-semibold transition-all ${
                     mode === m ? `${cfg.color} text-white shadow-sm` : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
                   }`}>
                   {cfg.label}
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             <form onSubmit={handleSubmit} className="p-5 space-y-4">

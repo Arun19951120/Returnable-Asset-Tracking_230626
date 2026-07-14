@@ -440,7 +440,7 @@
     "fromLocation": "Master Warehouse",
     "toLocation": "Tier 1",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "admin-001",
     "createdAt": "2026-06-19T07:39:51.292Z",
     "cycleId": {
@@ -454,7 +454,10 @@
       ],
       "status": "Active",
       "createdAt": "2026-06-19T07:39:51.220Z"
-    }
+    },
+    "completedBy": "user-2b2e87c2",
+    "completedAt": "2026-07-14T00:14:13.524Z",
+    "updatedAt": "2026-07-14T00:14:13.566Z"
   },
   {
     "id": "mov-ffab7832",
@@ -463,7 +466,7 @@
     "fromLocation": "Master Warehouse",
     "toLocation": "Tier 1",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "admin-001",
     "createdAt": "2026-06-19T07:39:51.362Z",
     "cycleId": {
@@ -477,7 +480,10 @@
       ],
       "status": "Active",
       "createdAt": "2026-06-19T07:39:51.359Z"
-    }
+    },
+    "completedBy": "user-2b2e87c2",
+    "completedAt": "2026-07-14T00:14:12.064Z",
+    "updatedAt": "2026-07-14T00:14:12.104Z"
   },
   {
     "id": "mov-46cda124",
@@ -486,7 +492,7 @@
     "fromLocation": "Master Warehouse",
     "toLocation": "Tier 1",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "admin-001",
     "createdAt": "2026-06-19T07:39:51.412Z",
     "cycleId": {
@@ -500,7 +506,10 @@
       ],
       "status": "Active",
       "createdAt": "2026-06-19T07:39:51.409Z"
-    }
+    },
+    "completedBy": "user-2b2e87c2",
+    "completedAt": "2026-07-14T00:14:09.329Z",
+    "updatedAt": "2026-07-14T00:14:09.368Z"
   },
   {
     "id": "mov-2f591d05",
@@ -509,9 +518,12 @@
     "fromLocation": "Master Warehouse",
     "toLocation": "Tier 1",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "admin-001",
-    "createdAt": "2026-06-22T06:48:23.854Z"
+    "createdAt": "2026-06-22T06:48:23.854Z",
+    "completedBy": "user-2b2e87c2",
+    "completedAt": "2026-07-14T00:14:06.796Z",
+    "updatedAt": "2026-07-14T00:14:06.839Z"
   },
   {
     "id": "mov-12f4f99b",
@@ -520,9 +532,12 @@
     "fromLocation": "Master Warehouse",
     "toLocation": "Tier 1",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "admin-001",
-    "createdAt": "2026-06-22T06:48:23.854Z"
+    "createdAt": "2026-06-22T06:48:23.854Z",
+    "completedBy": "user-2b2e87c2",
+    "completedAt": "2026-07-14T00:14:04.612Z",
+    "updatedAt": "2026-07-14T00:14:04.670Z"
   },
   {
     "id": "mov-d39444ae",
@@ -531,8 +546,11 @@
     "fromLocation": "Master Warehouse",
     "toLocation": "Tier 1",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "admin-001",
-    "createdAt": "2026-06-22T06:48:23.855Z"
+    "createdAt": "2026-06-22T06:48:23.855Z",
+    "completedBy": "user-2b2e87c2",
+    "completedAt": "2026-07-14T00:13:52.362Z",
+    "updatedAt": "2026-07-14T00:13:53.287Z"
   }
 ]

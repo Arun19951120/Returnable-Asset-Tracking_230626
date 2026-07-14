@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { fetchAll, updateDocument, logAudit } from "@/lib/storage";
+import { fetchAll, addDocument, updateDocument, logAudit } from "@/lib/storage";
 import { Asset, AssetMovement, Location, Notification, Project } from "@/lib/types";
 import { findUserProject, nextInFlow } from "@/lib/flow";
 import { useAuth } from "@/lib/auth-context";
@@ -196,6 +196,8 @@ export default function CustomerPortal() {
   const [txMode,    setTxMode]    = useState<"checkout" | "checkin">("checkout");
   const [checkInAllowedLocs,  setCheckInAllowedLocs]  = useState<string[]>([]);
   const [checkOutAllowedLocs, setCheckOutAllowedLocs] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [checkingOutAll, setCheckingOutAll] = useState(false);
 
   // Incoming shipment receive state
   const [receiving,    setReceiving]    = useState<string[]>([]);   // movement ids being received
@@ -292,6 +294,37 @@ export default function CustomerPortal() {
       }
       load();
     } finally { setCheckingInAll(false); }
+  }
+
+  // Bulk check-out (dispatch) selected Available assets to the flow's next stop
+  async function handleCheckOutSelected() {
+    const dest = checkOutAllowedLocs[0];
+    if (!dest) { return; }
+    const toDispatch = assets.filter((a) => selectedIds.includes(a.id) && a.status === "Available");
+    if (!toDispatch.length) return;
+    setCheckingOutAll(true);
+    try {
+      for (const a of toDispatch) {
+        await addDocument("movements", {
+          assetId: a.id, assetName: a.name,
+          fromLocation: a.location, toLocation: dest,
+          movementType: "Checkout", status: "In-Transit",
+          createdBy: profile?.uid ?? "", createdAt: new Date().toISOString(),
+        });
+        await updateDocument("assets", a.id, { status: "In-Transit", location: dest });
+        await logAudit({
+          userId: profile?.uid ?? "", userEmail: profile?.email ?? "",
+          action: `Bulk Check-Out: ${a.name} · ${a.location} → ${dest}`,
+          category: "Transfer", details: a.id,
+        });
+      }
+      setSelectedIds([]);
+      load();
+    } finally { setCheckingOutAll(false); }
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
   }
 
   function handleScanReceive(raw: string) {
@@ -514,6 +547,35 @@ export default function CustomerPortal() {
           </div>
         </div>
 
+        {/* Bulk check-out toolbar — appears when Available assets are selected */}
+        {filteredAssets.some((a) => a.status === "Available") && (
+          <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-slate-100 bg-orange-50/60">
+            <label className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer">
+              <input
+                type="checkbox"
+                className="rounded"
+                checked={
+                  filteredAssets.filter((a) => a.status === "Available").length > 0 &&
+                  filteredAssets.filter((a) => a.status === "Available").every((a) => selectedIds.includes(a.id))
+                }
+                onChange={(e) => {
+                  const avail = filteredAssets.filter((a) => a.status === "Available").map((a) => a.id);
+                  setSelectedIds(e.target.checked ? avail : []);
+                }}
+              />
+              Select all available
+              {selectedIds.length > 0 && <span className="text-orange-600 font-semibold">· {selectedIds.length} selected</span>}
+            </label>
+            <button
+              onClick={handleCheckOutSelected}
+              disabled={checkingOutAll || selectedIds.length === 0 || !checkOutAllowedLocs[0]}
+              className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-40 transition-colors">
+              {checkingOutAll ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogOut className="h-3 w-3" />}
+              Bulk Check-Out{checkOutAllowedLocs[0] ? ` → ${checkOutAllowedLocs[0]}` : ""}
+            </button>
+          </div>
+        )}
+
         {filteredAssets.length === 0 ? (
           <div className="py-10 text-center text-sm text-slate-400">No assets in this category</div>
         ) : (
@@ -521,7 +583,15 @@ export default function CustomerPortal() {
             {filteredAssets.map((a) => {
               const cfg = STATUS_CFG[a.status];
               return (
-                <div key={a.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
+                <div key={a.id} className={`flex items-center gap-3 px-4 py-3 transition-colors ${selectedIds.includes(a.id) ? "bg-orange-50" : "hover:bg-slate-50"}`}>
+                  {a.status === "Available" ? (
+                    <input
+                      type="checkbox"
+                      className="rounded shrink-0"
+                      checked={selectedIds.includes(a.id)}
+                      onChange={() => toggleSelect(a.id)}
+                    />
+                  ) : <span className="w-3.5 shrink-0" />}
                   <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${cfg?.light ?? "bg-slate-100"}`}>
                     <Package className={`h-4 w-4 ${cfg?.text ?? "text-slate-500"}`} />
                   </div>
