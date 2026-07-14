@@ -973,16 +973,16 @@ export default function AssetLedger() {
 
       {/* ── Add Asset Modal ─────────────────────────────────────────────────── */}
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl border border-slate-200 bg-white shadow-xl">
             {/* Modal Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
               <h3 className="font-semibold text-slate-900">Add Asset</h3>
               <button onClick={() => setShowAdd(false)}><X className="h-4 w-4 text-slate-400" /></button>
             </div>
 
             {/* Mode tabs */}
-            <div className="flex gap-1 border-b border-slate-100 bg-slate-50 px-4 py-2">
+            <div className="flex shrink-0 gap-1 border-b border-slate-100 bg-slate-50 px-4 py-2">
               {([["single", "Single Asset"], ["bulk", "Bulk Add (Form)"], ["csv", "CSV Import"]] as const).map(([m, label]) => (
                 <button key={m} onClick={() => setAddMode(m)}
                   className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors ${addMode === m ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-200"}`}>
@@ -990,6 +990,9 @@ export default function AssetLedger() {
                 </button>
               ))}
             </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto">
 
             {/* ── Single ── */}
             {addMode === "single" && (
@@ -1494,6 +1497,7 @@ export default function AssetLedger() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
