@@ -9,6 +9,7 @@ import {
   Upload, FileSpreadsheet,
   Wifi, Trash2, MoreHorizontal, LogOut, LogIn, ArrowRightLeft, Archive,
   ChevronDown, ChevronRight, Layers, List, Columns3, Clock, RotateCcw,
+  ChevronUp, ChevronsUpDown,
 } from "lucide-react";
 import { AssetMovement } from "@/lib/types";
 import { KitItem } from "@/lib/types";
@@ -63,6 +64,9 @@ async function buildQRDataUrl(uuid: string): Promise<string> {
 }
 
 const EMPTY = { name: "", uuid: "", description: "", status: "Available" as Asset["status"], location: "", healthScore: 90, cost: 0, projectId: "", rfidTag: "", bleTag: "" };
+
+// Sortable inventory columns
+type SortKey = "name" | "uuid" | "project" | "description" | "status" | "location" | "cycleDays" | "cycleCount" | "health" | "tags" | "updated";
 
 // ── Bulk-add row type ────────────────────────────────────────────────────────
 interface BulkRow { name: string; uuid: string; description: string; location: string; status: Asset["status"]; healthScore: number; cost: number; projectId: string }
@@ -140,6 +144,8 @@ export default function AssetLedger() {
   const [viewMode, setViewMode] = useState<"list" | "grouped">("grouped");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showColumnPicker, setShowColumnPicker] = useState(false);
+  // Column sort — click a header to cycle asc → desc → off
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
 
   // All available columns — persisted to localStorage
   const ALL_COLUMNS = [
@@ -244,13 +250,61 @@ export default function AssetLedger() {
     }
   }
 
-  const filtered = filterByDays(assets, dayRange, "lastUpdated").filter((a) => {
+  // ── Column sorting ───────────────────────────────────────────────────────────
+  function toggleSort(key: SortKey) {
+    setSort((prev) =>
+      prev && prev.key === key
+        ? prev.dir === "asc" ? { key, dir: "desc" } : null   // asc → desc → off
+        : { key, dir: "asc" }
+    );
+  }
+  function sortValue(a: Asset, key: SortKey): string | number {
+    switch (key) {
+      case "cycleDays":  return cycleDaysMap[a.id] ?? -1;
+      case "cycleCount": return a.cycleCount ?? 0;
+      case "health":     return a.healthScore ?? 0;
+      case "updated":    return new Date(a.lastUpdated).getTime();
+      case "project":    return (pm[a.projectId ?? ""] ?? "").toLowerCase();
+      case "tags":       return `${a.rfidTag ?? ""}${a.bleTag ?? ""}`.toLowerCase();
+      case "name":       return (a.name ?? "").toLowerCase();
+      case "uuid":       return (a.uuid ?? "").toLowerCase();
+      case "description":return (a.description ?? "").toLowerCase();
+      case "status":     return a.status ?? "";
+      case "location":   return (a.location ?? "").toLowerCase();
+    }
+  }
+  function sortAssets(list: Asset[]): Asset[] {
+    if (!sort) return list;
+    const factor = sort.dir === "asc" ? 1 : -1;
+    return [...list].sort((a, b) => {
+      const va = sortValue(a, sort.key), vb = sortValue(b, sort.key);
+      if (typeof va === "number" && typeof vb === "number") return (va - vb) * factor;
+      return String(va).localeCompare(String(vb)) * factor;
+    });
+  }
+  // Clickable sortable column header
+  function sortTh(label: string, key: SortKey, className: string) {
+    const active = sort?.key === key;
+    return (
+      <th className={className}>
+        <button type="button" onClick={() => toggleSort(key)}
+          className="inline-flex items-center gap-1 uppercase hover:text-slate-700 transition-colors">
+          {label}
+          {active
+            ? (sort!.dir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)
+            : <ChevronsUpDown className="h-3 w-3 text-slate-300" />}
+        </button>
+      </th>
+    );
+  }
+
+  const filtered = sortAssets(filterByDays(assets, dayRange, "lastUpdated").filter((a) => {
     const s = search.toLowerCase();
     return (!s || a.name.toLowerCase().includes(s) || a.uuid.toLowerCase().includes(s) || a.location.toLowerCase().includes(s))
       && (statusFilter === "All" || a.status === statusFilter)
       && (!locationFilter || a.location === locationFilter)
       && (!projectFilter || a.projectId === projectFilter);
-  });
+  }));
 
   const allowedLocations = profile?.allowedLocations?.length
     ? locations.filter((l) => profile.allowedLocations!.includes(l.name)) : locations;
@@ -715,20 +769,22 @@ export default function AssetLedger() {
                                   : [...new Set([...prev, ...allIds])]);
                               }} />
                           </th>
-                          {col("uuid")        && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">UUID</th>}
-                          {col("description") && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Description</th>}
-                          {col("status")      && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Status</th>}
-                          {col("location")    && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Location</th>}
-                          {col("cycleDays")   && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Cycle Days</th>}
-                          {col("cycleCount")  && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Cycles</th>}
-                          {col("health")      && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Health</th>}
-                          {col("tags")        && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Tags</th>}
-                          {col("updated")     && <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400">Updated</th>}
+                          {(() => { const cls = "px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-slate-400"; return <>
+                            {col("uuid")        && sortTh("UUID", "uuid", cls)}
+                            {col("description") && sortTh("Description", "description", cls)}
+                            {col("status")      && sortTh("Status", "status", cls)}
+                            {col("location")    && sortTh("Location", "location", cls)}
+                            {col("cycleDays")   && sortTh("Cycle Days", "cycleDays", cls)}
+                            {col("cycleCount")  && sortTh("Cycles", "cycleCount", cls)}
+                            {col("health")      && sortTh("Health", "health", cls)}
+                            {col("tags")        && sortTh("Tags", "tags", cls)}
+                            {col("updated")     && sortTh("Updated", "updated", cls)}
+                          </>; })()}
                           <th className="px-3 py-2.5" />
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        {group.assets.map((asset) => {
+                        {sortAssets(group.assets).map((asset) => {
                           const cd = cycleDaysMap[asset.id];
                           return (
                           <tr key={asset.id} className="hover:bg-indigo-50/30 transition-colors">
@@ -826,17 +882,19 @@ export default function AssetLedger() {
                   checked={selected.length === filtered.length && filtered.length > 0}
                   onChange={() => setSelected(selected.length === filtered.length ? [] : filtered.map((a) => a.id))} />
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Asset Name</th>
-              {col("uuid")        && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">UUID</th>}
-              {col("project")     && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Project</th>}
-              {col("description") && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Description</th>}
-              {col("status")      && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Status</th>}
-              {col("location")    && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Location</th>}
-              {col("cycleDays")   && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Cycle Days</th>}
-              {col("cycleCount")  && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Cycles</th>}
-              {col("health")      && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Health</th>}
-              {col("tags")        && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Tags</th>}
-              {col("updated")     && <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Updated</th>}
+              {(() => { const cls = "px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500"; return <>
+                {sortTh("Asset Name", "name", cls)}
+                {col("uuid")        && sortTh("UUID", "uuid", cls)}
+                {col("project")     && sortTh("Project", "project", cls)}
+                {col("description") && sortTh("Description", "description", cls)}
+                {col("status")      && sortTh("Status", "status", cls)}
+                {col("location")    && sortTh("Location", "location", cls)}
+                {col("cycleDays")   && sortTh("Cycle Days", "cycleDays", cls)}
+                {col("cycleCount")  && sortTh("Cycles", "cycleCount", cls)}
+                {col("health")      && sortTh("Health", "health", cls)}
+                {col("tags")        && sortTh("Tags", "tags", cls)}
+                {col("updated")     && sortTh("Updated", "updated", cls)}
+              </>; })()}
               <th className="px-3 py-3" />
             </tr>
           </thead>
