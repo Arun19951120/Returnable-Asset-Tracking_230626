@@ -9,12 +9,13 @@ import {
   Upload, FileSpreadsheet,
   Wifi, Trash2, MoreHorizontal, LogOut, LogIn, ArrowRightLeft, Archive,
   ChevronDown, ChevronRight, Layers, List, Columns3, Clock, RotateCcw,
-  ChevronUp, ChevronsUpDown,
+  ChevronUp, ChevronsUpDown, Info,
 } from "lucide-react";
 import { AssetMovement } from "@/lib/types";
 import { KitItem } from "@/lib/types";
 import CheckInOutDialog from "@/components/dialogs/CheckInOutDialog";
 import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
+import AssetDetailDialog from "@/components/dialogs/AssetDetailDialog";
 import FilterBar, { DayRange, filterByDays } from "@/components/ui/FilterBar";
 import { toast } from "sonner";
 
@@ -125,6 +126,7 @@ export default function AssetLedger() {
   const [selected, setSelected] = useState<string[]>([]);
   const [checkoutAsset, setCheckoutAsset] = useState<Asset | null>(null);
   const [checkoutMode, setCheckoutMode] = useState<"checkout"|"checkin"|"transfer">("checkout");
+  const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [retireAsset, setRetireAsset] = useState<Asset | null>(null);
   const [retireCategory, setRetireCategory] = useState<"Damaged"|"End of Life"|"Lost"|"Other">("Damaged");
@@ -791,7 +793,7 @@ export default function AssetLedger() {
                             <td className="px-4 py-2.5">
                               <input type="checkbox" className="rounded" checked={selected.includes(asset.id)} onChange={() => toggleSelect(asset.id)} />
                             </td>
-                            {col("uuid")        && <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{asset.uuid}</td>}
+                            {col("uuid")        && <td className="px-3 py-2.5"><button onClick={() => setDetailAsset(asset)} title="View details & history" className="font-mono text-xs text-indigo-500 hover:text-indigo-700 hover:underline">{asset.uuid}</button></td>}
                             {col("description") && <td className="px-3 py-2.5 text-xs text-slate-500">{asset.description ?? "—"}</td>}
                             {col("status")      && <td className="px-3 py-2.5"><StatusBadge status={asset.status} /></td>}
                             {col("location")    && <td className="px-3 py-2.5 text-xs text-slate-600">{asset.location}</td>}
@@ -837,6 +839,8 @@ export default function AssetLedger() {
                                       <div className="fixed inset-0 z-20" onClick={() => setMenuOpenId(null)} />
                                       <div className="absolute right-0 top-full z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
                                         <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Actions</p>
+                                        <button onClick={() => { setDetailAsset(asset); setMenuOpenId(null); }}
+                                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><Info className="h-3.5 w-3.5 text-indigo-500" /> Details &amp; History</button>
                                         <button onClick={() => { setCheckoutMode("checkout"); setCheckoutAsset(asset); setMenuOpenId(null); }}
                                           className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><LogOut className="h-3.5 w-3.5 text-blue-500" /> Check Out</button>
                                         <button onClick={() => { setCheckoutMode("checkin"); setCheckoutAsset(asset); setMenuOpenId(null); }}
@@ -909,8 +913,8 @@ export default function AssetLedger() {
                 <td className="px-4 py-3">
                   <input type="checkbox" className="rounded" checked={selected.includes(asset.id)} onChange={() => toggleSelect(asset.id)} />
                 </td>
-                <td className="px-3 py-3 font-medium text-slate-800 whitespace-nowrap">{asset.name}</td>
-                {col("uuid")        && <td className="px-3 py-3 font-mono text-xs text-slate-400">{asset.uuid}</td>}
+                <td className="px-3 py-3 whitespace-nowrap"><button onClick={() => setDetailAsset(asset)} title="View details & history" className="font-medium text-slate-800 hover:text-indigo-600 hover:underline text-left">{asset.name}</button></td>
+                {col("uuid")        && <td className="px-3 py-3"><button onClick={() => setDetailAsset(asset)} className="font-mono text-xs text-indigo-500 hover:text-indigo-700 hover:underline">{asset.uuid}</button></td>}
                 {col("project")     && (
                   <td className="px-3 py-3">
                     {asset.projectId && pm[asset.projectId]
@@ -973,6 +977,8 @@ export default function AssetLedger() {
                           <div className="fixed inset-0 z-20" onClick={() => setMenuOpenId(null)} />
                           <div className="absolute right-0 top-full z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
                             <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Actions</p>
+                            <button onClick={() => { setMenuOpenId(null); setDetailAsset(asset); }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><Info className="h-3.5 w-3.5 text-indigo-500" /> Details &amp; History</button>
                             {[
                               { mode: "checkout" as const, label: "Check Out", icon: LogOut,          color: "text-orange-600", bg: "hover:bg-orange-50" },
                               { mode: "checkin"  as const, label: "Check In",  icon: LogIn,           color: "text-emerald-600", bg: "hover:bg-emerald-50" },
@@ -1426,6 +1432,13 @@ export default function AssetLedger() {
                             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500" />
                         </div>
                         <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-600">Unit Cost / Declared Value (₹)</label>
+                          <input type="number" min={0} value={serialSeed.cost}
+                            onChange={(e) => { setSerialSeed((p) => ({ ...p, cost: +e.target.value })); setSerialPreview([]); }}
+                            placeholder="0"
+                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500" />
+                        </div>
+                        <div>
                           <label className="mb-1 block text-xs font-medium text-slate-600">Project</label>
                           <select value={serialSeed.projectId} onChange={(e) => { setSerialSeed((p) => ({ ...p, projectId: e.target.value })); setSerialPreview([]); }}
                             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
@@ -1567,6 +1580,10 @@ export default function AssetLedger() {
       )}
       {showBulkTx && (
         <BulkCheckInOutDialog assetIds={selected} locations={allowedLocations} onClose={() => { setShowBulkTx(false); setSelected([]); load(); }} />
+      )}
+      {detailAsset && (
+        <AssetDetailDialog asset={detailAsset} locations={locations} projects={projects}
+          onClose={() => setDetailAsset(null)} onSaved={load} />
       )}
 
       {/* ── Retire Asset Dialog ── */}

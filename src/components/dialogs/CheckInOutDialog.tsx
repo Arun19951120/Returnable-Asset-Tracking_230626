@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { updateDocument, logAudit, fetchAll } from "@/lib/storage";
+import { updateDocument, addDocument, logAudit, fetchAll } from "@/lib/storage";
 import { Asset, Location, Project } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { X, Loader2, ArrowRight, MapPin, Download, CheckCircle2, AlertCircle } from "lucide-react";
@@ -111,16 +111,31 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
     setErrors([]);
     setLoading(true);
     try {
+      const changedProject = mode === "transfer" && targetProject && targetProject !== (asset.projectId ?? "");
       await updateDocument("assets", asset.id, {
         status: newStatus,
         location: destination.trim(),
         ...(mode === "transfer" && targetProject ? { projectId: targetProject } : {}),
         lastUpdated: new Date().toISOString(),
       });
+      // Capture a movement record so each asset carries its full transaction history
+      await addDocument("movements", {
+        assetId: asset.id,
+        assetName: asset.name,
+        fromLocation: asset.location,
+        toLocation: destination.trim(),
+        movementType: mode === "checkout" ? "Checkout" : mode === "checkin" ? "Checkin" : "Transfer",
+        status: newStatus === "In-Transit" ? "In-Transit" : "Completed",
+        createdBy: profile?.uid ?? "",
+        createdAt: new Date().toISOString(),
+        completedBy: newStatus === "In-Transit" ? undefined : (profile?.uid ?? ""),
+        completedAt: newStatus === "In-Transit" ? undefined : new Date().toISOString(),
+        notes: [notes.trim(), changedProject ? `Project reassigned` : ""].filter(Boolean).join(" · ") || undefined,
+      });
       await logAudit({
         userId: profile?.uid ?? "unknown",
         userEmail: profile?.email ?? "unknown",
-        action: `${MODE_CONFIG[mode].label}: ${asset.name} · ${asset.location} → ${destination.trim()} [${newStatus}]`,
+        action: `${MODE_CONFIG[mode].label}: ${asset.name} · ${asset.location} → ${destination.trim()} [${newStatus}]${changedProject ? " (project changed)" : ""}`,
         category: "Asset",
         details: `ID: ${asset.id} | UUID: ${asset.uuid}${notes ? ` | Notes: ${notes}` : ""}`,
       });
