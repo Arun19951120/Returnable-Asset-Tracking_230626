@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { updateDocument, logAudit, fetchAll } from "@/lib/storage";
-import { Asset, Location } from "@/lib/types";
+import { Asset, Location, Project } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { X, Loader2, ArrowRight, MapPin, Download, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -40,6 +40,13 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
   const [done, setDone]           = useState(false);
   const [errors, setErrors]       = useState<string[]>([]);
   const [destError, setDestError] = useState(false);
+  const [projects, setProjects]   = useState<Project[]>([]);
+  const [targetProject, setTargetProject] = useState(asset.projectId ?? "");
+
+  // Fetch active projects for the Transfer target-project selector.
+  useEffect(() => {
+    fetchAll<Project>("projects").then((all) => setProjects(all.filter((p) => p.status === "Active")));
+  }, []);
 
   // Fetch active locations once; mode filtering happens in memory below.
   useEffect(() => {
@@ -85,6 +92,9 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
       errs.push("Transfer destination must be different from current location");
       setDestError(true);
     }
+    if (mode === "transfer" && !targetProject) {
+      errs.push("Select the project to transfer this asset to");
+    }
     if (mode === "checkin" && asset.status === "Available") {
       errs.push(`Asset is already marked "Available" — it may already be checked in`);
     }
@@ -104,6 +114,7 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
       await updateDocument("assets", asset.id, {
         status: newStatus,
         location: destination.trim(),
+        ...(mode === "transfer" && targetProject ? { projectId: targetProject } : {}),
         lastUpdated: new Date().toISOString(),
       });
       await logAudit({
@@ -253,6 +264,18 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
                 </datalist>
                 {destError && <p className="mt-1 text-[10px] text-red-500 font-medium">⚠ This field is required</p>}
               </div>
+
+              {/* Transfer target project */}
+              {mode === "transfer" && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Transfer To Project *</label>
+                  <select value={targetProject} onChange={(e) => { setTargetProject(e.target.value); setErrors([]); }}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
+                    <option value="">— Select project —</option>
+                    {projects.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.client})</option>)}
+                  </select>
+                </div>
+              )}
 
               {/* Status */}
               <div>

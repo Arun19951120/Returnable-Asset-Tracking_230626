@@ -287,6 +287,7 @@ export default function AssetLedger() {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name || !form.uuid || !form.location) { toast.error("Name, UUID and Location are required"); return; }
+    if (!form.projectId) { toast.error("Please assign a project"); return; }
     setSaving(true);
     try {
       const validKits = hasKit ? kitItems.filter((k) => k.description.trim()) : undefined;
@@ -313,6 +314,7 @@ export default function AssetLedger() {
   async function handleBulkAdd() {
     const valid = bulkRows.filter((r) => r.name && r.uuid && r.location);
     if (!valid.length) { toast.error("Fill at least one complete row"); return; }
+    if (valid.some((r) => !r.projectId)) { toast.error("Assign a project to every row"); return; }
     setBulkSaving(true);
     try {
       await Promise.all(valid.map((row) => addDocument("assets", { ...row, lastUpdated: new Date().toISOString() })));
@@ -1049,10 +1051,10 @@ export default function AssetLedger() {
                   )}
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">Assign to Project</label>
-                    <select value={form.projectId} onChange={(e) => setForm((p) => ({ ...p, projectId: e.target.value }))}
+                    <label className="mb-1 block text-xs font-medium text-slate-600">Assign to Project *</label>
+                    <select required value={form.projectId} onChange={(e) => setForm((p) => ({ ...p, projectId: e.target.value }))}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
-                      <option value="">— No Project —</option>
+                      <option value="">— Select a project —</option>
                       {projects.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.client})</option>)}
                     </select>
                   </div>

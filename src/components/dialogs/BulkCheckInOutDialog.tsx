@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { updateDocument, addDocument, logAudit, fetchAll } from "@/lib/storage";
-import { Asset, Location } from "@/lib/types";
+import { Asset, Location, Project } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { X, Loader2, Package, Download, CheckCircle2, AlertCircle, List, LayoutList, Tag, Bluetooth, MapPin } from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +30,8 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
   const [mode, setMode]               = useState<Mode>(initialMode ?? "checkout");
   const [allLocations, setAllLocs]    = useState<Location[]>(locations);
   const [allAssets, setAllAssets]     = useState<Asset[]>([]);
+  const [projects, setProjects]       = useState<Project[]>([]);
+  const [targetProject, setTargetProject] = useState("");
   const [destination, setDest]        = useState(initialDestination ?? "");
   const [newStatus, setStatus]        = useState<Asset["status"]>("In-Transit");
   const lockedDest = !!initialDestination;  // destination is pre-set — no dropdown needed
@@ -50,6 +52,7 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
   useEffect(() => {
     fetchAll<Location>("locations").then((all) => setAllLocs(all.filter((l) => l.status === "Active")));
     fetchAll<Asset>("assets").then(setAllAssets);
+    fetchAll<Project>("projects").then((all) => setProjects(all.filter((p) => p.status === "Active")));
   }, []);
 
   useEffect(() => {
@@ -72,6 +75,9 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
     if (assetIds.length === 0) {
       errs.push("No assets selected — select at least one asset");
     }
+    if (mode === "transfer" && !targetProject) {
+      errs.push("Select the project to transfer these assets to");
+    }
     return errs;
   }
 
@@ -91,6 +97,7 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
           updateDocument("assets", id, {
             status: newStatus,
             location: dest,
+            ...(mode === "transfer" && targetProject ? { projectId: targetProject } : {}),
             lastUpdated: new Date().toISOString(),
           })
         )
@@ -285,6 +292,19 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
                 </>
               )}
             </div>
+
+            {/* Transfer target project */}
+            {mode === "transfer" && (
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-600">Transfer To Project *</label>
+                <select value={targetProject} onChange={(e) => { setTargetProject(e.target.value); setErrors([]); }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500">
+                  <option value="">— Select project —</option>
+                  {projects.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.client})</option>)}
+                </select>
+                <p className="mt-1 text-[10px] text-slate-400">All {assetIds.length} selected assets will be reassigned to this project.</p>
+              </div>
+            )}
 
             {/* Status picker */}
             <div>
