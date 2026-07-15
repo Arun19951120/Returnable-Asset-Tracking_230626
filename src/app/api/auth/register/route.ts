@@ -4,7 +4,7 @@ import path from "path";
 import { v4 as uuid } from "uuid";
 
 export async function POST(req: NextRequest) {
-  const { email, password, displayName, role, organization } = await req.json();
+  const { email, password, displayName, role, organization, phone } = await req.json();
   const filePath = path.join(process.cwd(), "data", "users.json");
   const users = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     displayName,
     role: role ?? "Employee",
     organization: organization ?? "",
+    phone: phone ?? "",
     projects: [],
     allowedLocations: [],
   };

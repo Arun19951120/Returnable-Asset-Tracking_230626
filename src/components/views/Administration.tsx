@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { fetchAll, addDocument, updateDocument, deleteDocument, logAudit } from "@/lib/storage";
-import { UserProfile, CustomRole, Location, Project, BUILT_IN_ROLES, ALL_TABS } from "@/lib/types";
+import { UserProfile, CustomRole, Location, Project, BUILT_IN_ROLES, ALL_TABS, PRIMARY_ACCOUNT_EMAIL } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import {
   Users, ShieldCheck, FolderKanban, Plus, Trash2, Edit2, X, Loader2, Check,
@@ -22,7 +22,7 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 // ─── User Profiles ────────────────────────────────────────────────────────────
-const NEW_USER_EMPTY = { displayName: "", email: "", password: "", role: "Employee", organization: "" };
+const NEW_USER_EMPTY = { displayName: "", email: "", password: "", role: "Employee", organization: "", phone: "" };
 
 function UserProfilesTab() {
   const { profile: cp, refreshRoles } = useAuth();
@@ -41,6 +41,10 @@ function UserProfilesTab() {
   const [addSaving, setAddSaving] = useState(false);
   const [addErrors, setAddErrors] = useState<string[]>([]);
   const [showPass,  setShowPass]  = useState(false);
+
+  // Delete user
+  const [deletingUser, setDeletingUser] = useState<UserProfile | null>(null);
+  const [deleteSaving,  setDeleteSaving]  = useState(false);
 
   const load = useCallback(async () => {
     const [u, r, l, p] = await Promise.all([
@@ -81,6 +85,7 @@ function UserProfilesTab() {
           displayName: newUser.displayName.trim(),
           role: newUser.role,
           organization: newUser.organization.trim() || undefined,
+          phone: newUser.phone.trim() || undefined,
         }),
       });
       if (!res.ok) {
@@ -108,6 +113,22 @@ function UserProfilesTab() {
       toast.success("Profile updated"); setEditing(null); load();
     } catch { toast.error("Failed to save"); }
     finally { setSaving(false); }
+  }
+
+  const isPrimary = (u: UserProfile) => u.email.toLowerCase() === PRIMARY_ACCOUNT_EMAIL.toLowerCase();
+
+  async function handleDeleteUser() {
+    if (!deletingUser) return;
+    if (isPrimary(deletingUser)) { toast.error("The primary account cannot be deleted"); return; }
+    setDeleteSaving(true);
+    try {
+      await deleteDocument("users", deletingUser.uid);
+      await logAudit({ userId: cp?.uid ?? "", userEmail: cp?.email ?? "", action: `Deleted user: ${deletingUser.email}`, category: "User", details: `Role: ${deletingUser.role}` });
+      toast.success(`Account "${deletingUser.displayName}" deleted`);
+      setDeletingUser(null);
+      load();
+    } catch { toast.error("Failed to delete account"); }
+    finally { setDeleteSaving(false); }
   }
 
   function toggle(field: "allowedLocations" | "projects", val: string) {
@@ -188,8 +209,14 @@ function UserProfilesTab() {
                     placeholder="Optional"
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500" />
                 </div>
+                <div className="col-span-2">
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Mobile Number</label>
+                  <input type="tel" value={newUser.phone} onChange={(e) => setNewUser((p) => ({ ...p, phone: e.target.value }))}
+                    placeholder="+91 98765 43210 — used for password reset"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-500" />
+                </div>
               </div>
-              <p className="text-xs text-slate-400">The user can log in immediately using this email and password.</p>
+              <p className="text-xs text-slate-400">The user can log in immediately using this email and password. The mobile number lets them reset their own password.</p>
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
               <button onClick={() => setShowAdd(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
@@ -224,6 +251,9 @@ function UserProfilesTab() {
                       {u.displayName?.charAt(0).toUpperCase() ?? "?"}
                     </div>
                     <span className="font-medium text-slate-800">{u.displayName}</span>
+                    {isPrimary(u) && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-700">PRIMARY</span>
+                    )}
                   </div>
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-500">{u.email}</td>
@@ -233,15 +263,55 @@ function UserProfilesTab() {
                   {u.allowedLocations?.length ? u.allowedLocations.slice(0, 2).join(", ") + (u.allowedLocations.length > 2 ? ` +${u.allowedLocations.length - 2}` : "") : "All"}
                 </td>
                 <td className="px-4 py-3">
-                  <button onClick={() => openEdit(u)} className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 transition-colors">
-                    <Edit2 className="h-3 w-3" /> Edit
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => openEdit(u)} className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 transition-colors">
+                      <Edit2 className="h-3 w-3" /> Edit
+                    </button>
+                    {isPrimary(u) ? (
+                      <span title="Primary account cannot be deleted"
+                        className="flex items-center gap-1 rounded-lg border border-slate-100 px-2 py-1 text-xs text-slate-300 cursor-not-allowed">
+                        <Lock className="h-3 w-3" /> Protected
+                      </span>
+                    ) : (
+                      <button onClick={() => setDeletingUser(u)}
+                        className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors">
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Delete user confirm */}
+      {deletingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setDeletingUser(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-slate-900">Delete this account?</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  <span className="font-medium text-slate-700">{deletingUser.displayName}</span> ({deletingUser.email}) will be permanently removed and can no longer sign in. This cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setDeletingUser(null)}
+                className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button onClick={handleDeleteUser} disabled={deleteSaving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
+                {deleteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -259,10 +329,14 @@ function UserProfilesTab() {
               <button onClick={() => setEditing(null)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
             </div>
             <div className="p-5 space-y-5">
-              {(["displayName", "organization"] as const).map((field) => (
+              {([
+                ["displayName", "Display Name", "text"],
+                ["organization", "Organization", "text"],
+                ["phone", "Mobile Number (for password reset)", "tel"],
+              ] as const).map(([field, label, type]) => (
                 <div key={field}>
-                  <label className="mb-1 block text-xs font-semibold text-slate-600">{field === "displayName" ? "Display Name" : "Organization"}</label>
-                  <input value={(form[field] as string) ?? ""} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))}
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">{label}</label>
+                  <input type={type} value={(form[field] as string) ?? ""} onChange={(e) => setForm((p) => ({ ...p, [field]: e.target.value }))}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400 bg-slate-50" />
                 </div>
               ))}

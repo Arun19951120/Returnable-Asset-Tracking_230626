@@ -2,35 +2,53 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-// Forgot-password: if the email belongs to a user, notify administrators
-// so they can reset it from Administration → Password Reset.
+// Normalize a phone number for comparison: keep digits only (ignore spaces,
+// dashes, "+", country-code punctuation differences).
+function normalizePhone(v: string): string {
+  return (v || "").replace(/\D/g, "");
+}
+
+// Self-service password reset: verify the email + mobile number match a user,
+// then set a new password. No admin step required.
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
+  const { email, phone, newPassword } = await req.json();
+
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
-
-  const usersPath = path.join(process.cwd(), "data", "users.json");
-  const users = JSON.parse(fs.readFileSync(usersPath, "utf-8")) as { email: string; displayName?: string }[];
-  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-
-  if (user) {
-    const notifPath = path.join(process.cwd(), "data", "notifications.json");
-    const notifications = JSON.parse(fs.readFileSync(notifPath, "utf-8")) as Record<string, unknown>[];
-    notifications.unshift({
-      id: `notif-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
-      title: "🔑 Password Reset Request",
-      message: `${user.displayName ?? user.email} (${user.email}) requested a password reset. Go to Administration → Password Reset to set a new password.`,
-      type: "warning",
-      read: false,
-      createdAt: new Date().toISOString(),
-    });
-    fs.writeFileSync(notifPath, JSON.stringify(notifications, null, 2) + "\n");
+  if (!phone || typeof phone !== "string") {
+    return NextResponse.json({ error: "Mobile number is required" }, { status: 400 });
+  }
+  if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
+    return NextResponse.json({ error: "New password must be at least 6 characters" }, { status: 400 });
   }
 
-  // Same response whether or not the account exists (no email enumeration)
+  const usersPath = path.join(process.cwd(), "data", "users.json");
+  const users = JSON.parse(fs.readFileSync(usersPath, "utf-8")) as Record<string, unknown>[];
+
+  const inputPhone = normalizePhone(phone);
+  const idx = users.findIndex(
+    (u) =>
+      String(u.email).toLowerCase() === email.trim().toLowerCase() &&
+      normalizePhone(String(u.phone ?? "")) !== "" &&
+      normalizePhone(String(u.phone ?? "")) === inputPhone
+  );
+
+  if (idx === -1) {
+    return NextResponse.json(
+      { error: "No account matches that email and mobile number." },
+      { status: 404 }
+    );
+  }
+
+  // Store as base64 passwordHash (same scheme the login route already accepts),
+  // and clear any legacy plaintext password field.
+  users[idx].passwordHash = Buffer.from(newPassword).toString("base64");
+  delete users[idx].password;
+  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2) + "\n");
+
   return NextResponse.json({
     ok: true,
-    message: "If that account exists, the administrator has been notified and will reset your password.",
+    message: "Password reset successfully. You can now sign in with your new password.",
   });
 }

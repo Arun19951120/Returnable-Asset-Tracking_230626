@@ -4,9 +4,13 @@ export interface UserProfile {
   displayName: string;
   role: string;
   organization?: string;
+  phone?: string;            // mobile number — used to verify self-service password reset
   projects?: string[];
   allowedLocations?: string[];
 }
+
+// The primary/owner account — protected from deletion.
+export const PRIMARY_ACCOUNT_EMAIL = "arunpethaperumal@gmail.com";
 
 export interface CustomRole {
   id: string;

@@ -118,6 +118,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [displayName, setDisplayName] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -133,14 +134,17 @@ export default function LoginPage() {
         const res = await fetch("/api/auth/forgot", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, phone, newPassword: password }),
         });
         const data = await res.json();
         if (!res.ok) {
           setError(data.error ?? "Request failed");
           return;
         }
-        setInfo(data.message ?? "The administrator has been notified.");
+        setInfo(data.message ?? "Password reset successfully. You can now sign in.");
+        setMode("login");
+        setPassword("");
+        setPhone("");
         return;
       }
 
@@ -248,7 +252,7 @@ export default function LoginPage() {
               <p className="mt-1 text-sm text-slate-500">
                 {mode === "login" ? "Sign in to your workspace"
                   : mode === "register" ? "Get started today"
-                  : "Enter your email — the administrator will be notified to reset your password"}
+                  : "Verify your email & registered mobile number to set a new password"}
               </p>
             </div>
 
@@ -267,22 +271,30 @@ export default function LoginPage() {
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-all focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                   placeholder="you@company.com" />
               </div>
-              {mode !== "forgot" && (
+              {mode === "forgot" && (
                 <div>
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <label className="block text-xs font-semibold text-slate-700">Password</label>
-                    {mode === "login" && (
-                      <button type="button" onClick={() => { setMode("forgot"); setError(""); setInfo(""); }}
-                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
-                        Forgot password?
-                      </button>
-                    )}
-                  </div>
-                  <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">Registered Mobile Number</label>
+                  <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-all focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                    placeholder="••••••••" />
+                    placeholder="+91 98765 43210" />
                 </div>
               )}
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    {mode === "forgot" ? "New Password" : "Password"}
+                  </label>
+                  {mode === "login" && (
+                    <button type="button" onClick={() => { setMode("forgot"); setError(""); setInfo(""); }}
+                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition-all focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                  placeholder={mode === "forgot" ? "New password (min 6 chars)" : "••••••••"} />
+              </div>
 
               {error && (
                 <div className="rounded-xl bg-red-50 border border-red-100 px-3 py-2.5 text-xs text-red-600">
@@ -298,7 +310,7 @@ export default function LoginPage() {
               <button type="submit" disabled={loading}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition-all hover:shadow-indigo-300 hover:shadow-xl hover:scale-[1.01] disabled:opacity-60 disabled:scale-100 disabled:shadow-none">
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {mode === "login" ? "Sign In" : mode === "register" ? "Create Account" : "Request Password Reset"}
+                {mode === "login" ? "Sign In" : mode === "register" ? "Create Account" : "Reset Password"}
               </button>
             </form>
 

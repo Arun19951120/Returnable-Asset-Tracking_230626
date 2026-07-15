@@ -67,7 +67,6 @@
   {
     "uid": "user-2b2e87c2",
     "email": "customer01@tier1.com",
-    "password": "Tier123",
     "displayName": "Vignesh",
     "role": "Customer",
     "organization": "Tier 1",
@@ -77,8 +76,9 @@
     "allowedLocations": [
       "Tier 1"
     ],
-    "passwordHash": "dGllcjEyMw==",
-    "updatedAt": "2026-07-02T08:26:10.790Z"
+    "passwordHash": "VGllcjEyMw==",
+    "updatedAt": "2026-07-02T08:26:10.790Z",
+    "phone": "9611111111"
   },
   {
     "uid": "user-22c5b492",
@@ -103,6 +103,7 @@
     "projects": [],
     "allowedLocations": [],
     "passwordHash": "UlNQTEAyMDI2",
-    "updatedAt": "2026-07-07T14:07:14.311Z"
+    "updatedAt": "2026-07-07T14:07:14.311Z",
+    "phone": "9600000000"
   }
 ]
