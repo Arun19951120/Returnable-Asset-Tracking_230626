@@ -88,7 +88,7 @@ export function AuthProviderWithLogin({ children }: { children: ReactNode }) {
     if (user.role === "Admin") return ALL_TABS.map((t) => t.id);
     const matched = roles.find((r) => r.name === user.role);
     if (matched) return matched.allowedTabs;
-    if (user.role === "Manager")  return ["dashboard", "assets", "movements", "transfers", "cycles", "orders", "pickups", "projects", "inventory", "reports", "notifications", "audit"];
+    if (user.role === "Manager")  return ["dashboard", "assets", "movements", "transfers", "cycles", "orders", "pickups", "projects", "inventory", "reports", "hardware", "notifications", "audit"];
     if (user.role === "Customer") return ["dashboard", "movements", "orders", "pickups", "sustainability", "notifications"];
     if (user.role === "Employee") return ["dashboard", "assets", "movements", "orders", "pickups", "sustainability", "notifications"];
     // Legacy / fallback role names

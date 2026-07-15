@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { fetchAll, addDocument, updateDocument } from "@/lib/storage";
-import { Location } from "@/lib/types";
+import { Location, UserProfile } from "@/lib/types";
 import { MapPin, Plus, X, Edit2, Loader2, Star, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,13 +16,19 @@ const empty = {
 
 export default function LocationManagement() {
   const [locations, setLocations] = useState<Location[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Location | null>(null);
   const [form, setForm] = useState({ ...empty });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    setLocations(await fetchAll<Location>("locations"));
+    const [locs, us] = await Promise.all([
+      fetchAll<Location>("locations"),
+      fetchAll<UserProfile>("users"),
+    ]);
+    setLocations(locs);
+    setUsers(us);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -38,6 +44,37 @@ export default function LocationManagement() {
       contactName: l.contactName ?? "", contactEmail: l.contactEmail ?? "", contactPhone: l.contactPhone ?? "",
     });
     setShowForm(true);
+  }
+
+  // Create a Customer login for a newly-added location's contact person.
+  async function createContactUser(loc: typeof form) {
+    const email = loc.contactEmail?.trim().toLowerCase();
+    if (!email) return;                                   // no email → no account
+    if (users.some((u) => u.email.toLowerCase() === email)) return;  // already exists
+    // Generate a simple temporary password to share with the contact
+    const digits = (loc.contactPhone ?? "").replace(/\D/g, "");
+    const tempPassword = `Rspl@${digits.slice(-4) || Math.floor(1000 + Math.random() * 9000)}`;
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password: tempPassword,
+          displayName: loc.contactName?.trim() || loc.name,
+          role: "Customer",
+          organization: loc.name,
+          phone: loc.contactPhone?.trim() || undefined,
+        }),
+      });
+      if (!res.ok) return;                                // e.g. already registered
+      const created = await res.json() as { uid?: string };
+      if (created.uid) {
+        // Scope the new user to this location
+        await updateDocument("users", created.uid, { allowedLocations: [loc.name] });
+      }
+      toast.success(`Login created for ${loc.contactName || loc.name} — ${email} / ${tempPassword}`, { duration: 8000 });
+    } catch { /* non-blocking — location was still saved */ }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -61,6 +98,8 @@ export default function LocationManagement() {
       } else {
         await addDocument("locations", payload);
         toast.success("Location added");
+        // Auto-create a login for the location's contact (when an email is provided)
+        await createContactUser(payload);
       }
       setShowForm(false); load();
     } catch { toast.error("Failed to save"); }

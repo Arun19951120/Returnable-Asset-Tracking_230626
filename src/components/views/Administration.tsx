@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { fetchAll, addDocument, updateDocument, deleteDocument, logAudit } from "@/lib/storage";
 import { UserProfile, CustomRole, Location, Project, BUILT_IN_ROLES, ALL_TABS, PRIMARY_ACCOUNT_EMAIL } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import {
   Users, ShieldCheck, FolderKanban, Plus, Trash2, Edit2, X, Loader2, Check,
   KeyRound, Eye, EyeOff, Lock, Search, RefreshCw, AlertTriangle, UserPlus,
+  DatabaseBackup, Download, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -854,13 +855,14 @@ function ProjectsTab() {
 
 // ─── Main Administration Shell ────────────────────────────────────────────────
 export default function Administration() {
-  const [activeTab, setActiveTab] = useState<"users" | "roles" | "projects" | "passwords">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "roles" | "projects" | "passwords" | "backup">("users");
 
   const TABS = [
     { id: "users"     as const, label: "User Profiles",       icon: Users,        color: "text-blue-600"   },
     { id: "passwords" as const, label: "Password Reset",      icon: KeyRound,     color: "text-orange-600" },
     { id: "roles"     as const, label: "Access Roles (RBAC)", icon: ShieldCheck,  color: "text-purple-600" },
     { id: "projects"  as const, label: "Projects",            icon: FolderKanban, color: "text-emerald-600" },
+    { id: "backup"    as const, label: "Backup & Restore",    icon: DatabaseBackup, color: "text-rose-600" },
   ];
 
   return (
@@ -883,6 +885,116 @@ export default function Administration() {
       {activeTab === "passwords" && <PasswordResetTab />}
       {activeTab === "roles"     && <RBACTab />}
       {activeTab === "projects"  && <ProjectsTab />}
+      {activeTab === "backup"    && <BackupTab />}
+    </div>
+  );
+}
+
+// ─── Backup & Restore Tab ─────────────────────────────────────────────────────
+function BackupTab() {
+  const [restoring, setRestoring] = useState(false);
+  const [confirmFile, setConfirmFile] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function handleBackup() {
+    // Stream the backup file straight from the API (Content-Disposition triggers download)
+    const a = document.createElement("a");
+    a.href = "/api/backup";
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast.success("Backup download started");
+  }
+
+  async function handleRestore(file: File) {
+    setRestoring(true);
+    try {
+      const text = await file.text();
+      let payload: unknown;
+      try { payload = JSON.parse(text); }
+      catch { toast.error("That file is not valid JSON"); return; }
+      const res = await fetch("/api/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Restore failed"); return; }
+      toast.success(`Restored ${data.restored?.length ?? 0} collections. Reloading…`);
+      setTimeout(() => window.location.reload(), 1200);
+    } catch { toast.error("Restore failed"); }
+    finally { setRestoring(false); setConfirmFile(null); }
+  }
+
+  return (
+    <div className="max-w-2xl space-y-5">
+      {/* Backup */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
+            <Download className="h-5 w-5 text-emerald-600" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-slate-900">Download Backup</p>
+            <p className="mt-0.5 text-sm text-slate-500">
+              Saves a single JSON snapshot of the entire database (assets, movements, users, locations, projects, config, logs…). Keep it somewhere safe — you can restore from it any time.
+            </p>
+            <button onClick={handleBackup}
+              className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+              <Download className="h-4 w-4" /> Download Backup File
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Restore */}
+      <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100">
+            <Upload className="h-5 w-5 text-rose-600" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-slate-900">Restore from Backup</p>
+            <p className="mt-0.5 text-sm text-slate-500">
+              Upload a backup file to <strong>overwrite</strong> the current data. Use this after a glitch or data loss.
+            </p>
+            <p className="mt-1 text-xs font-medium text-rose-600">⚠ This replaces all current data. Download a fresh backup first if unsure.</p>
+            <input ref={fileRef} type="file" accept="application/json,.json" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setConfirmFile(f); e.target.value = ""; }} />
+            <button onClick={() => fileRef.current?.click()} disabled={restoring}
+              className="mt-3 flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60">
+              <Upload className="h-4 w-4" /> Choose Backup File…
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Restore confirm */}
+      {confirmFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setConfirmFile(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100">
+                <AlertTriangle className="h-5 w-5 text-rose-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-slate-900">Overwrite all data?</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Restoring <span className="font-medium text-slate-700">{confirmFile.name}</span> will replace the current database. This cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setConfirmFile(null)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button onClick={() => handleRestore(confirmFile)} disabled={restoring}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-rose-600 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-60">
+                {restoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
