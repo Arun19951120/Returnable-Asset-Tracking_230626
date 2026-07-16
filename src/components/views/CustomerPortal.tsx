@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   Package, LogOut, LogIn, MapPin,
   Truck, CheckCheck, Loader2, CheckCircle2, Clock,
-  QrCode, ScanBarcode, Wifi, Camera, X, FlipHorizontal,
+  QrCode, ScanBarcode, Wifi, Camera, X, FlipHorizontal, AlertTriangle,
 } from "lucide-react";
 import CheckInOutDialog from "@/components/dialogs/CheckInOutDialog";
 
@@ -543,13 +543,22 @@ export default function CustomerPortal() {
               Select all available
               {selectedIds.length > 0 && <span className="text-orange-600 font-semibold">· {selectedIds.length} selected</span>}
             </label>
-            <button
-              onClick={handleCheckOutSelected}
-              disabled={checkingOutAll || selectedIds.length === 0 || !checkOutAllowedLocs[0]}
-              className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-40 transition-colors">
-              {checkingOutAll ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogOut className="h-3 w-3" />}
-              Bulk Check-Out{checkOutAllowedLocs[0] ? ` → ${checkOutAllowedLocs[0]}` : ""}
-            </button>
+            {!checkOutAllowedLocs[0] ? (
+              /* No destination derivable — explain why instead of a dead button */
+              <span title="Ask your administrator to assign your account to a project and configure its movement flow."
+                className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                Check-Out unavailable — no project flow set
+              </span>
+            ) : (
+              <button
+                onClick={handleCheckOutSelected}
+                disabled={checkingOutAll || selectedIds.length === 0}
+                className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-40 transition-colors">
+                {checkingOutAll ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogOut className="h-3 w-3" />}
+                Bulk Check-Out → {checkOutAllowedLocs[0]}
+              </button>
+            )}
           </div>
         )}
 

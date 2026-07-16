@@ -560,9 +560,12 @@
     "fromLocation": "Tier 1",
     "toLocation": "OEM",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "user-2b2e87c2",
-    "createdAt": "2026-07-14T00:38:38.948Z"
+    "createdAt": "2026-07-14T00:38:38.948Z",
+    "completedBy": "user-22c5b492",
+    "completedAt": "2026-07-16T10:30:07.082Z",
+    "updatedAt": "2026-07-16T10:30:07.884Z"
   },
   {
     "id": "mov-bc82795a",
@@ -571,9 +574,12 @@
     "fromLocation": "Tier 1",
     "toLocation": "OEM",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "user-2b2e87c2",
-    "createdAt": "2026-07-14T00:40:15.278Z"
+    "createdAt": "2026-07-14T00:40:15.278Z",
+    "completedBy": "user-22c5b492",
+    "completedAt": "2026-07-16T10:30:07.976Z",
+    "updatedAt": "2026-07-16T10:30:07.994Z"
   },
   {
     "id": "mov-c1688999",
@@ -582,9 +588,12 @@
     "fromLocation": "Tier 1",
     "toLocation": "OEM",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "user-2b2e87c2",
-    "createdAt": "2026-07-14T00:40:15.452Z"
+    "createdAt": "2026-07-14T00:40:15.452Z",
+    "completedBy": "user-22c5b492",
+    "completedAt": "2026-07-16T10:30:08.044Z",
+    "updatedAt": "2026-07-16T10:30:08.066Z"
   },
   {
     "id": "mov-737f2767",
@@ -593,9 +602,12 @@
     "fromLocation": "Tier 1",
     "toLocation": "OEM",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "user-2b2e87c2",
-    "createdAt": "2026-07-14T00:52:21.636Z"
+    "createdAt": "2026-07-14T00:52:21.636Z",
+    "completedBy": "user-22c5b492",
+    "completedAt": "2026-07-16T10:30:08.126Z",
+    "updatedAt": "2026-07-16T10:30:08.146Z"
   },
   {
     "id": "mov-d46f70a2",
@@ -604,9 +616,12 @@
     "fromLocation": "Tier 1",
     "toLocation": "OEM",
     "movementType": "Checkout",
-    "status": "In-Transit",
+    "status": "Completed",
     "createdBy": "user-2b2e87c2",
-    "createdAt": "2026-07-14T00:52:21.887Z"
+    "createdAt": "2026-07-14T00:52:21.887Z",
+    "completedBy": "user-22c5b492",
+    "completedAt": "2026-07-16T10:30:08.201Z",
+    "updatedAt": "2026-07-16T10:30:08.216Z"
   },
   {
     "id": "mov-5c336c30",
@@ -695,5 +710,60 @@
       "status": "Active",
       "createdAt": "2026-07-14T01:03:58.177Z"
     }
+  },
+  {
+    "id": "mov-26773b86",
+    "assetId": "ass-c4945b1a",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "fromLocation": "OEM",
+    "toLocation": "Master Warehouse",
+    "movementType": "Checkout",
+    "status": "In-Transit",
+    "createdBy": "user-22c5b492",
+    "createdAt": "2026-07-16T10:31:07.335Z"
+  },
+  {
+    "id": "mov-561999f2",
+    "assetId": "ass-0c6222ce",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "fromLocation": "OEM",
+    "toLocation": "Master Warehouse",
+    "movementType": "Checkout",
+    "status": "In-Transit",
+    "createdBy": "user-22c5b492",
+    "createdAt": "2026-07-16T10:31:07.492Z"
+  },
+  {
+    "id": "mov-4ea6c8f5",
+    "assetId": "ass-71c027a8",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "fromLocation": "OEM",
+    "toLocation": "Master Warehouse",
+    "movementType": "Checkout",
+    "status": "In-Transit",
+    "createdBy": "user-22c5b492",
+    "createdAt": "2026-07-16T10:31:07.560Z"
+  },
+  {
+    "id": "mov-4c90b120",
+    "assetId": "ass-59379a3c",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "fromLocation": "OEM",
+    "toLocation": "Master Warehouse",
+    "movementType": "Checkout",
+    "status": "In-Transit",
+    "createdBy": "user-22c5b492",
+    "createdAt": "2026-07-16T10:31:07.632Z"
+  },
+  {
+    "id": "mov-ba6108ed",
+    "assetId": "ass-975cd15e",
+    "assetName": "PLSKIT 1200X1000X1000mm",
+    "fromLocation": "OEM",
+    "toLocation": "Master Warehouse",
+    "movementType": "Checkout",
+    "status": "In-Transit",
+    "createdBy": "user-22c5b492",
+    "createdAt": "2026-07-16T10:31:07.696Z"
   }
 ]

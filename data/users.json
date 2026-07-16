@@ -87,7 +87,9 @@
     "displayName": "Saravanan",
     "role": "Customer",
     "organization": "OEM",
-    "projects": [],
+    "projects": [
+      "Project Alpha"
+    ],
     "allowedLocations": [
       "OEM"
     ],

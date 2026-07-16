@@ -1268,5 +1268,105 @@
     "details": "ass-fe1588a7, ass-4f8f8e4d",
     "timestamp": "2026-07-14T01:03:58.274Z",
     "createdAt": "2026-07-14T01:03:58.312Z"
+  },
+  {
+    "id": "aud-d14e62d3",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at OEM",
+    "category": "Transfer",
+    "details": "ass-c4945b1a",
+    "timestamp": "2026-07-16T10:30:07.915Z",
+    "createdAt": "2026-07-16T10:30:07.972Z"
+  },
+  {
+    "id": "aud-daadf0e4",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at OEM",
+    "category": "Transfer",
+    "details": "ass-0c6222ce",
+    "timestamp": "2026-07-16T10:30:08.021Z",
+    "createdAt": "2026-07-16T10:30:08.040Z"
+  },
+  {
+    "id": "aud-4ccb0de8",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at OEM",
+    "category": "Transfer",
+    "details": "ass-71c027a8",
+    "timestamp": "2026-07-16T10:30:08.095Z",
+    "createdAt": "2026-07-16T10:30:08.122Z"
+  },
+  {
+    "id": "aud-6f464cf4",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at OEM",
+    "category": "Transfer",
+    "details": "ass-59379a3c",
+    "timestamp": "2026-07-16T10:30:08.175Z",
+    "createdAt": "2026-07-16T10:30:08.197Z"
+  },
+  {
+    "id": "aud-88e0053b",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Received: PLSKIT 1200X1000X1000mm at OEM",
+    "category": "Transfer",
+    "details": "ass-975cd15e",
+    "timestamp": "2026-07-16T10:30:08.244Z",
+    "createdAt": "2026-07-16T10:30:08.261Z"
+  },
+  {
+    "id": "aud-ceee16b1",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · OEM → Master Warehouse",
+    "category": "Transfer",
+    "details": "ass-c4945b1a",
+    "timestamp": "2026-07-16T10:31:07.467Z",
+    "createdAt": "2026-07-16T10:31:07.488Z"
+  },
+  {
+    "id": "aud-01b52a8a",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · OEM → Master Warehouse",
+    "category": "Transfer",
+    "details": "ass-0c6222ce",
+    "timestamp": "2026-07-16T10:31:07.536Z",
+    "createdAt": "2026-07-16T10:31:07.554Z"
+  },
+  {
+    "id": "aud-5a0778f9",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · OEM → Master Warehouse",
+    "category": "Transfer",
+    "details": "ass-71c027a8",
+    "timestamp": "2026-07-16T10:31:07.608Z",
+    "createdAt": "2026-07-16T10:31:07.627Z"
+  },
+  {
+    "id": "aud-77044823",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · OEM → Master Warehouse",
+    "category": "Transfer",
+    "details": "ass-59379a3c",
+    "timestamp": "2026-07-16T10:31:07.676Z",
+    "createdAt": "2026-07-16T10:31:07.691Z"
+  },
+  {
+    "id": "aud-5cdc33be",
+    "userId": "user-22c5b492",
+    "userEmail": "customer02@oem.com",
+    "action": "Bulk Check-Out: PLSKIT 1200X1000X1000mm · OEM → Master Warehouse",
+    "category": "Transfer",
+    "details": "ass-975cd15e",
+    "timestamp": "2026-07-16T10:31:07.737Z",
+    "createdAt": "2026-07-16T10:31:07.753Z"
   }
 ]

@@ -4,7 +4,7 @@
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-01",
     "description": "",
-    "location": "OEM",
+    "location": "Master Warehouse",
     "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
@@ -12,7 +12,7 @@
     "autoIncrementName": false,
     "lastUpdated": "2026-06-15T13:22:26.291Z",
     "createdAt": "2026-06-09T17:44:59.448Z",
-    "updatedAt": "2026-07-14T00:38:40.269Z"
+    "updatedAt": "2026-07-16T10:31:07.461Z"
   },
   {
     "id": "ass-39bf02cc",
@@ -34,7 +34,7 @@
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-03",
     "description": "",
-    "location": "OEM",
+    "location": "Master Warehouse",
     "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
@@ -42,14 +42,14 @@
     "autoIncrementName": false,
     "lastUpdated": "2026-06-15T13:22:26.293Z",
     "createdAt": "2026-06-09T17:44:59.472Z",
-    "updatedAt": "2026-07-14T00:40:15.405Z"
+    "updatedAt": "2026-07-16T10:31:07.530Z"
   },
   {
     "id": "ass-71c027a8",
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-04",
     "description": "",
-    "location": "OEM",
+    "location": "Master Warehouse",
     "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
@@ -57,14 +57,14 @@
     "autoIncrementName": false,
     "lastUpdated": "2026-06-15T13:22:26.293Z",
     "createdAt": "2026-06-09T17:44:59.487Z",
-    "updatedAt": "2026-07-14T00:40:15.526Z"
+    "updatedAt": "2026-07-16T10:31:07.603Z"
   },
   {
     "id": "ass-59379a3c",
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-06",
     "description": "",
-    "location": "OEM",
+    "location": "Master Warehouse",
     "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
@@ -72,7 +72,7 @@
     "autoIncrementName": false,
     "lastUpdated": "2026-06-15T13:22:26.294Z",
     "createdAt": "2026-06-09T17:44:59.511Z",
-    "updatedAt": "2026-07-14T00:52:21.848Z",
+    "updatedAt": "2026-07-16T10:31:07.672Z",
     "cycleCount": 1
   },
   {
@@ -80,7 +80,7 @@
     "name": "PLSKIT 1200X1000X1000mm",
     "uuid": "U546-05",
     "description": "",
-    "location": "OEM",
+    "location": "Master Warehouse",
     "status": "In-Transit",
     "healthScore": 100,
     "cost": 0,
@@ -88,7 +88,7 @@
     "autoIncrementName": false,
     "lastUpdated": "2026-06-14T10:54:48.067Z",
     "createdAt": "2026-06-09T17:44:59.525Z",
-    "updatedAt": "2026-07-14T00:52:22.011Z"
+    "updatedAt": "2026-07-16T10:31:07.731Z"
   },
   {
     "id": "ass-f0944467",
