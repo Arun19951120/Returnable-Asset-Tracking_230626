@@ -16,6 +16,8 @@ import { KitItem } from "@/lib/types";
 import CheckInOutDialog from "@/components/dialogs/CheckInOutDialog";
 import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
 import AssetDetailDialog from "@/components/dialogs/AssetDetailDialog";
+import BulkQRDialog from "@/components/dialogs/BulkQRDialog";
+import { buildQRDataUrl } from "@/lib/qr";
 import FilterBar, { DayRange, filterByDays } from "@/components/ui/FilterBar";
 import { toast } from "sonner";
 
@@ -56,12 +58,6 @@ function exportCSV(assets: Asset[], projects: Project[]) {
   Object.assign(document.createElement("a"), { href: url, download: "assets-export.csv" }).click();
   URL.revokeObjectURL(url);
   toast.success("Assets exported to CSV");
-}
-
-async function buildQRDataUrl(uuid: string): Promise<string> {
-  const QRCode = (await import("qrcode")).default;
-  // Encode UUID only as per requirement
-  return QRCode.toDataURL(uuid, { width: 256, margin: 2, color: { dark: "#0f172a", light: "#ffffff" } });
 }
 
 const EMPTY = { name: "", uuid: "", description: "", status: "Available" as Asset["status"], location: "", healthScore: 90, cost: 0, projectId: "", rfidTag: "", bleTag: "" };
@@ -127,6 +123,7 @@ export default function AssetLedger() {
   const [checkoutAsset, setCheckoutAsset] = useState<Asset | null>(null);
   const [checkoutMode, setCheckoutMode] = useState<"checkout"|"checkin"|"transfer">("checkout");
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
+  const [showBulkQR, setShowBulkQR] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [retireAsset, setRetireAsset] = useState<Asset | null>(null);
   const [retireCategory, setRetireCategory] = useState<"Damaged"|"End of Life"|"Lost"|"Other">("Damaged");
@@ -612,6 +609,11 @@ export default function AssetLedger() {
           <button onClick={() => exportCSV(filtered, projects)}
             className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
             <Download className="h-4 w-4" /> Export CSV
+          </button>
+          <button onClick={() => setShowBulkQR(true)}
+            title="Download QR codes for a project"
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <QrCode className="h-4 w-4" /> QR Codes
           </button>
           {selected.length > 1 && (
             <button onClick={() => setShowBulkTx(true)}
@@ -1584,6 +1586,10 @@ export default function AssetLedger() {
       {detailAsset && (
         <AssetDetailDialog asset={detailAsset} locations={locations} projects={projects}
           onClose={() => setDetailAsset(null)} onSaved={load} />
+      )}
+      {showBulkQR && (
+        <BulkQRDialog assets={assets} projects={projects} initialProjectId={projectFilter}
+          onClose={() => setShowBulkQR(false)} />
       )}
 
       {/* ── Retire Asset Dialog ── */}
