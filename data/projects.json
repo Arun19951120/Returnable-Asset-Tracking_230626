@@ -20,7 +20,7 @@
     "poCountFromLocation": "Master Warehouse",
     "poCountToLocation": "Tier 1",
     "poBasis": "asset",
-    "updatedAt": "2026-07-13T06:27:09.621Z",
+    "updatedAt": "2026-07-17T11:52:59.775Z",
     "woodPerAsset": 15,
     "corrugationPerAsset": 7,
     "poPrice": 1360,
@@ -29,6 +29,14 @@
       "Tier 1",
       "OEM"
     ],
-    "slaDays": 7
+    "slaDays": 7,
+    "receivingStages": [
+      [
+        "Tier 1"
+      ],
+      [
+        "OEM"
+      ]
+    ]
   }
 ]

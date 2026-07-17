@@ -49,7 +49,7 @@ const EMPTY_FORM = {
   startDate: "", endDate: "",
   allowedLocations: [] as string[],
   primaryLocation: "",
-  receivingLocations: [] as string[],
+  receivingStages: [] as string[][],
   slaDays: "" as string | number,
 };
 
@@ -1074,7 +1074,10 @@ export default function Projects() {
       startDate: proj.startDate ?? "", endDate: proj.endDate ?? "",
       allowedLocations: proj.allowedLocations ?? [],
       primaryLocation: proj.primaryLocation ?? "",
-      receivingLocations: proj.receivingLocations ?? [],
+      // Prefer the staged format; fall back to the legacy one-per-stage list
+      receivingStages: proj.receivingStages?.length
+        ? proj.receivingStages.map((s) => [...s])
+        : (proj.receivingLocations ?? []).map((l) => [l]),
       slaDays: proj.slaDays ?? "",
     });
     setShowForm(true);
@@ -1091,7 +1094,9 @@ export default function Projects() {
         endDate: form.endDate || undefined,
         allowedLocations: form.allowedLocations.length > 0 ? form.allowedLocations : undefined,
         primaryLocation: form.primaryLocation || undefined,
-        receivingLocations: form.receivingLocations.length > 0 ? form.receivingLocations : undefined,
+        receivingStages: form.receivingStages.length > 0 ? form.receivingStages : undefined,
+        // keep the legacy field in sync (first option of each stage) for older readers
+        receivingLocations: form.receivingStages.length > 0 ? form.receivingStages.map((s) => s[0]) : undefined,
         slaDays: form.slaDays !== "" ? Number(form.slaDays) : undefined,
       };
       if (editingId) {
@@ -1559,30 +1564,75 @@ export default function Projects() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">Receiving Locations (in flow order)</label>
-                  {form.receivingLocations.map((name, i) => (
-                    <div key={i} className="mb-1.5 flex items-center gap-2">
-                      <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">{i + 1}</span>
-                      <span className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700">{name}</span>
-                      <button type="button"
-                        onClick={() => setForm((p) => ({ ...p, receivingLocations: p.receivingLocations.filter((_, x) => x !== i) }))}
-                        className="text-slate-300 hover:text-red-500"><X className="h-4 w-4" /></button>
-                    </div>
-                  ))}
+                  <label className="mb-1 block text-xs font-medium text-slate-600">Receiving Stages (in flow order)</label>
+                  <p className="mb-2 text-[10px] text-slate-400">
+                    Add more than one location to a stage (1.a, 1.b, 1.c…) when the asset may go to any of them — the user picks which at check-out.
+                  </p>
+
+                  {form.receivingStages.map((stage, si) => {
+                    const used = new Set([form.primaryLocation, ...form.receivingStages.flat()]);
+                    return (
+                      <div key={si} className="mb-2 rounded-lg border border-slate-200 bg-white p-2">
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                            Stage {si + 1}{stage.length > 1 ? ` · ${stage.length} options` : ""}
+                          </span>
+                          <button type="button" title="Remove stage"
+                            onClick={() => setForm((p) => ({ ...p, receivingStages: p.receivingStages.filter((_, x) => x !== si) }))}
+                            className="text-slate-300 hover:text-red-500"><X className="h-3.5 w-3.5" /></button>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {stage.map((name, li) => (
+                            <span key={li} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700">
+                              <span className="text-indigo-500 font-bold">{si + 1}.{String.fromCharCode(97 + li)}</span>
+                              {name}
+                              <button type="button"
+                                onClick={() => setForm((p) => ({
+                                  ...p,
+                                  receivingStages: p.receivingStages
+                                    .map((s, x) => x === si ? s.filter((_, y) => y !== li) : s)
+                                    .filter((s) => s.length > 0),
+                                }))}
+                                className="ml-0.5 text-slate-400 hover:text-red-500"><X className="h-3 w-3" /></button>
+                            </span>
+                          ))}
+                        </div>
+
+                        <select value=""
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v) setForm((p) => ({
+                              ...p,
+                              receivingStages: p.receivingStages.map((s, x) => x === si ? [...s, v] : s),
+                            }));
+                          }}
+                          className="mt-1.5 w-full rounded border border-dashed border-slate-300 bg-white px-2 py-1 text-[11px] text-slate-500 outline-none focus:border-slate-500">
+                          <option value="">+ Add another location to this stage…</option>
+                          {locations
+                            .filter((l) => l.status === "Active" && !used.has(l.name))
+                            .map((l) => <option key={l.id} value={l.name}>{l.name}</option>)}
+                        </select>
+                      </div>
+                    );
+                  })}
+
+                  {/* Add a new stage */}
                   <select value=""
                     onChange={(e) => {
                       const v = e.target.value;
-                      if (v) setForm((p) => ({ ...p, receivingLocations: [...p.receivingLocations, v] }));
+                      if (v) setForm((p) => ({ ...p, receivingStages: [...p.receivingStages, [v]] }));
                     }}
                     className="w-full rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-500 outline-none focus:border-slate-500">
-                    <option value="">+ Add receiving location…</option>
+                    <option value="">+ Add receiving stage…</option>
                     {locations
-                      .filter((l) => l.status === "Active" && l.name !== form.primaryLocation && !form.receivingLocations.includes(l.name))
+                      .filter((l) => l.status === "Active" && l.name !== form.primaryLocation && !form.receivingStages.flat().includes(l.name))
                       .map((l) => <option key={l.id} value={l.name}>{l.name}</option>)}
                   </select>
-                  {form.primaryLocation && form.receivingLocations.length > 0 && (
+
+                  {form.primaryLocation && form.receivingStages.length > 0 && (
                     <p className="mt-2 text-[10px] font-medium text-indigo-600">
-                      Flow: {form.primaryLocation} → {form.receivingLocations.join(" → ")} → {form.primaryLocation}
+                      Flow: {form.primaryLocation} → {form.receivingStages.map((s) => s.length > 1 ? `(${s.join(" | ")})` : s[0]).join(" → ")} → {form.primaryLocation}
                     </p>
                   )}
                 </div>

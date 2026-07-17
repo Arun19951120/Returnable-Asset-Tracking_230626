@@ -70,7 +70,9 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
     // Pre-fill the destination from the configured flow:
     // check-out → next stop in project flow; check-in → the asset's own location.
     if (mode === "checkout") {
-      setDest(checkOutAllowedLocs?.length ? checkOutAllowedLocs[0] : "");
+      // Only pre-fill when the flow stage offers a single destination —
+      // if the stage has alternatives (1.a, 1.b…) the user must choose.
+      setDest(checkOutAllowedLocs?.length === 1 ? checkOutAllowedLocs[0] : "");
     } else if (mode === "checkin") {
       setDest(checkInAllowedLocs?.length === 1 ? checkInAllowedLocs[0] : asset.location);
     } else {

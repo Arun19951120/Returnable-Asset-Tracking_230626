@@ -85,9 +85,12 @@ export interface Project {
   startDate?: string;
   endDate?: string;
   // Flow configuration — the movement loop for this project:
-  // primaryLocation → receivingLocations[0] → [1] → … → back to primary
+  //   primaryLocation → stage 1 → stage 2 → … → back to primary
+  // Each stage may offer several alternative locations (1.a, 1.b, 1.c…);
+  // when a stage has more than one, the user picks which at check-out.
   primaryLocation?: string;
-  receivingLocations?: string[];
+  receivingStages?: string[][];  // preferred: one array of alternatives per stage
+  receivingLocations?: string[]; // legacy: exactly one location per stage
   slaDays?: number;              // SLA (days) for this project's customer
   // Contract type
   contractType?: "po" | "agreement";   // default = "po" for backward compat

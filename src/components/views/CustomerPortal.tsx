@@ -197,6 +197,8 @@ export default function CustomerPortal() {
   const [checkOutAllowedLocs, setCheckOutAllowedLocs] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [checkingOutAll, setCheckingOutAll] = useState(false);
+  // Chosen destination when the flow stage offers several (1.a, 1.b, 1.c…)
+  const [bulkDest, setBulkDest] = useState("");
 
   // Incoming shipment receive state
   const [receiving,    setReceiving]    = useState<string[]>([]);   // movement ids being received
@@ -292,7 +294,8 @@ export default function CustomerPortal() {
 
   // Bulk check-out (dispatch) selected Available assets to the flow's next stop
   async function handleCheckOutSelected() {
-    const dest = checkOutAllowedLocs[0];
+    // One option → use it; several → whatever the user picked
+    const dest = checkOutAllowedLocs.length === 1 ? checkOutAllowedLocs[0] : bulkDest;
     if (!dest) { return; }
     const toDispatch = assets.filter((a) => selectedIds.includes(a.id) && a.status === "Available");
     if (!toDispatch.length) return;
@@ -551,13 +554,23 @@ export default function CustomerPortal() {
                 Check-Out unavailable — no project flow set
               </span>
             ) : (
-              <button
-                onClick={handleCheckOutSelected}
-                disabled={checkingOutAll || selectedIds.length === 0}
-                className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-40 transition-colors">
-                {checkingOutAll ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogOut className="h-3 w-3" />}
-                Bulk Check-Out → {checkOutAllowedLocs[0]}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* This stage has alternatives (1.a, 1.b…) — the user chooses */}
+                {checkOutAllowedLocs.length > 1 && (
+                  <select value={bulkDest} onChange={(e) => setBulkDest(e.target.value)}
+                    className="rounded-lg border border-orange-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 outline-none focus:border-orange-500">
+                    <option value="">— choose destination —</option>
+                    {checkOutAllowedLocs.map((l) => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                )}
+                <button
+                  onClick={handleCheckOutSelected}
+                  disabled={checkingOutAll || selectedIds.length === 0 || (checkOutAllowedLocs.length > 1 && !bulkDest)}
+                  className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-40 transition-colors">
+                  {checkingOutAll ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogOut className="h-3 w-3" />}
+                  Bulk Check-Out{checkOutAllowedLocs.length === 1 ? ` → ${checkOutAllowedLocs[0]}` : bulkDest ? ` → ${bulkDest}` : ""}
+                </button>
+              </div>
             )}
           </div>
         )}
