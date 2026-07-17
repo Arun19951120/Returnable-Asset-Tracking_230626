@@ -25,6 +25,7 @@ const INK: [number, number, number] = [15, 23, 42];
  * and keeps multi-label PDFs small.
  */
 let logoCache: string | null | undefined;
+let logoAspect = 5700 / 3900;           // real ratio of Rustoppers_Logo.jpg; refined on load
 const LOGO_ALIAS = "rustoppers-logo";   // lets jsPDF embed the image only once
 async function getLogo(): Promise<string | null> {
   if (logoCache !== undefined) return logoCache;
@@ -35,6 +36,7 @@ async function getLogo(): Promise<string | null> {
       img.onload = () => resolve();
       img.onerror = () => reject(new Error("logo failed to load"));
     });
+    if (img.width && img.height) logoAspect = img.width / img.height;
     const maxW = 260;
     const scale = Math.min(1, maxW / (img.width || maxW));
     const c = document.createElement("canvas");
@@ -123,35 +125,39 @@ function drawLabel(
   const qrSize = 17;
   if (qr) drawQRVector(doc, qr, ox + 1.5, oy + (LABEL_H - qrSize) / 2, qrSize);
 
-  // ── Company logo (top-right) ──
-  const logoW = 11, logoH = 8;
-  const logoX = ox + LABEL_W - logoW - 1.5;
+  // Right-hand column: everything else lives between the QR and the label edge
+  const colX = ox + 1.5 + qrSize + 2;   // left edge of the column
+  const colR = ox + LABEL_W - 1.5;      // right edge of the column
+  const colW = colR - colX;
+
+  // ── Company logo (top-right, true aspect ratio, clear of the barcode) ──
+  const logoH = 7.5;
+  const logoW = logoH * logoAspect;
+  const logoX = colR - logoW;
+  const logoBottom = 0.7 + logoH;
   if (logoUrl) {
     // alias → the logo bitmap is stored once and re-referenced by every label
-    try { doc.addImage(logoUrl, "JPEG", logoX, oy + 1.2, logoW, logoH, LOGO_ALIAS); } catch { /* ignore */ }
+    try { doc.addImage(logoUrl, "JPEG", logoX, oy + 0.7, logoW, logoH, LOGO_ALIAS); } catch { /* ignore */ }
   }
 
-  // ── "Property of Rustoppers" (top strip, between QR and logo) ──
-  const midX = ox + qrSize + 3;              // left edge of the middle column
-  const midW = LABEL_W - qrSize - logoW - 6; // usable width of the middle column
+  // ── "Property of Rustoppers" — sits to the LEFT of the logo, never under it ──
   doc.setTextColor(...INK);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(4.2);
-  doc.text("Property of Rustoppers", midX, oy + 4);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(3.6);   // sized to fit on one line beside the logo
+  doc.text("Property of Rustoppers", colX, oy + 4.3, { maxWidth: logoX - colX - 1 });
 
-  // ── Barcode (middle column) ──
-  const barW = midW + logoW - 1;   // barcode may run under the logo's column width
-  const barH = 8;
-  const barY = oy + 6;
-  if (bars) drawBarcode(doc, bars, midX, barY, barW, barH);
+  // ── Barcode — full column width, starting BELOW the logo so they never merge ──
+  const barY = oy + logoBottom + 0.8;
+  const barH = 7.2;
+  if (bars) drawBarcode(doc, bars, colX, barY, colW, barH);
 
-  // ── Part number on the orange band (bottom of the middle column) ──
+  // ── Part number on the orange band (shorter, so the logo stays legible) ──
   const bandY = barY + barH + 0.8;
-  const bandH = LABEL_H - (bandY - oy) - 1.5;
+  const bandH = LABEL_H - (bandY - oy) - 2.4;
   doc.setFillColor(...ORANGE);
-  doc.rect(midX, bandY, barW, bandH, "F");
+  doc.rect(colX, bandY, colW, bandH, "F");
   doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(7);
-  doc.text(pn, midX + barW / 2, bandY + bandH / 2 + 1.2, { align: "center", maxWidth: barW - 1 });
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6.5);
+  doc.text(pn, colX + colW / 2, bandY + bandH / 2 + 1.1, { align: "center", maxWidth: colW - 1 });
 }
 
 /**
