@@ -9,7 +9,7 @@ import {
   Upload, FileSpreadsheet,
   Wifi, Trash2, MoreHorizontal, LogOut, LogIn, ArrowRightLeft, Archive,
   ChevronDown, ChevronRight, Layers, List, Columns3, Clock, RotateCcw,
-  ChevronUp, ChevronsUpDown, Info,
+  ChevronUp, ChevronsUpDown, Info, Tag,
 } from "lucide-react";
 import { AssetMovement } from "@/lib/types";
 import { KitItem } from "@/lib/types";
@@ -18,6 +18,7 @@ import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
 import AssetDetailDialog from "@/components/dialogs/AssetDetailDialog";
 import BulkQRDialog from "@/components/dialogs/BulkQRDialog";
 import { buildQRDataUrl } from "@/lib/qr";
+import { generateAssetLabels } from "@/lib/label";
 import FilterBar, { DayRange, filterByDays } from "@/components/ui/FilterBar";
 import { toast } from "sonner";
 
@@ -611,9 +612,9 @@ export default function AssetLedger() {
             <Download className="h-4 w-4" /> Export CSV
           </button>
           <button onClick={() => setShowBulkQR(true)}
-            title="Download QR codes for a project"
+            title="Print asset labels or QR codes for a project"
             className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-            <QrCode className="h-4 w-4" /> QR Codes
+            <Tag className="h-4 w-4" /> Labels / QR
           </button>
           {selected.length > 1 && (
             <button onClick={() => setShowBulkTx(true)}
@@ -843,6 +844,8 @@ export default function AssetLedger() {
                                         <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Actions</p>
                                         <button onClick={() => { setDetailAsset(asset); setMenuOpenId(null); }}
                                           className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><Info className="h-3.5 w-3.5 text-indigo-500" /> Details &amp; History</button>
+                                        <button onClick={() => { setMenuOpenId(null); generateAssetLabels([asset], asset.uuid, { sheet: false }); }}
+                                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><Tag className="h-3.5 w-3.5 text-slate-500" /> Print Label</button>
                                         <button onClick={() => { setCheckoutMode("checkout"); setCheckoutAsset(asset); setMenuOpenId(null); }}
                                           className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><LogOut className="h-3.5 w-3.5 text-blue-500" /> Check Out</button>
                                         <button onClick={() => { setCheckoutMode("checkin"); setCheckoutAsset(asset); setMenuOpenId(null); }}
@@ -981,6 +984,8 @@ export default function AssetLedger() {
                             <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Actions</p>
                             <button onClick={() => { setMenuOpenId(null); setDetailAsset(asset); }}
                               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><Info className="h-3.5 w-3.5 text-indigo-500" /> Details &amp; History</button>
+                            <button onClick={() => { setMenuOpenId(null); generateAssetLabels([asset], asset.uuid, { sheet: false }); }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><Tag className="h-3.5 w-3.5 text-slate-500" /> Print Label</button>
                             {[
                               { mode: "checkout" as const, label: "Check Out", icon: LogOut,          color: "text-orange-600", bg: "hover:bg-orange-50" },
                               { mode: "checkin"  as const, label: "Check In",  icon: LogIn,           color: "text-emerald-600", bg: "hover:bg-emerald-50" },

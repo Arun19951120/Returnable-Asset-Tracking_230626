@@ -1,11 +1,41 @@
 import type { Asset } from "./types";
 import { toast } from "sonner";
 
-/** Encode an asset UUID as a QR data-URL (shared by the single-asset modal & bulk sheet). */
+/** Encode an asset UUID as a QR data-URL (used by the on-screen single-asset modal). */
 export async function buildQRDataUrl(uuid: string): Promise<string> {
   const QRCode = (await import("qrcode")).default;
   // Encode UUID only as per requirement
   return QRCode.toDataURL(uuid, { width: 256, margin: 2, color: { dark: "#0f172a", light: "#ffffff" } });
+}
+
+export interface QRMatrix { modules: { size: number; data: ArrayLike<number> } }
+
+/**
+ * Draw a QR code into a PDF as vector modules (horizontal runs merged).
+ * Vectors stay crisp at any DPI and keep multi-code PDFs small & fast —
+ * embedding one bitmap per code does not scale to hundreds of assets.
+ */
+export function drawQRVector(
+  doc: import("jspdf").jsPDF,
+  qr: QRMatrix,
+  x: number,
+  y: number,
+  size: number
+) {
+  const n = qr.modules.size;
+  const d = qr.modules.data;
+  const cell = size / n;
+  doc.setFillColor(0, 0, 0);
+  for (let r = 0; r < n; r++) {
+    let c = 0;
+    while (c < n) {
+      if (d[r * n + c]) {
+        const start = c;
+        while (c < n && d[r * n + c]) c++;
+        doc.rect(x + start * cell, y + r * cell, (c - start) * cell, cell, "F");
+      } else c++;
+    }
+  }
 }
 
 /**
@@ -18,7 +48,7 @@ export async function generateQRSheet(assets: Asset[], title: string) {
   const QRCode = (await import("qrcode")).default;
   const { jsPDF } = await import("jspdf");
 
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const W = 210, H = 297, mg = 12;
   const COLS = 3;
   const cellW = (W - mg * 2) / COLS;   // 62mm
@@ -62,10 +92,10 @@ export async function generateQRSheet(assets: Asset[], title: string) {
     doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
     doc.roundedRect(x + 1, y, cellW - 2, cellH - 4, 2, 2, "S");
 
-    // QR image (centred)
+    // QR (centred, drawn as vectors)
     try {
-      const url = await QRCode.toDataURL(a.uuid, { width: 256, margin: 1, color: { dark: "#0f172a", light: "#ffffff" } });
-      doc.addImage(url, "PNG", x + (cellW - qrSize) / 2, y + 4, qrSize, qrSize);
+      const qr = QRCode.create(a.uuid, { errorCorrectionLevel: "M" }) as unknown as QRMatrix;
+      drawQRVector(doc, qr, x + (cellW - qrSize) / 2, y + 4, qrSize);
     } catch { /* skip unrenderable code */ }
 
     // UUID (bold, monospace-ish)
