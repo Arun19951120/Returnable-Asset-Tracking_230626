@@ -711,5 +711,113 @@
         "description": ""
       }
     ]
+  },
+  {
+    "id": "dc_-a4ae2822",
+    "dcNo": "DC-1277878",
+    "createdAt": "2026-07-18T07:54:37.878Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "cumulative",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-a07f6b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-13",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-c0df8b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-30",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-f81f02c6",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-36",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-77a453e2",
+    "dcNo": "DC-1514714",
+    "createdAt": "2026-07-18T07:58:34.714Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "cumulative",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-a07f6b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-13",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-c0df8b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-30",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-f81f02c6",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-36",
+        "cost": 0,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "id": "dc_-97027aec",
+    "dcNo": "DC-1552075",
+    "createdAt": "2026-07-18T07:59:12.075Z",
+    "fromLocation": "Master Warehouse",
+    "toLocation": "Tier 1",
+    "movementType": "Bulk Check-Out",
+    "description": "PLSKIT 1200X1000X1000mm ×3",
+    "qty": 3,
+    "lineMode": "cumulative",
+    "showRFID": false,
+    "showBLE": false,
+    "assetSnapshots": [
+      {
+        "id": "ass-a07f6b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-13",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-c0df8b09",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-30",
+        "cost": 0,
+        "description": ""
+      },
+      {
+        "id": "ass-f81f02c6",
+        "name": "PLSKIT 1200X1000X1000mm",
+        "uuid": "U546-36",
+        "cost": 0,
+        "description": ""
+      }
+    ]
   }
 ]

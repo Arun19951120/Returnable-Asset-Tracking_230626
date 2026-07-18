@@ -25,6 +25,35 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
+// Company logo — loaded once, downscaled for print, cached across DCs.
+let dcLogoCache: string | null | undefined;
+let dcLogoAspect = 1;   // width / height, refined on load
+async function getDcLogo(): Promise<string | null> {
+  if (dcLogoCache !== undefined) return dcLogoCache;
+  try {
+    const img = new Image();
+    img.src = "/rustoppers-logo.jpg";
+    await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(new Error("logo")); });
+    if (img.width && img.height) dcLogoAspect = img.width / img.height;
+    const maxW = 320;
+    const scale = Math.min(1, maxW / (img.width || maxW));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.width * scale));
+    c.height = Math.max(1, Math.round(img.height * scale));
+    const ctx = c.getContext("2d");
+    if (!ctx) throw new Error("ctx");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    dcLogoCache = c.toDataURL("image/jpeg", 0.85);
+  } catch { dcLogoCache = null; }
+  return dcLogoCache;
+}
+
+// Logo palette — background/accents kept compatible with the Rustoppers logo.
+const INK: [number, number, number] = [51, 41, 33];       // dark brown-grey text
+const ACCENT: [number, number, number] = [234, 130, 40];  // logo orange
+const SUBTLE: [number, number, number] = [120, 110, 100]; // muted brown-grey
+
 export async function generateAssetsDC(
   assets: Asset[],
   fromLocation: string,
@@ -94,33 +123,48 @@ export async function generateAssetsDC(
   }
 
   const grandTotal = assets.reduce((s, a) => s + (a.cost ?? 0), 0);
+  const logoUrl = await getDcLogo();
 
   for (let ci = 0; ci < 3; ci++) {
     if (ci > 0) doc.addPage();
     const lbl = COPIES[ci];
     const clr = HDR[lbl];
 
-    // ── Header band ────────────────────────────────────────────────────────────
-    const bandH = headAddress ? 34 : 28;
-    doc.setFillColor(...clr);
+    // ── Header band (white — compatible with the logo) ──────────────────────────
+    const bandH = 34;
+    doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, W, bandH, "F");
-    doc.setTextColor(255, 255, 255);
+
+    // Company logo (top-left), true aspect ratio
+    const logoH = 18;
+    const logoW = logoH * dcLogoAspect;
+    if (logoUrl) { try { doc.addImage(logoUrl, "JPEG", mg, 3, logoW, logoH, "dc-logo"); } catch { /* ignore */ } }
+
+    // Organization name + address + GSTIN (centred, dark on white)
+    doc.setTextColor(...INK);
     doc.setFontSize(13); doc.setFont("helvetica", "bold");
-    doc.text(headOrg, W / 2, 9, { align: "center" });
-    // Master Warehouse address + GST (origin of dispatch)
+    doc.text(headOrg, W / 2, 8, { align: "center" });
     if (headAddress) {
-      doc.setFontSize(7.5); doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...SUBTLE);
       const addrLine = headGst ? `${headAddress}  ·  GSTIN: ${headGst}` : headAddress;
-      doc.text(addrLine, W / 2, 14, { align: "center" });
+      doc.text(addrLine, W / 2, 12.5, { align: "center" });
     }
-    const subY = headAddress ? 20 : 15;
-    doc.setFontSize(9); doc.setFont("helvetica", "normal");
-    doc.text(`Asset Movement Delivery Challan — ${movementType}`, W / 2, subY, { align: "center" });
-    doc.setFontSize(8);
-    const metaY = headAddress ? 28 : 22;
-    doc.text(`DC No: ${dcNo}`, mg, metaY);
-    doc.text(`Date: ${now.toLocaleDateString("en-IN")}`, W / 2, metaY, { align: "center" });
-    doc.text(`[ ${lbl} COPY ]`, W - mg, metaY, { align: "right" });
+
+    // ── Title — "Returnable Delivery Challan" (bold, legible, accent) ──
+    doc.setTextColor(...ACCENT);
+    doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text("Returnable Delivery Challan", W / 2, 20.5, { align: "center" });
+
+    // Meta row: DC No / Date / [COPY], below the logo
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...INK);
+    doc.text(`DC No: ${dcNo}`, mg, 29);
+    doc.text(`Date: ${now.toLocaleDateString("en-IN")}`, W / 2, 29, { align: "center" });
+    doc.setFont("helvetica", "bold"); doc.setTextColor(...clr);
+    doc.text(`[ ${lbl} COPY ]`, W - mg, 29, { align: "right" });
+
+    // Accent underline keyed to the copy (keeps ORIGINAL / DUPLICATE / TRIPLICATE distinct)
+    doc.setDrawColor(...ACCENT); doc.setLineWidth(0.8);
+    doc.line(0, bandH - 0.4, W, bandH - 0.4);
 
     // ── From / To ──────────────────────────────────────────────────────────────
     const half = (W - mg * 2) / 2 - 2;
