@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   Users, ShieldCheck, FolderKanban, Plus, Trash2, Edit2, X, Loader2, Check,
   KeyRound, Eye, EyeOff, Lock, Search, RefreshCw, AlertTriangle, UserPlus,
-  DatabaseBackup, Download, Upload,
+  DatabaseBackup, Download, Upload, FolderOpen, Clock, Save, RotateCcw, HardDrive,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -891,10 +891,97 @@ export default function Administration() {
 }
 
 // ─── Backup & Restore Tab ─────────────────────────────────────────────────────
+interface StoredBackup { name: string; size: number; createdAt: string; auto: boolean }
+interface BackupSettings {
+  directory: string; auto: boolean; intervalHours: number; retain: number;
+  lastRunAt: string | null; lastError: string | null;
+}
+
+const fmtSize = (b: number) => b < 1024 ? `${b} B` : b < 1024 ** 2 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 ** 2).toFixed(1)} MB`;
+const fmtWhen = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+
 function BackupTab() {
   const [restoring, setRestoring] = useState(false);
   const [confirmFile, setConfirmFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Server-side storage directory + schedule
+  const [settings, setSettings] = useState<BackupSettings | null>(null);
+  const [directory, setDirectory] = useState("");        // resolved absolute path (display)
+  const [dirInput, setDirInput] = useState("");          // editable field
+  const [defaultDir, setDefaultDir] = useState("");
+  const [files, setFiles] = useState<StoredBackup[]>([]);
+  const [dirError, setDirError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [snapshotting, setSnapshotting] = useState(false);
+  const [confirmStored, setConfirmStored] = useState<StoredBackup | null>(null);
+
+  const loadBackups = useCallback(async () => {
+    try {
+      const res = await fetch("/api/backups");
+      const d = await res.json();
+      setSettings(d.settings);
+      setDirectory(d.directory);
+      setDirInput(d.settings?.directory ?? "");
+      setDefaultDir(d.defaultDirectory ?? "");
+      setDirError(d.dirError ?? null);
+      setFiles(d.files ?? []);
+    } catch { toast.error("Could not load backup settings"); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { loadBackups(); }, [loadBackups]);
+
+  async function saveSettings(patch: Partial<BackupSettings>) {
+    if (!settings) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/backups", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...settings, ...patch }),
+      });
+      const d = await res.json();
+      if (!res.ok) { toast.error(d.error ?? "Could not save settings"); return; }
+      toast.success("Backup settings saved");
+      await loadBackups();
+    } catch { toast.error("Could not save settings"); }
+    finally { setSaving(false); }
+  }
+
+  async function snapshotNow() {
+    setSnapshotting(true);
+    try {
+      const res = await fetch("/api/backups", { method: "POST" });
+      const d = await res.json();
+      if (!res.ok) { toast.error(d.error ?? "Backup failed"); return; }
+      toast.success(`Saved ${d.file.name} to the backup folder`);
+      await loadBackups();
+    } catch { toast.error("Backup failed"); }
+    finally { setSnapshotting(false); }
+  }
+
+  async function deleteStored(f: StoredBackup) {
+    try {
+      const res = await fetch(`/api/backups/${encodeURIComponent(f.name)}`, { method: "DELETE" });
+      if (!res.ok) { toast.error("Could not delete that backup"); return; }
+      toast.success("Backup deleted");
+      await loadBackups();
+    } catch { toast.error("Could not delete that backup"); }
+  }
+
+  async function restoreStored(f: StoredBackup) {
+    setRestoring(true);
+    try {
+      const res = await fetch(`/api/backups/${encodeURIComponent(f.name)}`, { method: "POST" });
+      const d = await res.json();
+      if (!res.ok) { toast.error(d.error ?? "Restore failed"); return; }
+      toast.success(`Restored ${d.restored?.length ?? 0} collections. Reloading…`);
+      setTimeout(() => window.location.reload(), 1200);
+    } catch { toast.error("Restore failed"); }
+    finally { setRestoring(false); setConfirmStored(null); }
+  }
 
   function handleBackup() {
     // Stream the backup file straight from the API (Content-Disposition triggers download)
@@ -929,6 +1016,163 @@ function BackupTab() {
 
   return (
     <div className="max-w-2xl space-y-5">
+      {/* ── Storage directory ─────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100">
+            <FolderOpen className="h-5 w-5 text-indigo-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-slate-900">Backup Storage Folder</p>
+            <p className="mt-0.5 text-sm text-slate-500">
+              Where the server keeps backup files. Snapshots are written here so they survive
+              even if nobody downloaded a copy.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <input value={dirInput} onChange={(e) => setDirInput(e.target.value)}
+                placeholder={defaultDir || "./backups"}
+                className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs outline-none focus:border-slate-500" />
+              <button onClick={() => saveSettings({ directory: dirInput })}
+                disabled={saving || loading || !dirInput.trim() || dirInput === settings?.directory}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-900 disabled:opacity-40">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-slate-400">
+              Absolute path, or relative to the app folder. Currently resolving to{" "}
+              <span className="font-mono text-slate-500">{directory || "…"}</span>
+            </p>
+            {dirError && (
+              <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{dirError}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Automatic backup schedule ─────────────────────────────────── */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+            <Clock className="h-5 w-5 text-amber-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold text-slate-900">Automatic Backup</p>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Let the server snapshot the database on a schedule, with no one having to remember.
+                </p>
+              </div>
+              <button
+                role="switch" aria-checked={!!settings?.auto} aria-label="Automatic backup"
+                onClick={() => saveSettings({ auto: !settings?.auto })}
+                disabled={saving || loading}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${settings?.auto ? "bg-emerald-500" : "bg-slate-300"}`}>
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${settings?.auto ? "left-[22px]" : "left-0.5"}`} />
+              </button>
+            </div>
+
+            {settings?.auto && (
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Run every</label>
+                  <select value={settings.intervalHours}
+                    onChange={(e) => saveSettings({ intervalHours: Number(e.target.value) })}
+                    disabled={saving}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500">
+                    <option value={1}>Hour</option>
+                    <option value={6}>6 hours</option>
+                    <option value={12}>12 hours</option>
+                    <option value={24}>Day</option>
+                    <option value={168}>Week</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Keep the newest</label>
+                  <select value={settings.retain}
+                    onChange={(e) => saveSettings({ retain: Number(e.target.value) })}
+                    disabled={saving}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500">
+                    <option value={7}>7 backups</option>
+                    <option value={30}>30 backups</option>
+                    <option value={90}>90 backups</option>
+                    <option value={0}>Keep everything</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <p className="mt-3 text-xs text-slate-400">
+              {settings?.lastRunAt
+                ? <>Last automatic backup: {fmtWhen(settings.lastRunAt)}</>
+                : <>No automatic backup has run yet.</>}
+            </p>
+            {settings?.lastError && (
+              <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                Last scheduled run failed: {settings.lastError}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stored backups ────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100">
+            <HardDrive className="h-5 w-5 text-sky-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold text-slate-900">Stored Backups</p>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  {loading ? "Loading…" : `${files.length} snapshot${files.length === 1 ? "" : "s"} in the backup folder`}
+                </p>
+              </div>
+              <button onClick={snapshotNow} disabled={snapshotting || loading}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50">
+                {snapshotting ? <Loader2 className="h-4 w-4 animate-spin" /> : <DatabaseBackup className="h-4 w-4" />} Back Up Now
+              </button>
+            </div>
+
+            {!loading && files.length === 0 && (
+              <p className="mt-3 rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-xs text-slate-400">
+                No backups stored yet — use <strong>Back Up Now</strong> or turn on automatic backup.
+              </p>
+            )}
+
+            {files.length > 0 && (
+              <div className="mt-3 max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200">
+                {files.map((f) => (
+                  <div key={f.name} className="flex items-center gap-3 px-3 py-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium text-slate-800">{fmtWhen(f.createdAt)}</p>
+                      <p className="truncate text-[11px] text-slate-400">
+                        {fmtSize(f.size)} · {f.auto ? "automatic" : "manual"}
+                      </p>
+                    </div>
+                    <a href={`/api/backups/${encodeURIComponent(f.name)}`} download
+                      title="Download this backup"
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                      <Download className="h-4 w-4" />
+                    </a>
+                    <button onClick={() => setConfirmStored(f)} title="Restore from this backup"
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-50 hover:text-amber-600">
+                      <RotateCcw className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => deleteStored(f)} title="Delete this backup"
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Backup */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex items-start gap-3">
@@ -969,6 +1213,34 @@ function BackupTab() {
           </div>
         </div>
       </div>
+
+      {/* Restore-from-stored-backup confirm */}
+      {confirmStored && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setConfirmStored(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-slate-900">Roll back to this backup?</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  The database will be replaced with the snapshot from{" "}
+                  <span className="font-medium text-slate-700">{fmtWhen(confirmStored.createdAt)}</span>.
+                  Any changes made since then will be lost.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setConfirmStored(null)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button onClick={() => restoreStored(confirmStored)} disabled={restoring}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60">
+                {restoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Restore confirm */}
       {confirmFile && (

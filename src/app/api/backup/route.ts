@@ -1,32 +1,13 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { buildSnapshot } from "@/lib/backup-server";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-
-// Full backup — bundles every data/*.json collection into a single snapshot.
+// Full backup, streamed straight to the browser as a download.
+// (To write a snapshot into the server's storage directory instead,
+// POST /api/backups.)
 export async function GET() {
-  const snapshot: Record<string, unknown> = {
-    _meta: {
-      app: "RSPL Returnable Asset Tracking",
-      version: 1,
-      createdAt: new Date().toISOString(),
-    },
-    collections: {} as Record<string, unknown[]>,
-  };
-
+  let snapshot: Record<string, unknown>;
   try {
-    const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json"));
-    const collections: Record<string, unknown[]> = {};
-    for (const file of files) {
-      const name = file.replace(/\.json$/, "");
-      try {
-        collections[name] = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf-8"));
-      } catch {
-        collections[name] = [];
-      }
-    }
-    snapshot.collections = collections;
+    snapshot = buildSnapshot();
   } catch {
     return NextResponse.json({ error: "Failed to read data directory" }, { status: 500 });
   }
