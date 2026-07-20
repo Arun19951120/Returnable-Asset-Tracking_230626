@@ -5,18 +5,18 @@ import { toast } from "sonner";
 /**
  * Asset label — 50mm (L) x 25mm (H)
  *
- * Layout (mirrors the approved artwork):
+ * Layout — everything prints black-on-white so it stays crisp on a thermal
+ * label printer (no filled colour bands, which print as muddy grey):
  *   ┌───────────────────────────────────────────────┐
- *   │  ┌──────┐   Property of Rustoppers   ┌─────┐  │
- *   │  │  QR  │   ▌▌▐ ▌▐▐ ▌▌▐ barcode ▌▐   │LOGO │  │
- *   │  └──────┘   ┌───────────────────┐    └─────┘  │
- *   │             │  53001 (part no)  │ ← orange    │
+ *   │  ┌──────┐   Property of        ┌─────────┐    │
+ *   │  │  QR  │   Rustoppers         │  LOGO   │    │
+ *   │  │      │   ▌▌▐ ▌▐▐ ▌▌▐ barcode ▌▐ ▌▌▐ ▌▌     │
+ *   │  └──────┘        53001 (part no)              │
  *   └───────────────────────────────────────────────┘
  */
 export const LABEL_W = 50;   // mm
 export const LABEL_H = 25;   // mm
 
-const ORANGE: [number, number, number] = [234, 130, 40];
 const INK: [number, number, number] = [15, 23, 42];
 
 /**
@@ -65,7 +65,7 @@ function barcodePattern(value: string, JsBarcode: typeof import("jsbarcode")): b
     const canvas = document.createElement("canvas");
     JsBarcode(canvas, value, {
       format: "CODE128",
-      displayValue: false,   // the part number is printed separately, in the orange band
+      displayValue: false,   // the part number is printed separately, below the bars
       margin: 0,
       width: 1,              // 1px per module → canvas width == module count
       height: 2,
@@ -122,42 +122,40 @@ function drawLabel(
   }
 
   // ── QR (left) ──
-  const qrSize = 17;
-  if (qr) drawQRVector(doc, qr, ox + 1.5, oy + (LABEL_H - qrSize) / 2, qrSize);
+  const qrSize = 16;
+  if (qr) drawQRVector(doc, qr, ox + 1.5, oy + 1.5, qrSize);
 
   // Right-hand column: everything else lives between the QR and the label edge
   const colX = ox + 1.5 + qrSize + 2;   // left edge of the column
   const colR = ox + LABEL_W - 1.5;      // right edge of the column
   const colW = colR - colX;
 
-  // ── Company logo (top-right, true aspect ratio, clear of the barcode) ──
-  const logoH = 7.5;
+  // ── Company logo (top-right) — enlarged for legibility, true aspect ratio ──
+  const logoH = 9;
   const logoW = logoH * logoAspect;
   const logoX = colR - logoW;
-  const logoBottom = 0.7 + logoH;
+  const logoBottom = 0.8 + logoH;
   if (logoUrl) {
     // alias → the logo bitmap is stored once and re-referenced by every label
-    try { doc.addImage(logoUrl, "JPEG", logoX, oy + 0.7, logoW, logoH, LOGO_ALIAS); } catch { /* ignore */ }
+    try { doc.addImage(logoUrl, "JPEG", logoX, oy + 0.8, logoW, logoH, LOGO_ALIAS); } catch { /* ignore */ }
   }
 
-  // ── "Property of Rustoppers" — sits to the LEFT of the logo, never under it ──
+  // ── "Property of Rustoppers" — two lines so it can be set much larger ──
   doc.setTextColor(...INK);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(3.6);   // sized to fit on one line beside the logo
-  doc.text("Property of Rustoppers", colX, oy + 4.3, { maxWidth: logoX - colX - 1 });
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6);
+  doc.text("Property of", colX, oy + 4.4);
+  doc.text("Rustoppers", colX, oy + 8.4);
 
   // ── Barcode — full column width, starting BELOW the logo so they never merge ──
-  const barY = oy + logoBottom + 0.8;
-  const barH = 7.2;
+  const barY = oy + logoBottom + 0.9;
+  const barH = 7;
   if (bars) drawBarcode(doc, bars, colX, barY, colW, barH);
 
-  // ── Part number on the orange band (shorter, so the logo stays legible) ──
-  const bandY = barY + barH + 0.8;
-  const bandH = LABEL_H - (bandY - oy) - 2.4;
-  doc.setFillColor(...ORANGE);
-  doc.rect(colX, bandY, colW, bandH, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(6.5);
-  doc.text(pn, colX + colW / 2, bandY + bandH / 2 + 1.1, { align: "center", maxWidth: colW - 1 });
+  // ── Part number — plain bold black text, no background fill ──
+  const pnY = barY + barH + 4.4;
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.text(pn, colX + colW / 2, pnY, { align: "center", maxWidth: colW });
 }
 
 /**
