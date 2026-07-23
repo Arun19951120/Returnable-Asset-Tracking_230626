@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { fetchAll, addDocument, updateDocument, logAudit } from "@/lib/storage";
 import { Asset, Location, Project } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
@@ -182,6 +183,63 @@ function KitEditor({
   );
 }
 
+// ── Row-action dropdown, rendered in a portal ─────────────────────────────────
+// A plain absolutely-positioned menu gets clipped by the group card's
+// `overflow-hidden` and runs off the bottom of the screen for the last rows.
+// Rendering it into <body> at fixed, viewport-clamped coordinates (flipping
+// above the trigger when there's no room below) keeps it fully visible.
+function PortalMenu({ anchor, onClose, children }: {
+  anchor: HTMLElement | null;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState<React.CSSProperties>({ position: "fixed", top: 0, left: 0, visibility: "hidden" });
+
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (!anchor || !menu) return;
+    const place = () => {
+      const a = anchor.getBoundingClientRect();
+      const mh = menu.offsetHeight, mw = menu.offsetWidth;
+      const gap = 6, pad = 8;
+      let top = a.bottom + gap;                                 // default: below the button
+      if (top + mh > window.innerHeight - pad) {
+        const above = a.top - gap - mh;                         // flip up when no room below
+        top = above >= pad ? above : window.innerHeight - pad - mh;
+      }
+      // final clamp so the menu is always fully on screen (both axes)
+      top = Math.max(pad, Math.min(top, window.innerHeight - pad - mh));
+      let left = a.right - mw;                                  // right-align to the button
+      left = Math.min(Math.max(pad, left), window.innerWidth - pad - mw);
+      setStyle({ position: "fixed", top, left, visibility: "visible", zIndex: 50 });
+    };
+    place();
+  }, [anchor]);
+
+  // Any scroll or resize detaches the menu from its button — just close it.
+  useEffect(() => {
+    const close = () => onClose();
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div ref={menuRef} style={{ ...style, maxHeight: "calc(100vh - 16px)", overflowY: "auto" }}
+        className="w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+        {children}
+      </div>
+    </>,
+    document.body,
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AssetLedger() {
   const { profile } = useAuth();
@@ -199,6 +257,13 @@ export default function AssetLedger() {
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
   const [showBulkQR, setShowBulkQR] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  // Open the row menu anchored to the clicked button (or toggle it closed)
+  const toggleRowMenu = (id: string, el: HTMLElement) => {
+    if (menuOpenId === id) { setMenuOpenId(null); setMenuAnchor(null); }
+    else { setMenuOpenId(id); setMenuAnchor(el); }
+  };
+  const closeRowMenu = () => { setMenuOpenId(null); setMenuAnchor(null); };
   const [retireAsset, setRetireAsset] = useState<Asset | null>(null);
   const [retireCategory, setRetireCategory] = useState<"Damaged"|"End of Life"|"Lost"|"Other">("Damaged");
   const [retireReason, setRetireReason] = useState("");
@@ -922,14 +987,12 @@ export default function AssetLedger() {
                                   <QrCode className="h-3.5 w-3.5" />
                                 </button>
                                 <div className="relative">
-                                  <button onClick={() => setMenuOpenId(menuOpenId === asset.id ? null : asset.id)}
+                                  <button onClick={(e) => toggleRowMenu(asset.id, e.currentTarget)}
                                     className="rounded border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-100 transition-colors">
                                     <MoreHorizontal className="h-3.5 w-3.5" />
                                   </button>
                                   {menuOpenId === asset.id && (
-                                    <>
-                                      <div className="fixed inset-0 z-20" onClick={() => setMenuOpenId(null)} />
-                                      <div className="absolute right-0 top-full z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+                                    <PortalMenu anchor={menuAnchor} onClose={closeRowMenu}>
                                         <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Actions</p>
                                         <button onClick={() => { setDetailAsset(asset); setMenuOpenId(null); }}
                                           className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><Info className="h-3.5 w-3.5 text-indigo-500" /> Details &amp; History</button>
@@ -950,10 +1013,9 @@ export default function AssetLedger() {
                                           </button>
                                         ))}
                                         <div className="my-1 border-t border-slate-100" />
-                                        <button onClick={() => { setRetireAsset(asset); setMenuOpenId(null); }}
+                                        <button onClick={() => { setRetireAsset(asset); closeRowMenu(); }}
                                           className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"><Archive className="h-3.5 w-3.5" /> Retire Asset</button>
-                                      </div>
-                                    </>
+                                    </PortalMenu>
                                   )}
                                 </div>
                               </div>
@@ -1060,16 +1122,13 @@ export default function AssetLedger() {
                     {/* ⋯ action menu */}
                     <div className="relative">
                       <button
-                        onClick={() => setMenuOpenId(menuOpenId === asset.id ? null : asset.id)}
+                        onClick={(e) => toggleRowMenu(asset.id, e.currentTarget)}
                         className="rounded border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
                         title="Actions">
                         <MoreHorizontal className="h-3.5 w-3.5" />
                       </button>
                       {menuOpenId === asset.id && (
-                        <>
-                          {/* Backdrop to close on outside click */}
-                          <div className="fixed inset-0 z-20" onClick={() => setMenuOpenId(null)} />
-                          <div className="absolute right-0 top-full z-30 mt-1 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-xl">
+                        <PortalMenu anchor={menuAnchor} onClose={closeRowMenu}>
                             <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Actions</p>
                             <button onClick={() => { setMenuOpenId(null); setDetailAsset(asset); }}
                               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"><Info className="h-3.5 w-3.5 text-indigo-500" /> Details &amp; History</button>
@@ -1121,8 +1180,7 @@ export default function AssetLedger() {
                                 </button>
                               </>
                             )}
-                          </div>
-                        </>
+                        </PortalMenu>
                       )}
                     </div>
                   </div>
