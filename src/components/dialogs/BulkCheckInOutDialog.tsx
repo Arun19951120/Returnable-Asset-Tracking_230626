@@ -154,7 +154,10 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
           MODE_CONFIG[mode].label,
           dcOptions(),
           undefined,
-          allLocations
+          allLocations,
+          undefined,
+          undefined,
+          projects
         );
       }
 
@@ -175,7 +178,10 @@ export default function BulkCheckInOutDialog({ assetIds, locations, onClose, ini
       MODE_CONFIG[mode].label,
       dcOptions(),
       undefined,
-      allLocations
+      allLocations,
+      undefined,
+      undefined,
+      projects
     );
   }
 

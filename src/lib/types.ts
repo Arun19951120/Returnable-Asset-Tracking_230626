@@ -38,7 +38,6 @@ export interface Asset {
   customerId?: string;
   projectId?: string;
   cost?: number;          // Unit cost / declared value (baseline, for DC & sales reporting)
-  locationCosts?: Record<string, number>; // per-location declared value (keyed by location name, e.g. "1.a")
   description?: string;   // Asset category / short description for DC grouping
   kitItems?: KitItem[];   // Kit components bundled with this asset
   cycleCount?: number;    // Number of completed return trips to master warehouse
@@ -92,6 +91,11 @@ export interface Project {
   primaryLocation?: string;
   receivingStages?: string[][];  // preferred: one array of alternatives per stage
   receivingLocations?: string[]; // legacy: exactly one location per stage
+  // Loop rate card: the price of one full route through the flow. When a stage
+  // branches (1.a/1.b/…), each branch choice is a distinct, separately-priced
+  // loop. Keyed by the branch choices joined with "|" (or "__single__" when
+  // the flow has no branch). Used as the declared value on the Delivery Challan.
+  loopCosts?: Record<string, number>;
   slaDays?: number;              // SLA (days) for this project's customer
   // Contract type
   contractType?: "po" | "agreement";   // default = "po" for backward compat

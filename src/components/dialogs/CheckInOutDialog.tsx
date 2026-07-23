@@ -157,7 +157,10 @@ export default function CheckInOutDialog({ asset, locations, onClose, initialMod
       MODE_CONFIG[mode].label,
       "uuid",
       undefined,
-      allLocations
+      allLocations,
+      undefined,
+      undefined,
+      projects
     );
   }
 

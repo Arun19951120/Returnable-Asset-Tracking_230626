@@ -1,6 +1,6 @@
-import type { Asset, Location, DCLog } from "@/lib/types";
+import type { Asset, Location, DCLog, Project } from "@/lib/types";
 import { addDocument } from "@/lib/storage";
-import { assetValueAt } from "@/lib/cost";
+import { resolveLoopCost } from "@/lib/loops";
 import { toast } from "sonner";
 
 /** Option 01 — one row per asset with UUID, optional RFID/BLE, Unit Price, Qty=1, Total */
@@ -64,9 +64,18 @@ export async function generateAssetsDC(
   signatureImg?: string,
   allLocations: Location[] = [],
   companyName = "PLENOVA SUPPLY CHAIN PRIVATE LIMITED",
-  createdBy?: string
+  createdBy?: string,
+  projects: Project[] = []
 ) {
   if (!assets.length) return;
+
+  // Declared value for an asset on this DC leg: the price of the loop it's on
+  // (per its project), falling back to the asset's own unit cost.
+  const valueOf = (a: Asset): number => {
+    const proj = projects.find((p) => p.id === a.projectId);
+    const loop = proj ? resolveLoopCost(proj, fromLocation, toLocation) : null;
+    return loop ?? (a.cost ?? 0);
+  };
 
   // Normalise argument
   let lineMode: DCLineMode = "individual";
@@ -114,7 +123,7 @@ export async function generateAssetsDC(
     const map = new Map<string, Group>();
     assets.forEach((a) => {
       const key = a.description?.trim() || a.name;
-      if (!map.has(key)) map.set(key, { name: key, uuids: [], rfids: [], bles: [], unitCost: assetValueAt(a, toLocation) });
+      if (!map.has(key)) map.set(key, { name: key, uuids: [], rfids: [], bles: [], unitCost: valueOf(a) });
       const g = map.get(key)!;
       g.uuids.push(a.uuid);
       if (a.rfidTag) g.rfids.push(a.rfidTag);
@@ -123,7 +132,7 @@ export async function generateAssetsDC(
     return [...map.values()];
   }
 
-  const grandTotal = assets.reduce((s, a) => s + assetValueAt(a, toLocation), 0);
+  const grandTotal = assets.reduce((s, a) => s + valueOf(a), 0);
   const logoUrl = await getDcLogo();
 
   for (let ci = 0; ci < 3; ci++) {
@@ -200,7 +209,7 @@ export async function generateAssetsDC(
       head.push("Unit Price", "Qty", "Total Value");
 
       const body = assets.map((a, i) => {
-        const cost = assetValueAt(a, toLocation);
+        const cost = valueOf(a);
         const row: (string|number)[] = [i + 1, a.name, hsnCode, a.uuid];
         if (showRFID) row.push(a.rfidTag || "");
         if (showBLE)  row.push(a.bleTag  || "");
@@ -369,7 +378,7 @@ export async function generateAssetsDC(
       assetSnapshots: assets.map((a) => ({
         id: a.id, name: a.name, uuid: a.uuid,
         rfidTag: a.rfidTag, bleTag: a.bleTag,
-        cost: assetValueAt(a, toLocation), description: a.description,
+        cost: valueOf(a), description: a.description,
       })),
     } satisfies Omit<DCLog, "id">);
   } catch { /* non-critical */ }

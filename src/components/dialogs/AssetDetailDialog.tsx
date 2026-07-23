@@ -8,8 +8,6 @@ import {
   X, Loader2, Save, History, LogOut, LogIn, ArrowRightLeft, Package, MapPin, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { projectFlow } from "@/lib/flow";
-import { LocationCostEditor, setCostEntry, scopeCosts } from "@/components/LocationCostEditor";
 
 interface Props {
   asset: Asset;
@@ -49,11 +47,8 @@ export default function AssetDetailDialog({ asset, locations, projects, onClose,
     bleTag: asset.bleTag ?? "",
     conditionNotes: asset.conditionNotes ?? "",
   });
-  const [locCosts, setLocCosts] = useState<Record<string, number>>(asset.locationCosts ?? {});
 
   const pm = useMemo(() => Object.fromEntries(projects.map((p) => [p.id, p.name])), [projects]);
-  // Flow locations of the asset's (possibly reassigned) project
-  const flowLocs = useMemo(() => projectFlow(projects.find((p) => p.id === form.projectId)), [projects, form.projectId]);
 
   useEffect(() => {
     Promise.all([fetchAll<AssetMovement>("movements"), fetchAll<Transfer>("transfers")])
@@ -85,7 +80,6 @@ export default function AssetDetailDialog({ asset, locations, projects, onClose,
         name: form.name.trim(),
         description: form.description.trim() || undefined,
         cost: Number(form.cost) || 0,
-        locationCosts: (() => { const lc = scopeCosts(locCosts, flowLocs); return Object.keys(lc).length ? lc : undefined; })(),
         healthScore: Number(form.healthScore) || 0,
         status: form.status,
         location: form.location.trim(),
@@ -191,10 +185,6 @@ export default function AssetDetailDialog({ asset, locations, projects, onClose,
               <div className="col-span-2">
                 <label className="mb-1 block text-xs font-medium text-slate-600">Condition Notes</label>
                 <textarea rows={2} value={form.conditionNotes} onChange={(e) => setForm((p) => ({ ...p, conditionNotes: e.target.value }))} className={`${inputCls} resize-none`} />
-              </div>
-              <div className="col-span-2">
-                <LocationCostEditor locations={flowLocs} value={locCosts}
-                  onSet={(loc, raw) => setCostEntry(setLocCosts, loc, raw)} />
               </div>
             </div>
           ) : (

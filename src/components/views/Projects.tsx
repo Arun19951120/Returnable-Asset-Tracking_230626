@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
+import { projectLoops, type Loop } from "@/lib/loops";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ProjectAlert {
@@ -44,12 +45,52 @@ function daysUntil(dateStr: string): number {
   return Math.floor((target.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
+// Loop rate card: one price per full route through the flow. When a stage
+// branches (1.a/1.b), each branch is its own priced loop. This price becomes
+// the declared value on the Delivery Challan for assets moving along that loop.
+function LoopCostEditor({
+  loops, value, onSet,
+}: {
+  loops: Loop[];
+  value: Record<string, number>;
+  onSet: (key: string, raw: string) => void;
+}) {
+  if (loops.length === 0) return null;
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3">
+      <p className="text-xs font-semibold text-slate-700">Loop Cost (declared value on the DC)</p>
+      <p className="mb-2 text-[10px] text-slate-400">
+        {loops.length > 1
+          ? "Each branch of the flow is a separate loop — price them individually."
+          : "The price of one full route through this flow."}
+      </p>
+      <div className="space-y-1.5">
+        {loops.map((loop) => (
+          <div key={loop.key} className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-[11px] text-slate-600" title={loop.label}>
+              {loop.label || "Full route"}
+            </span>
+            <div className="relative shrink-0">
+              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">₹</span>
+              <input type="number" min={0} placeholder="—"
+                value={value[loop.key] ?? ""}
+                onChange={(e) => onSet(loop.key, e.target.value)}
+                className="w-28 rounded-lg border border-slate-300 py-1.5 pl-5 pr-2 text-xs outline-none focus:border-slate-500" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const EMPTY_FORM = {
   name: "", client: "", status: "Active" as Project["status"],
   startDate: "", endDate: "",
   allowedLocations: [] as string[],
   primaryLocation: "",
   receivingStages: [] as string[][],
+  loopCosts: {} as Record<string, number>,
   slaDays: "" as string | number,
 };
 
@@ -1078,6 +1119,7 @@ export default function Projects() {
       receivingStages: proj.receivingStages?.length
         ? proj.receivingStages.map((s) => [...s])
         : (proj.receivingLocations ?? []).map((l) => [l]),
+      loopCosts: proj.loopCosts ? { ...proj.loopCosts } : {},
       slaDays: proj.slaDays ?? "",
     });
     setShowForm(true);
@@ -1097,6 +1139,15 @@ export default function Projects() {
         receivingStages: form.receivingStages.length > 0 ? form.receivingStages : undefined,
         // keep the legacy field in sync (first option of each stage) for older readers
         receivingLocations: form.receivingStages.length > 0 ? form.receivingStages.map((s) => s[0]) : undefined,
+        loopCosts: (() => {
+          // keep only prices whose loop still exists in the (possibly edited) flow
+          const valid = new Set(projectLoops({
+            primaryLocation: form.primaryLocation,
+            receivingStages: form.receivingStages,
+          } as Project).map((l) => l.key));
+          const kept = Object.fromEntries(Object.entries(form.loopCosts).filter(([k]) => valid.has(k)));
+          return Object.keys(kept).length ? kept : undefined;
+        })(),
         slaDays: form.slaDays !== "" ? Number(form.slaDays) : undefined,
       };
       if (editingId) {
@@ -1635,6 +1686,17 @@ export default function Projects() {
                       Flow: {form.primaryLocation} → {form.receivingStages.map((s) => s.length > 1 ? `(${s.join(" | ")})` : s[0]).join(" → ")} → {form.primaryLocation}
                     </p>
                   )}
+
+                  {/* Loop rate card — one price per full route through the flow */}
+                  <LoopCostEditor
+                    loops={projectLoops({ primaryLocation: form.primaryLocation, receivingStages: form.receivingStages } as Project)}
+                    value={form.loopCosts}
+                    onSet={(key, raw) => setForm((p) => {
+                      const next = { ...p.loopCosts };
+                      if (raw === "" || isNaN(+raw)) delete next[key]; else next[key] = +raw;
+                      return { ...p, loopCosts: next };
+                    })}
+                  />
                 </div>
               </div>
 

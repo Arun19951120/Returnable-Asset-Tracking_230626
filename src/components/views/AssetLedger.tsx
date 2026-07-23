@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { fetchAll, addDocument, updateDocument, logAudit } from "@/lib/storage";
 import { Asset, Location, Project } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
@@ -18,8 +18,6 @@ import BulkCheckInOutDialog from "@/components/dialogs/BulkCheckInOutDialog";
 import AssetDetailDialog from "@/components/dialogs/AssetDetailDialog";
 import BulkQRDialog from "@/components/dialogs/BulkQRDialog";
 import { buildQRDataUrl } from "@/lib/qr";
-import { projectFlow } from "@/lib/flow";
-import { LocationCostEditor, setCostEntry, scopeCosts } from "@/components/LocationCostEditor";
 import { generateAssetLabels } from "@/lib/label";
 import FilterBar, { DayRange, filterByDays } from "@/components/ui/FilterBar";
 import { toast } from "sonner";
@@ -275,12 +273,6 @@ export default function AssetLedger() {
   const [bulkKitItems, setBulkKitItems] = useState<KitItem[]>([{ description: "", qty: 1 }]);
   const bulkKit = () => bulkHasKit ? bulkKitItems.filter((k) => k.description.trim()) : [];
 
-  // Location-wise costs — declared value keyed by flow location (single + serial add)
-  const [locCosts, setLocCosts] = useState<Record<string, number>>({});
-  const [serialLocCosts, setSerialLocCosts] = useState<Record<string, number>>({});
-  // Flow locations of the currently-selected project (single / serial add forms)
-  const singleFlowLocs = useMemo(() => projectFlow(projects.find((p) => p.id === form.projectId)), [projects, form.projectId]);
-
   // Bulk manual rows (Option A — row-by-row table)
   const [bulkRows, setBulkRows] = useState<BulkRow[]>([EMPTY_ROW()]);
   const [bulkSaving, setBulkSaving] = useState(false);
@@ -293,7 +285,6 @@ export default function AssetLedger() {
   const [serialCount, setSerialCount] = useState(5);
   const [serialPreview, setSerialPreview] = useState<BulkRow[]>([]);
   const [serialSaving, setSerialSaving] = useState(false);
-  const serialFlowLocs = useMemo(() => projectFlow(projects.find((p) => p.id === serialSeed.projectId)), [projects, serialSeed.projectId]);
 
   // CSV paste
   const [csvText, setCsvText] = useState("");
@@ -432,11 +423,9 @@ export default function AssetLedger() {
     setSaving(true);
     try {
       const validKits = hasKit ? kitItems.filter((k) => k.description.trim()) : undefined;
-      const lc = scopeCosts(locCosts, singleFlowLocs);
       await addDocument("assets", {
         ...form,
         kitItems: validKits?.length ? validKits : undefined,
-        locationCosts: Object.keys(lc).length ? lc : undefined,
         lastUpdated: new Date().toISOString(),
       });
       await logAudit({ userId: profile?.uid ?? "", userEmail: profile?.email ?? "", action: `Asset added: ${form.name}`, category: "Asset", details: `UUID: ${form.uuid}` });
@@ -444,7 +433,6 @@ export default function AssetLedger() {
       setForm({ ...EMPTY });
       setHasKit(false);
       setKitItems([{ description: "", qty: 1 }]);
-      setLocCosts({});
       load();
     } catch { toast.error("Failed to add asset"); }
     finally { setSaving(false); }
@@ -489,13 +477,10 @@ export default function AssetLedger() {
     setSerialSaving(true);
     try {
       const kit = bulkKit();
-      const lc = scopeCosts(serialLocCosts, serialFlowLocs);
-      const lcOut = Object.keys(lc).length ? lc : undefined;
       await Promise.all(
         serialPreview.map((row) => addDocument("assets", {
           ...row,
           kitItems: kit.length ? kit : undefined,
-          locationCosts: lcOut,
           lastUpdated: new Date().toISOString(),
         }))
       );
@@ -507,7 +492,7 @@ export default function AssetLedger() {
       });
       toast.success(`${serialPreview.length} assets added with serial UUIDs`);
       setSerialPreview([]); setSerialSeed({ ...EMPTY_ROW(), autoIncrementName: true }); setSerialCount(5);
-      setBulkHasKit(false); setBulkKitItems([{ description: "", qty: 1 }]); setSerialLocCosts({}); load();
+      setBulkHasKit(false); setBulkKitItems([{ description: "", qty: 1 }]); load();
     } catch { toast.error("Serial add failed"); }
     finally { setSerialSaving(false); }
   }
@@ -1289,10 +1274,6 @@ export default function AssetLedger() {
                 <KitEditor hasKit={hasKit} setHasKit={setHasKit} items={kitItems} setItems={setKitItems}
                   prompt="Does this asset have a Kit?" qtyLabel="Qty per Asset" />
 
-                {/* ── Location-wise Cost ── */}
-                <LocationCostEditor locations={singleFlowLocs} value={locCosts}
-                  onSet={(loc, raw) => setCostEntry(setLocCosts, loc, raw)} />
-
                 {form.projectId && <div className="rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">Linking to: <strong>{pm[form.projectId] ?? form.projectId}</strong></div>}
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowAdd(false)} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm text-slate-600">Cancel</button>
@@ -1516,10 +1497,6 @@ export default function AssetLedger() {
 
                     <KitEditor hasKit={bulkHasKit} setHasKit={setBulkHasKit} items={bulkKitItems} setItems={setBulkKitItems}
                       prompt="Add a Kit to every generated asset?" qtyLabel="Qty per Asset" />
-
-                    <LocationCostEditor locations={serialFlowLocs} value={serialLocCosts}
-                      onSet={(loc, raw) => { setCostEntry(setSerialLocCosts, loc, raw); setSerialPreview([]); }}
-                      note="Optional. Applied to every generated asset — its declared value at each flow location. Blank falls back to the Unit Cost above." />
 
                     {/* Preview */}
                     {serialPreview.length > 0 && (
