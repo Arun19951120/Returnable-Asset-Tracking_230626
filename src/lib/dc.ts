@@ -1,5 +1,6 @@
 import type { Asset, Location, DCLog } from "@/lib/types";
 import { addDocument } from "@/lib/storage";
+import { assetValueAt } from "@/lib/cost";
 import { toast } from "sonner";
 
 /** Option 01 — one row per asset with UUID, optional RFID/BLE, Unit Price, Qty=1, Total */
@@ -113,7 +114,7 @@ export async function generateAssetsDC(
     const map = new Map<string, Group>();
     assets.forEach((a) => {
       const key = a.description?.trim() || a.name;
-      if (!map.has(key)) map.set(key, { name: key, uuids: [], rfids: [], bles: [], unitCost: a.cost ?? 0 });
+      if (!map.has(key)) map.set(key, { name: key, uuids: [], rfids: [], bles: [], unitCost: assetValueAt(a, toLocation) });
       const g = map.get(key)!;
       g.uuids.push(a.uuid);
       if (a.rfidTag) g.rfids.push(a.rfidTag);
@@ -122,7 +123,7 @@ export async function generateAssetsDC(
     return [...map.values()];
   }
 
-  const grandTotal = assets.reduce((s, a) => s + (a.cost ?? 0), 0);
+  const grandTotal = assets.reduce((s, a) => s + assetValueAt(a, toLocation), 0);
   const logoUrl = await getDcLogo();
 
   for (let ci = 0; ci < 3; ci++) {
@@ -199,7 +200,7 @@ export async function generateAssetsDC(
       head.push("Unit Price", "Qty", "Total Value");
 
       const body = assets.map((a, i) => {
-        const cost = a.cost ?? 0;
+        const cost = assetValueAt(a, toLocation);
         const row: (string|number)[] = [i + 1, a.name, hsnCode, a.uuid];
         if (showRFID) row.push(a.rfidTag || "");
         if (showBLE)  row.push(a.bleTag  || "");
@@ -368,7 +369,7 @@ export async function generateAssetsDC(
       assetSnapshots: assets.map((a) => ({
         id: a.id, name: a.name, uuid: a.uuid,
         rfidTag: a.rfidTag, bleTag: a.bleTag,
-        cost: a.cost, description: a.description,
+        cost: assetValueAt(a, toLocation), description: a.description,
       })),
     } satisfies Omit<DCLog, "id">);
   } catch { /* non-critical */ }

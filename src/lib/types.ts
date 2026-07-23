@@ -37,7 +37,8 @@ export interface Asset {
   bleTag?: string;
   customerId?: string;
   projectId?: string;
-  cost?: number;          // Unit cost / declared value (for DC & sales reporting)
+  cost?: number;          // Unit cost / declared value (baseline, for DC & sales reporting)
+  locationCosts?: Record<string, number>; // per-location declared value (keyed by location name, e.g. "1.a")
   description?: string;   // Asset category / short description for DC grouping
   kitItems?: KitItem[];   // Kit components bundled with this asset
   cycleCount?: number;    // Number of completed return trips to master warehouse
