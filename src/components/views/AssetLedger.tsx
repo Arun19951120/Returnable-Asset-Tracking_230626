@@ -109,6 +109,79 @@ function generateSerialRows(
   }));
 }
 
+// ── Reusable Kit editor ───────────────────────────────────────────────────────
+// Shared by the single-asset form and both bulk modes so kitting looks and
+// behaves identically everywhere.
+function KitEditor({
+  hasKit, setHasKit, items, setItems, prompt, qtyLabel,
+}: {
+  hasKit: boolean;
+  setHasKit: (v: boolean) => void;
+  items: KitItem[];
+  setItems: React.Dispatch<React.SetStateAction<KitItem[]>>;
+  prompt: string;
+  qtyLabel: string;
+}) {
+  return (
+    <div className="border-t border-slate-100 pt-4">
+      <label className="flex items-center gap-3 cursor-pointer mb-3">
+        <span className="text-xs font-semibold text-slate-700">{prompt}</span>
+        <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-medium">
+          <button type="button" onClick={() => setHasKit(false)}
+            className={`px-3 py-1.5 transition-colors ${!hasKit ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100"}`}>No</button>
+          <button type="button" onClick={() => setHasKit(true)}
+            className={`px-3 py-1.5 transition-colors ${hasKit ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100"}`}>Yes</button>
+        </div>
+      </label>
+
+      {hasKit && (
+        <div className="space-y-2">
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider">
+                  <th className="border-b border-slate-200 px-3 py-2 text-left font-medium">Kit Description</th>
+                  <th className="border-b border-slate-200 px-3 py-2 text-left font-medium w-24">{qtyLabel}</th>
+                  <th className="border-b border-slate-200 px-2 py-2 w-8"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {items.map((kit, i) => (
+                  <tr key={i}>
+                    <td className="px-2 py-1.5">
+                      <input value={kit.description}
+                        onChange={(e) => setItems((k) => k.map((x, idx) => idx === i ? { ...x, description: e.target.value } : x))}
+                        placeholder="e.g. Mounting Bracket"
+                        className="w-full rounded px-2 py-1 text-xs outline-none border border-transparent focus:border-slate-300 bg-transparent" />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <input type="number" min={1} value={kit.qty}
+                        onChange={(e) => setItems((k) => k.map((x, idx) => idx === i ? { ...x, qty: Math.max(1, +e.target.value) } : x))}
+                        className="w-full rounded px-2 py-1 text-xs outline-none border border-transparent focus:border-slate-300 bg-transparent" />
+                    </td>
+                    <td className="px-1 py-1">
+                      {items.length > 1 && (
+                        <button type="button" onClick={() => setItems((k) => k.filter((_, idx) => idx !== i))}
+                          className="text-red-400 hover:text-red-600">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button type="button" onClick={() => setItems((k) => [...k, { description: "", qty: 1 }])}
+            className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 hover:border-slate-400 hover:bg-slate-50">
+            <Plus className="h-3.5 w-3.5" /> Add Kit Item
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AssetLedger() {
   const { profile } = useAuth();
@@ -191,9 +264,14 @@ export default function AssetLedger() {
   const [rfidReading, setRfidReading] = useState(false);
   const [bleReading, setBleReading] = useState(false);
 
-  // Kit items
+  // Kit items — single-asset form
   const [hasKit, setHasKit] = useState(false);
   const [kitItems, setKitItems] = useState<KitItem[]>([{ description: "", qty: 1 }]);
+
+  // Kit items — bulk (one shared kit applied to every asset in the batch)
+  const [bulkHasKit, setBulkHasKit] = useState(false);
+  const [bulkKitItems, setBulkKitItems] = useState<KitItem[]>([{ description: "", qty: 1 }]);
+  const bulkKit = () => bulkHasKit ? bulkKitItems.filter((k) => k.description.trim()) : [];
 
   // Bulk manual rows (Option A — row-by-row table)
   const [bulkRows, setBulkRows] = useState<BulkRow[]>([EMPTY_ROW()]);
@@ -371,10 +449,15 @@ export default function AssetLedger() {
     if (valid.some((r) => !r.projectId)) { toast.error("Assign a project to every row"); return; }
     setBulkSaving(true);
     try {
-      await Promise.all(valid.map((row) => addDocument("assets", { ...row, lastUpdated: new Date().toISOString() })));
+      const kit = bulkKit();
+      await Promise.all(valid.map((row) => addDocument("assets", {
+        ...row,
+        kitItems: kit.length ? kit : undefined,
+        lastUpdated: new Date().toISOString(),
+      })));
       await logAudit({ userId: profile?.uid ?? "", userEmail: profile?.email ?? "", action: `Bulk add: ${valid.length} assets`, category: "Asset", details: valid.map((r) => r.uuid).join(", ") });
       toast.success(`${valid.length} assets added`);
-      setBulkRows([EMPTY_ROW()]); load();
+      setBulkRows([EMPTY_ROW()]); setBulkHasKit(false); setBulkKitItems([{ description: "", qty: 1 }]); load();
     } catch { toast.error("Bulk add failed"); }
     finally { setBulkSaving(false); }
   }
@@ -393,8 +476,13 @@ export default function AssetLedger() {
     if (!serialPreview.length) return;
     setSerialSaving(true);
     try {
+      const kit = bulkKit();
       await Promise.all(
-        serialPreview.map((row) => addDocument("assets", { ...row, lastUpdated: new Date().toISOString() }))
+        serialPreview.map((row) => addDocument("assets", {
+          ...row,
+          kitItems: kit.length ? kit : undefined,
+          lastUpdated: new Date().toISOString(),
+        }))
       );
       await logAudit({
         userId: profile?.uid ?? "", userEmail: profile?.email ?? "",
@@ -403,7 +491,8 @@ export default function AssetLedger() {
         details: `UUIDs: ${serialPreview[0].uuid} … ${serialPreview[serialPreview.length - 1].uuid}`,
       });
       toast.success(`${serialPreview.length} assets added with serial UUIDs`);
-      setSerialPreview([]); setSerialSeed({ ...EMPTY_ROW(), autoIncrementName: true }); setSerialCount(5); load();
+      setSerialPreview([]); setSerialSeed({ ...EMPTY_ROW(), autoIncrementName: true }); setSerialCount(5);
+      setBulkHasKit(false); setBulkKitItems([{ description: "", qty: 1 }]); load();
     } catch { toast.error("Serial add failed"); }
     finally { setSerialSaving(false); }
   }
@@ -1182,75 +1271,8 @@ export default function AssetLedger() {
                 </div>
 
                 {/* ── Kit Items ── */}
-                <div className="border-t border-slate-100 pt-4">
-                  <label className="flex items-center gap-3 cursor-pointer mb-3">
-                    <span className="text-xs font-semibold text-slate-700">Does this asset have a Kit?</span>
-                    <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-medium">
-                      <button
-                        type="button"
-                        onClick={() => setHasKit(false)}
-                        className={`px-3 py-1.5 transition-colors ${!hasKit ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100"}`}
-                      >No</button>
-                      <button
-                        type="button"
-                        onClick={() => setHasKit(true)}
-                        className={`px-3 py-1.5 transition-colors ${hasKit ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100"}`}
-                      >Yes</button>
-                    </div>
-                  </label>
-
-                  {hasKit && (
-                    <div className="space-y-2">
-                      <div className="overflow-x-auto rounded-lg border border-slate-200">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider">
-                              <th className="border-b border-slate-200 px-3 py-2 text-left font-medium">Kit Description</th>
-                              <th className="border-b border-slate-200 px-3 py-2 text-left font-medium w-24">Qty per Asset</th>
-                              <th className="border-b border-slate-200 px-2 py-2 w-8"></th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {kitItems.map((kit, i) => (
-                              <tr key={i}>
-                                <td className="px-2 py-1.5">
-                                  <input
-                                    value={kit.description}
-                                    onChange={(e) => setKitItems((k) => k.map((x, idx) => idx === i ? { ...x, description: e.target.value } : x))}
-                                    placeholder="e.g. Mounting Bracket"
-                                    className="w-full rounded px-2 py-1 text-xs outline-none border border-transparent focus:border-slate-300 bg-transparent"
-                                  />
-                                </td>
-                                <td className="px-2 py-1.5">
-                                  <input
-                                    type="number" min={1} value={kit.qty}
-                                    onChange={(e) => setKitItems((k) => k.map((x, idx) => idx === i ? { ...x, qty: Math.max(1, +e.target.value) } : x))}
-                                    className="w-full rounded px-2 py-1 text-xs outline-none border border-transparent focus:border-slate-300 bg-transparent"
-                                  />
-                                </td>
-                                <td className="px-1 py-1">
-                                  {kitItems.length > 1 && (
-                                    <button type="button" onClick={() => setKitItems((k) => k.filter((_, idx) => idx !== i))}
-                                      className="text-red-400 hover:text-red-600">
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setKitItems((k) => [...k, { description: "", qty: 1 }])}
-                        className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 hover:border-slate-400 hover:bg-slate-50"
-                      >
-                        <Plus className="h-3.5 w-3.5" /> Add Kit Item
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <KitEditor hasKit={hasKit} setHasKit={setHasKit} items={kitItems} setItems={setKitItems}
+                  prompt="Does this asset have a Kit?" qtyLabel="Qty per Asset" />
 
                 {form.projectId && <div className="rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">Linking to: <strong>{pm[form.projectId] ?? form.projectId}</strong></div>}
                 <div className="flex gap-3 pt-2">
@@ -1350,6 +1372,8 @@ export default function AssetLedger() {
                         </button>
                       )}
                     </div>
+                    <KitEditor hasKit={bulkHasKit} setHasKit={setBulkHasKit} items={bulkKitItems} setItems={setBulkKitItems}
+                      prompt="Add a Kit to every asset above?" qtyLabel="Qty per Asset" />
                     <div className="flex gap-3">
                       <button onClick={() => setShowAdd(false)} className="flex-1 rounded-lg border border-slate-200 py-2 text-sm text-slate-600">Cancel</button>
                       <button onClick={handleBulkAdd} disabled={bulkSaving}
@@ -1470,6 +1494,9 @@ export default function AssetLedger() {
                         </div>
                       </div>
                     </div>
+
+                    <KitEditor hasKit={bulkHasKit} setHasKit={setBulkHasKit} items={bulkKitItems} setItems={setBulkKitItems}
+                      prompt="Add a Kit to every generated asset?" qtyLabel="Qty per Asset" />
 
                     {/* Preview */}
                     {serialPreview.length > 0 && (
