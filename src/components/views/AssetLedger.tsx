@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { fetchAll, addDocument, updateDocument, logAudit } from "@/lib/storage";
-import { Asset, Location, Project } from "@/lib/types";
+import { fetchAll, addDocument, updateDocument, deleteDocument, logAudit } from "@/lib/storage";
+import { Asset, Location, Project, PRIMARY_ACCOUNT_EMAIL } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import {
   Search, Plus, Download, QrCode, X, Loader2,
@@ -273,6 +273,11 @@ export default function AssetLedger() {
   const [markSaving, setMarkSaving] = useState(false);
   const [retireSaving, setRetireSaving] = useState(false);
   const [showBulkTx, setShowBulkTx] = useState(false);
+  // Permanent delete — master admin only. Irreversible; separate from Retire.
+  const isMasterAdmin = profile?.email === PRIMARY_ACCOUNT_EMAIL;
+  const [deleteAsset, setDeleteAsset] = useState<Asset | null>(null);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [deleteSaving, setDeleteSaving] = useState(false);
   // QR modal
   const [qrAsset,   setQrAsset]   = useState<Asset | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
@@ -655,6 +660,44 @@ export default function AssetLedger() {
     }
   }
 
+  // ── Permanent delete (master admin only) ─────────────────────────────────────
+  async function handleDeleteAsset() {
+    if (!deleteAsset || !isMasterAdmin) return;
+    setDeleteSaving(true);
+    try {
+      await deleteDocument("assets", deleteAsset.id);
+      await logAudit({
+        userId: profile?.uid ?? "", userEmail: profile?.email ?? "",
+        action: `Asset DELETED: ${deleteAsset.name}`, category: "Asset",
+        details: `UUID: ${deleteAsset.uuid} (${deleteAsset.id})`,
+      });
+      toast.success("Asset deleted");
+      setSelected((s) => s.filter((id) => id !== deleteAsset.id));
+      setDeleteAsset(null);
+      load();
+    } catch { toast.error("Delete failed"); }
+    finally { setDeleteSaving(false); }
+  }
+
+  async function handleBulkDelete() {
+    if (!isMasterAdmin || !selected.length) return;
+    setDeleteSaving(true);
+    try {
+      const victims = assets.filter((a) => selected.includes(a.id));
+      await Promise.all(victims.map((a) => deleteDocument("assets", a.id)));
+      await logAudit({
+        userId: profile?.uid ?? "", userEmail: profile?.email ?? "",
+        action: `Bulk DELETE: ${victims.length} assets`, category: "Asset",
+        details: victims.map((a) => a.uuid).join(", "),
+      });
+      toast.success(`${victims.length} assets deleted`);
+      setSelected([]);
+      setShowBulkDelete(false);
+      load();
+    } catch { toast.error("Bulk delete failed"); }
+    finally { setDeleteSaving(false); }
+  }
+
   // ── Grouped view logic ────────────────────────────────────────────────────────
   interface AssetGroup {
     key: string;
@@ -774,6 +817,13 @@ export default function AssetLedger() {
             <button onClick={() => setShowBulkTx(true)}
               className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
               Bulk Tx ({selected.length})
+            </button>
+          )}
+          {isMasterAdmin && selected.length > 0 && (
+            <button onClick={() => setShowBulkDelete(true)}
+              title="Permanently delete the selected assets"
+              className="flex items-center gap-2 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+              <Trash2 className="h-4 w-4" /> Delete ({selected.length})
             </button>
           )}
           <button onClick={() => setShowAdd(true)}
@@ -1015,6 +1065,10 @@ export default function AssetLedger() {
                                         <div className="my-1 border-t border-slate-100" />
                                         <button onClick={() => { setRetireAsset(asset); closeRowMenu(); }}
                                           className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"><Archive className="h-3.5 w-3.5" /> Retire Asset</button>
+                                        {isMasterAdmin && (
+                                          <button onClick={() => { setDeleteAsset(asset); closeRowMenu(); }}
+                                            className="flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" /> Delete Asset</button>
+                                        )}
                                     </PortalMenu>
                                   )}
                                 </div>
@@ -1177,6 +1231,17 @@ export default function AssetLedger() {
                                   className="flex w-full items-center gap-2.5 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-red-50 transition-colors">
                                   <Archive className="h-4 w-4 text-red-500" />
                                   Retire Asset
+                                </button>
+                              </>
+                            )}
+                            {isMasterAdmin && (
+                              <>
+                                <div className="my-1 border-t border-slate-100" />
+                                <button
+                                  onClick={() => { closeRowMenu(); setDeleteAsset(asset); }}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors">
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete Asset
                                 </button>
                               </>
                             )}
@@ -1680,6 +1745,62 @@ export default function AssetLedger() {
       {showBulkQR && (
         <BulkQRDialog assets={assets} projects={projects} initialProjectId={projectFilter}
           onClose={() => setShowBulkQR(false)} />
+      )}
+
+      {/* ── Delete single asset (master admin) ── */}
+      {deleteAsset && isMasterAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setDeleteAsset(null)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-slate-900">Delete this asset?</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  <span className="font-medium text-slate-700">{deleteAsset.name}</span>{" "}
+                  <span className="font-mono text-xs text-slate-400">({deleteAsset.uuid})</span> will be
+                  permanently removed. This cannot be undone.
+                </p>
+                <p className="mt-1 text-xs text-slate-400">Use <strong>Retire</strong> instead if you only want to take it out of circulation.</p>
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setDeleteAsset(null)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button onClick={handleDeleteAsset} disabled={deleteSaving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
+                {deleteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bulk delete (master admin) ── */}
+      {showBulkDelete && isMasterAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowBulkDelete(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-slate-900">Delete {selected.length} asset{selected.length === 1 ? "" : "s"}?</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  The <span className="font-medium text-slate-700">{selected.length}</span> selected asset{selected.length === 1 ? "" : "s"} will be
+                  permanently removed. This cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => setShowBulkDelete(false)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+              <button onClick={handleBulkDelete} disabled={deleteSaving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
+                {deleteSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete {selected.length}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Retire Asset Dialog ── */}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { fetchAll, addDocument, updateDocument, deleteDocument, logAudit } from "@/lib/storage";
-import { Project, Asset, Transfer, Location, Notification, AssetMovement } from "@/lib/types";
+import { Project, Asset, Transfer, Location, Notification, AssetMovement, PRIMARY_ACCOUNT_EMAIL } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import {
   Plus, X, Loader2, AlertTriangle, RefreshCw,
@@ -1048,9 +1048,12 @@ export default function Projects() {
   const [renewingId, setRenewingId] = useState<string | null>(null);
   const [renewDate,  setRenewDate]  = useState("");
   const [confirmDeleteProject, setConfirmDeleteProject] = useState<Project | null>(null);
+  // When deleting a project, whether to also delete its linked assets (master admin only)
+  const [deleteLinkedAssets, setDeleteLinkedAssets] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
   const { profile } = useAuth();
   const isAdmin = profile?.role === "Admin";
+  const isMasterAdmin = profile?.email === PRIMARY_ACCOUNT_EMAIL;
 
   const load = useCallback(async () => {
     const [p, a, t, l, m] = await Promise.all([
@@ -1167,14 +1170,33 @@ export default function Projects() {
     if (!confirmDeleteProject) return;
     setDeletingProject(true);
     try {
+      const linked = assets.filter((a) => a.projectId === confirmDeleteProject.id);
+      // Only the master admin may delete assets; everyone else keeps them.
+      const alsoDelete = deleteLinkedAssets && isMasterAdmin;
+
+      if (alsoDelete) {
+        await Promise.all(linked.map((a) => deleteDocument("assets", a.id)));
+      } else {
+        // Keep the assets but drop the now-dangling project link.
+        // (An empty string clears it — sending `undefined` is stripped by JSON
+        // and the API's merge-update would leave the old id in place.)
+        await Promise.all(linked.map((a) => updateDocument("assets", a.id, { projectId: "" })));
+      }
+
       await deleteDocument("projects", confirmDeleteProject.id);
       await logAudit({
         userId: profile?.uid ?? "", userEmail: profile?.email ?? "",
         action: `Project deleted: ${confirmDeleteProject.name}`,
-        category: "Project", details: `Client: ${confirmDeleteProject.client}`,
+        category: "Project",
+        details: `Client: ${confirmDeleteProject.client}; ${linked.length} linked asset(s) ${alsoDelete ? "DELETED" : "unassigned"}`,
       });
-      toast.success(`Project "${confirmDeleteProject.name}" deleted`);
+      toast.success(
+        alsoDelete
+          ? `Project deleted with ${linked.length} asset${linked.length === 1 ? "" : "s"}`
+          : `Project "${confirmDeleteProject.name}" deleted`
+      );
       setConfirmDeleteProject(null);
+      setDeleteLinkedAssets(false);
       load();
     } catch {
       toast.error("Failed to delete project");
@@ -1722,9 +1744,11 @@ export default function Projects() {
       )}
 
       {/* ── Delete Project confirm modal ── */}
-      {confirmDeleteProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+      {confirmDeleteProject && (() => {
+        const linkedCount = assets.filter((a) => a.projectId === confirmDeleteProject.id).length;
+        return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => { setConfirmDeleteProject(null); setDeleteLinkedAssets(false); }}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
                 <Trash2 className="h-5 w-5 text-red-600" />
@@ -1732,25 +1756,57 @@ export default function Projects() {
               <div className="min-w-0">
                 <h3 className="font-semibold text-slate-900">Delete project?</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  <span className="font-medium text-slate-700">"{confirmDeleteProject.name}"</span> will be permanently removed.
-                  Assets assigned to this project will not be deleted but will lose their project association.
+                  <span className="font-medium text-slate-700">&quot;{confirmDeleteProject.name}&quot;</span> will be permanently removed.
                 </p>
               </div>
             </div>
+
+            {/* Linked-asset choice */}
+            {linkedCount > 0 && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold text-slate-600">
+                  {linkedCount} asset{linkedCount === 1 ? "" : "s"} {linkedCount === 1 ? "is" : "are"} linked to this project. What should happen to {linkedCount === 1 ? "it" : "them"}?
+                </p>
+                <div className="space-y-2">
+                  <label className={`flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors ${!deleteLinkedAssets ? "border-indigo-400 bg-indigo-50" : "border-slate-200 hover:bg-slate-50"}`}>
+                    <input type="radio" name="linked-assets" checked={!deleteLinkedAssets} onChange={() => setDeleteLinkedAssets(false)} className="mt-0.5" />
+                    <span>
+                      <span className="block font-medium text-slate-800">Keep the assets</span>
+                      <span className="text-xs text-slate-500">They stay in inventory; the project link is removed.</span>
+                    </span>
+                  </label>
+                  {isMasterAdmin ? (
+                    <label className={`flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors ${deleteLinkedAssets ? "border-red-400 bg-red-50" : "border-slate-200 hover:bg-slate-50"}`}>
+                      <input type="radio" name="linked-assets" checked={deleteLinkedAssets} onChange={() => setDeleteLinkedAssets(true)} className="mt-0.5" />
+                      <span>
+                        <span className="block font-medium text-red-700">Delete the assets too</span>
+                        <span className="text-xs text-slate-500">Permanently removes all {linkedCount} linked asset{linkedCount === 1 ? "" : "s"}. Cannot be undone.</span>
+                      </span>
+                    </label>
+                  ) : (
+                    <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-400">
+                      Only the master admin can delete the linked assets.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="mt-5 flex gap-3">
-              <button onClick={() => setConfirmDeleteProject(null)}
+              <button onClick={() => { setConfirmDeleteProject(null); setDeleteLinkedAssets(false); }}
                 className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                 Cancel
               </button>
               <button onClick={handleDeleteProject} disabled={deletingProject}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition-colors">
                 {deletingProject ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                {deletingProject ? "Deleting…" : "Delete Project"}
+                {deletingProject ? "Deleting…" : (deleteLinkedAssets && isMasterAdmin && linkedCount > 0) ? `Delete + ${linkedCount} Asset${linkedCount === 1 ? "" : "s"}` : "Delete Project"}
               </button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
